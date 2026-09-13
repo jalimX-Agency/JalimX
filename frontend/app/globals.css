@@ -1,0 +1,260 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   JalimX — MACHINED
+   Tokens are the single source of truth. See brand/BRAND.md.
+   ========================================================================== */
+
+@theme {
+  /* --- dark surfaces (MACHINED: /development) --- */
+  --color-graphite: #101318;
+  --color-surface: #191d24;
+  --color-surface-2: #212630;
+  --color-rule: #262c35;
+
+  /* --- light surfaces (marketing pages) ---
+     A cool near-white, not a warm cream. The brand promise is precision;
+     the ground should read as an instrument panel, not as paper stock. */
+  --color-paper: #f5f6f5;
+  --color-panel: #ffffff;
+  --color-hairline: #e3e5e3;
+  --color-ink: #14161a;
+  --color-ink-dim: #5c6068;
+  --color-ink-faint: #8b8f97;
+
+  /* --- identity: the JalimX blue, 30% less saturated than the original --- */
+  --color-jx: #2e7fb8;
+  --color-jx-deep: #1e64a8;
+  --color-jx-soft: #5b9bb5;
+
+  /* --- action: signal orange. CTAs and one accent only. Never a large fill. --- */
+  --color-signal: #e8823a;
+  --color-signal-dim: #b8622a;
+
+  /* --- text --- */
+  --color-bone: #f5f3ee;
+  --color-dim: #8e8a83;
+  --color-faint: #5f5c57;
+  --color-navy: #0b1220;
+
+  /* --- type --- */
+  --font-display: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* --- motion --- */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   base
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* No ground here: each page declares .surface-light or .surface-dark on its
+     own wrapper. Body only carries the fallback so a page that forgets still
+     renders legibly rather than transparent-on-unknown. */
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-graphite);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Display headings: uppercase, tight. See BRAND.md section 3. */
+  .h-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 0.98;
+    text-wrap: balance;
+  }
+
+  /* Mono eyebrows and counters — the detail that kills the template look. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+}
+
+/* The site is motion-led. Honour the OS setting. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   MACHINED surface treatments
+   Cheap, CSS-only atmosphere: a machined plate reads as a fine grid under
+   raking light. No canvas, no library, nothing that costs the LCP.
+   ========================================================================== */
+
+@layer components {
+  /* Fine engineering grid, faded out towards the edges so it never competes
+     with the type sitting on top of it. */
+  .tech-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-jx) 12%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-jx) 12%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
+  }
+
+  /* Primary action. The only place signal orange appears as a fill. */
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-signal);
+    color: var(--color-graphite);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.7rem 1.15rem;
+    border-radius: 4px;
+    transition: background 0.18s var(--ease-out-quint);
+  }
+  .cta:hover { background: color-mix(in oklab, var(--color-signal) 88%, white); }
+}
+
+/* ==========================================================================
+   Surfaces — one system, two densities
+   Components address the *role* (--ground, --fg, --link), never a literal
+   colour. A section declares which ground it sits on and everything inside it
+   follows, so the same Header works on the light homepage and on the dark
+   /development page with no duplicated markup.
+   ========================================================================== */
+
+@layer base {
+  .surface-dark {
+    --ground: var(--color-graphite);
+    --panel: var(--color-surface);
+    --fg: var(--color-bone);
+    --fg-dim: var(--color-dim);
+    --fg-faint: var(--color-faint);
+    --hairline: var(--color-rule);
+    /* #2E7FB8 clears 4.5:1 on graphite; on paper it does not. */
+    --link: var(--color-jx);
+    --jx-accent: var(--color-jx);
+
+    background: var(--ground);
+    color: var(--fg);
+  }
+
+  .surface-light {
+    --ground: var(--color-paper);
+    --panel: var(--color-panel);
+    --fg: var(--color-ink);
+    --fg-dim: var(--color-ink-dim);
+    --fg-faint: var(--color-ink-faint);
+    --hairline: var(--color-hairline);
+    /* The deeper blue: #2E7FB8 on near-white is only ~3.9:1, which fails body
+       text. #1E64A8 clears 5.6:1 and still reads as the same brand blue. */
+    --link: var(--color-jx-deep);
+    --jx-accent: var(--color-jx-deep);
+
+    background: var(--ground);
+    color: var(--fg);
+  }
+}
+
+@layer components {
+  /* Form controls. Built on the semantic tokens so one definition serves the
+     light contact page and any dark surface a form ends up on later. */
+  .field {
+    width: 100%;
+    background: var(--panel);
+    color: var(--fg);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 0.7rem 0.85rem;
+    font: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .field::placeholder {
+    color: var(--fg-faint);
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--link);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--link) 18%, transparent);
+  }
+
+  .field:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* A disabled primary action has to stop looking clickable, or people keep
+     pressing it while the request is still in flight. */
+  .cta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* A fine grain over the ground.
+     Flat colour is a large part of why a light minimal page reads as a
+     wireframe. An SVG turbulence tile costs one inlined data URI, no request,
+     and gives the surface something for the eye to hold on to. */
+  .grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+  }
+
+  .surface-dark .grain {
+    mix-blend-mode: screen;
+    opacity: 0.28;
+  }
+
+  /* The site header.
+
+     Sticky because the homepage hero hands its monogram up into this bar on
+     scroll, and a bar that has scrolled away is not somewhere to hand anything.
+     The ground is solid: a translucent bar let the hero's headline and button
+     ghost through it on the way past, which read as a rendering fault rather
+     than as depth. The travelling mark clears the bar by being lifted above it
+     instead — see the handoff in cinematic-hero.tsx. */
+  .site-header {
+    position: sticky;
+    top: 0;
+    background: var(--ground);
+  }
+}

@@ -1,0 +1,9 @@
+# pnpm 11 reads its settings from here, not from the "pnpm" key in package.json.
+# Native builds we deliberately skip: eslint falls back to its JS resolver,
+# Next.js 16 ships its own image optimiser, and next-intl's watcher/compiler
+# extras are only used by tooling we don't run.
+allowBuilds:
+  unrs-resolver: false
+  sharp: false
+  "@parcel/watcher": false
+  "@swc/core": false

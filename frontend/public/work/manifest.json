@@ -1,0 +1,41 @@
+{
+  "captured_at": "2026-09-08T11:01:09.678Z",
+  "shots": [
+    {
+      "slug": "arabian-desert-home",
+      "viewport": "desktop",
+      "url": "https://www.arabiandeserthome.ma/",
+      "src": "/work/arabian-desert-home-desktop.jpg"
+    },
+    {
+      "slug": "arabian-desert-home",
+      "viewport": "mobile",
+      "url": "https://www.arabiandeserthome.ma/",
+      "src": "/work/arabian-desert-home-mobile.jpg"
+    },
+    {
+      "slug": "families-tours",
+      "viewport": "desktop",
+      "url": "https://www.familiestours.com/en",
+      "src": "/work/families-tours-desktop.jpg"
+    },
+    {
+      "slug": "families-tours",
+      "viewport": "mobile",
+      "url": "https://www.familiestours.com/en",
+      "src": "/work/families-tours-mobile.jpg"
+    },
+    {
+      "slug": "globale-explore-tours",
+      "viewport": "desktop",
+      "url": "https://www.globaleexploretours.com/fr",
+      "src": "/work/globale-explore-tours-desktop.jpg"
+    },
+    {
+      "slug": "globale-explore-tours",
+      "viewport": "mobile",
+      "url": "https://www.globaleexploretours.com/fr",
+      "src": "/work/globale-explore-tours-mobile.jpg"
+    }
+  ]
+}

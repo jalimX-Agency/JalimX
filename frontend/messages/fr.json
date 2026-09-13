@@ -1,0 +1,242 @@
+{
+  "nav": {
+    "home": "JalimX — accueil",
+    "work": "Réalisations",
+    "approach": "Méthode",
+    "about": "À propos",
+    "contact": "Contact",
+    "cta": "Démarrer un projet",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "language": "Langue"
+  },
+  "hero": {
+    "eyebrow": "Studio de développement web",
+    "seeWork": "Voir les réalisations"
+  },
+  "clients": {
+    "label": "Réalisé pour"
+  },
+  "services": {
+    "heading": "Ce que nous faisons",
+    "intro": "Quatre choses, et elles se renforcent. La plupart des projets commencent par la première.",
+    "deepLink": "Notre façon de construire"
+  },
+  "work": {
+    "heading": "Réalisations choisies",
+    "allProjects": "Tous les projets",
+    "readCase": "Lire l'étude de cas",
+    "notLaunched": "pas encore en ligne",
+    "capturePending": "capture à venir",
+    "metricsNote": "Les résultats chiffrés sont volontairement absents — ce sont de vrais chiffres, et ils doivent venir de vous.",
+    "pageTitle": "Réalisations",
+    "pageHeading": "Chacune est partie d'un fichier vide.",
+    "pageDescription": "Des sites construits à partir d'un fichier vide pour des tour-opérateurs, des camps et des villas privées.",
+    "empty": "Rien de publié pour l'instant."
+  },
+  "caseStudy": {
+    "allWork": "Toutes les réalisations",
+    "builtWith": "Construit avec",
+    "scope": "Périmètre",
+    "live": "En ligne",
+    "problem": "Le problème",
+    "solution": "Ce que nous avons construit",
+    "result": "Le résultat",
+    "onPhone": "Sur mobile",
+    "notFound": "Introuvable"
+  },
+  "process": {
+    "heading": "Comment ça se passe",
+    "steps": {
+      "call": {
+        "title": "Un appel",
+        "body": "Ce dont l'entreprise a besoin, à qui elle vend, et ce que le site actuel ne permet pas de faire. Aucun livrable n'est encore évoqué — il n'y a rien à concevoir tant que ce point n'est pas clair."
+      },
+      "scope": {
+        "title": "Un périmètre écrit",
+        "body": "Les pages, ce que chacune doit accomplir, et les langues du site. Chiffré en devis ferme : le montant ne bouge pas une fois le travail lancé."
+      },
+      "build": {
+        "title": "La construction",
+        "body": "Conception et développement selon ce périmètre, avec un lien consultable à tout moment. Moitié à la commande, moitié à la livraison."
+      },
+      "handover": {
+        "title": "La remise",
+        "body": "Mise en ligne, avec le tableau de bord et sa prise en main. Vous modifiez ensuite vos contenus vous-même — textes, tarifs, images, traductions — sans appeler personne."
+      }
+    }
+  },
+  "testimonials": {
+    "heading": "De ceux qui l'ont payé",
+    "readCase": "Lire l'étude de cas"
+  },
+  "closing": {
+    "heading": "Dites-nous ce que le site doit faire.",
+    "body": "Un appel, puis un périmètre écrit à prix ferme. Sans engagement, dans un sens comme dans l'autre."
+  },
+  "footer": {
+    "tagline": "Conçu, pas assemblé",
+    "privacy": "Confidentialité",
+    "copyright": "© {year} JalimX"
+  },
+  "contact": {
+    "title": "Contact",
+    "description": "Dites-nous ce que le site doit faire. Un appel, puis un périmètre écrit à prix ferme.",
+    "heading": "Dites-nous ce que le site doit faire.",
+    "intro": "Plus vous en dites sur l'entreprise — qui achète chez vous, ce qu'on vous demande avant de réserver, ce que le site actuel complique — plus la première réponse sera utile.",
+    "nextHeading": "La suite",
+    "next1": "Une réponse sous un jour ouvré.",
+    "next2": "Un appel court — ce dont l'entreprise a besoin, pas ce à quoi le site devrait ressembler.",
+    "next3": "Un périmètre écrit à prix ferme. Sans engagement.",
+    "directHeading": "Ou directement",
+    "form": {
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "company": "Société",
+      "service": "Ce dont vous avez besoin",
+      "budget": "Budget",
+      "message": "Ce que le site doit faire",
+      "messagePlaceholder": "L'entreprise, à qui elle vend, et ce que le site actuel ne permet pas de faire.",
+      "choose": "Choisir",
+      "optional": "facultatif",
+      "submit": "Envoyer",
+      "sending": "Envoi…",
+      "note": "Pas de newsletter, pas de séquence marketing. Juste une réponse.",
+      "networkError": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+      "throttled": "Trop de messages depuis cette connexion. Réessayez dans un moment.",
+      "successTitle": "Message envoyé",
+      "successBody": "Nous lisons tout ce qui arrive et répondons sous un jour ouvré. Si c'est urgent, l'e-mail va plus vite que de nous attendre.",
+      "budgets": {
+        "b1": "Moins de 1 000 €",
+        "b2": "1 000 € – 3 000 €",
+        "b3": "3 000 € – 8 000 €",
+        "b4": "Plus de 8 000 €",
+        "b5": "Je ne sais pas encore"
+      }
+    }
+  },
+  "about": {
+    "title": "À propos",
+    "description": "Un petit studio de développement web. Chaque site part d'un fichier vide, et la personne qui écrit le code est celle à qui vous parlez.",
+    "heading": "Un petit studio, volontairement.",
+    "intro": "La personne qui écrit le code est celle à qui vous parlez. Pas de chef de projet qui transmet votre question à quelqu'un d'autre, et rien ne se perd en chemin.",
+    "beliefsHeading": "Notre façon de voir les choses",
+    "beliefs": {
+      "templates": {
+        "title": "Aucun gabarit",
+        "body": "Un gabarit, c'est la réponse de quelqu'un d'autre au problème de quelqu'un d'autre — et chaque heure passée après l'installation sert à le tordre vers le vôtre. Partir de zéro est plus rapide qu'il n'y paraît, et ce qui est livré ne contient rien dont vous n'aviez pas besoin."
+      },
+      "speed": {
+        "title": "La vitesse est un choix de conception",
+        "body": "Un site devient lent à cause de ce qu'on lui a ajouté, pas de la façon dont il a été construit. Une page rapide est presque toujours une page où quelqu'un a dit non à deux ou trois choses — un carrousel, une police, un traceur que personne ne lit."
+      },
+      "control": {
+        "title": "Changer un tarif ne devrait pas passer par nous",
+        "body": "Chaque site est livré avec un tableau de bord et sa prise en main. Textes, tarifs, images et traductions vous appartiennent. Devoir nous rappeler pour changer un numéro de téléphone est un échec de la remise, pas un modèle économique."
+      },
+      "price": {
+        "title": "Périmètre ferme, prix ferme",
+        "body": "Le périmètre est écrit et chiffré avant le début du travail : le montant ne bouge pas sous vos pieds. Si quelque chose doit changer en cours de route, c'est une conversation — pas une facture que vous découvrez après."
+      }
+    },
+    "deeperHeading": "Curieux de savoir comment c'est construit ?",
+    "deeperBody": "La stack, le raisonnement et les contraintes, plus en détail que la plupart des gens ne le souhaitent.",
+    "deeperLink": "Notre façon de construire"
+  },
+  "approach": {
+    "title": "Notre façon de travailler",
+    "description": "Tout le processus, écrit noir sur blanc : chaque étape d'un projet JalimX, ce dont nous avons besoin de vous à chacune, combien de temps elle prend, et ce que reçoit chaque site quel que soit le budget.",
+    "eyebrow": "Avant de vous engager",
+    "headlineTop": "Tout le processus,",
+    "headlineBottom": "noir sur blanc.",
+    "body": "La plupart des studios vous diront que ça dépend. Voici la séquence à la place — ce dont nous avons besoin de vous à chaque étape, combien de temps chacune prend à peu près, et ce qui se passe quand vous voulez changer quelque chose en cours de route.",
+    "telemetry": {
+      "label": "Cette page, dans votre navigateur",
+      "bytes": "Transféré",
+      "requests": "Requêtes",
+      "thirdParty": "Tierces parties",
+      "lcp": "Plus grand rendu",
+      "note": "Lu depuis l'API Performance de votre navigateur au chargement de cette page. Pas nos chiffres — les vôtres. Rechargez et regardez-les se poser."
+    },
+    "processHeading": "Comment se déroule un projet",
+    "processIntro": "Cinq étapes. La seule dont la durée varie est la construction, et le document de cadrage vous dit de quel côté de la fourchette vous êtes avant que vous ne payiez quoi que ce soit.",
+    "processTerms": "Moitié au cadrage, moitié à la mise en ligne. Deux tours de retours inclus.",
+    "needLabel": "Ce dont nous avons besoin de vous",
+    "phases": {
+      "call": {
+        "name": "L'appel",
+        "duration": "30–45 min",
+        "body": "Une conversation, pas un argumentaire. Ce que le site doit faire, à qui il s'adresse, et ce qui ne marche pas aujourd'hui. Si nous ne sommes pas les bonnes personnes, vous l'entendrez pendant cet appel plutôt qu'en troisième semaine.",
+        "need": "Quarante-cinq minutes, et un budget annoncé franchement."
+      },
+      "scope": {
+        "name": "Le cadrage",
+        "duration": "2–4 jours",
+        "body": "Un document écrit : chaque page, chaque fonctionnalité, ce qui est explicitement exclu, et un prix fixe. Vous pouvez le donner à un autre studio et obtenir un devis comparable — c'est bien l'intérêt de l'écrire.",
+        "need": "Vos contenus, ou la décision que nous les rédigions."
+      },
+      "build": {
+        "name": "La construction",
+        "duration": "2–5 semaines",
+        "body": "Vous recevez un lien dès le premier jour et il se met à jour au fil de l'eau. Pas de grande révélation à la fin. Si quelque chose ne va pas, ça ne va pas tant que c'est encore bon marché à corriger.",
+        "need": "Des réponses en un ou deux jours, d'une seule personne."
+      },
+      "review": {
+        "name": "Votre relecture",
+        "duration": "3–5 jours",
+        "body": "Vous parcourez l'ensemble et vous écrivez une liste. Nous traitons la liste. Deux tours sont inclus dans le prix, et il ne nous en a jamais fallu un troisième.",
+        "need": "Une liste, pas cinq e-mails séparés."
+      },
+      "live": {
+        "name": "En ligne",
+        "duration": "Un jour",
+        "body": "Domaine, certificat, redirections depuis ce qui existait avant, et une visite guidée de votre tableau de bord — enregistrée, pour que vous puissiez la revoir dans six mois quand vous aurez oublié.",
+        "need": "L'accès au domaine, ou nous l'achetons à votre nom."
+      }
+    },
+    "standardHeading": "Ce que reçoit chaque site",
+    "standardIntro": "Ce n'est pas une formule. Ces points ne se négocient pas à la baisse, parce qu'un site qui en est privé vous coûte plus tard plus qu'il ne vous a économisé maintenant.",
+    "standard": {
+      "a": "Rapide sur un téléphone avec une mauvaise connexion — pas seulement sur un portable en wifi de bureau.",
+      "b": "Utilisable au clavier, et lisible par un lecteur d'écran.",
+      "c": "Trouvable : du vrai markup, de vraies métadonnées, un vrai sitemap.",
+      "d": "Modifiable par vous, depuis un tableau de bord conçu pour votre site plutôt qu'un panneau d'administration générique.",
+      "e": "Dans les deux langues, si vos clients sont dans les deux.",
+      "f": "Toujours debout dans deux ans, sans abonnement mensuel pour le maintenir droit."
+    },
+    "ownHeading": "Ce que vous possédez ensuite",
+    "own": {
+      "a": {
+        "title": "Le contenu",
+        "body": "Textes, tarifs, images et traductions, modifiables depuis un tableau de bord conçu pour votre site plutôt qu'un panneau d'administration générique."
+      },
+      "b": {
+        "title": "Le code",
+        "body": "Le dépôt est à vous. Si nous arrêtons de travailler ensemble, un autre développeur le reprend — c'est du code ordinaire dans un framework pour lequel vous pouvez recruter, pas un système propriétaire."
+      },
+      "c": {
+        "title": "Le domaine et les comptes",
+        "body": "Enregistrés à votre nom, hébergés sur votre compte. Rien n'est retenu en otage parce que ce serait enregistré au nôtre."
+      }
+    },
+    "limitsHeading": "Ce que nous ne faisons pas",
+    "limitsIntro": "Le dire tout haut nous épargne un appel à tous les deux.",
+    "limits": {
+      "a": "Personnaliser un thème WordPress ou Shopify. Si un thème est la bonne réponse, vous n'avez pas besoin de nous.",
+      "b": "Rafistoler un site fait au page builder. Travailler dedans coûte plus cher que repartir de zéro, et le résultat repose toujours sur ce qui a causé le problème.",
+      "c": "Démarrer sans quelqu'un qui puisse décider. Il nous faut une personne de votre côté qui réponde aux questions et valide. Aucune planification ne sauve un projet qui n'obtient pas de réponse."
+    },
+    "sheet": {
+      "doc": "Doc · Notre méthode",
+      "of": "Feuille 1 sur 1",
+      "termsLabel": "Conditions",
+      "termsValue": "50 / 50",
+      "typicalLabel": "Durée type",
+      "typicalValue": "3–7 semaines",
+      "revisionsLabel": "Retours",
+      "revisionsValue": "2 inclus"
+    }
+  }
+}

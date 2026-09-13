@@ -1,0 +1,242 @@
+{
+  "nav": {
+    "home": "JalimX — home",
+    "work": "Work",
+    "approach": "Approach",
+    "about": "About",
+    "contact": "Contact",
+    "cta": "Start a project",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language"
+  },
+  "hero": {
+    "eyebrow": "Web development studio",
+    "seeWork": "See the work"
+  },
+  "clients": {
+    "label": "Built for"
+  },
+  "services": {
+    "heading": "What we do",
+    "intro": "Four things, and they compound. Most projects start with the first one.",
+    "deepLink": "How we build"
+  },
+  "work": {
+    "heading": "Selected work",
+    "allProjects": "All projects",
+    "readCase": "Read the case",
+    "notLaunched": "not launched yet",
+    "capturePending": "capture pending",
+    "metricsNote": "Outcomes and metrics are intentionally empty — those are real numbers, and they have to come from you.",
+    "pageTitle": "Work",
+    "pageHeading": "Every one of these started from an empty file.",
+    "pageDescription": "Websites built from an empty file for tour operators, camps and private villas.",
+    "empty": "Nothing published yet."
+  },
+  "caseStudy": {
+    "allWork": "All work",
+    "builtWith": "Built with",
+    "scope": "Scope",
+    "live": "Live",
+    "problem": "The problem",
+    "solution": "What we built",
+    "result": "The result",
+    "onPhone": "On a phone",
+    "notFound": "Not found"
+  },
+  "process": {
+    "heading": "How it goes",
+    "steps": {
+      "call": {
+        "title": "A call",
+        "body": "What the business needs, who it sells to, and what the current site fails to do. No deliverable is discussed yet — there is nothing to design until this part is clear."
+      },
+      "scope": {
+        "title": "A written scope",
+        "body": "Pages, what each one has to accomplish, and the languages it ships in. Priced as a fixed quote, so the number does not move once work starts."
+      },
+      "build": {
+        "title": "The build",
+        "body": "Design and development against that scope, with a working link you can open at any point. Half up front, half on delivery."
+      },
+      "handover": {
+        "title": "Handover",
+        "body": "Launch, plus the dashboard and a walkthrough of it. You edit your own content afterwards — text, prices, images, translations — without calling anyone."
+      }
+    }
+  },
+  "testimonials": {
+    "heading": "From the people who paid for it",
+    "readCase": "Read the case"
+  },
+  "closing": {
+    "heading": "Tell us what the site has to do.",
+    "body": "A call, then a written scope with a fixed price. No obligation either way."
+  },
+  "footer": {
+    "tagline": "Made, not assembled",
+    "privacy": "Privacy",
+    "copyright": "© {year} JalimX"
+  },
+  "contact": {
+    "title": "Contact",
+    "description": "Tell us what the site has to do. A call, then a written scope with a fixed price.",
+    "heading": "Tell us what the site has to do.",
+    "intro": "The more you can say about the business — who buys from you, what they ask before booking, what the current site gets in the way of — the more useful the first reply will be.",
+    "nextHeading": "What happens next",
+    "next1": "A reply within a working day.",
+    "next2": "A short call — what the business needs, not what it should look like.",
+    "next3": "A written scope with a fixed price. No obligation.",
+    "directHeading": "Or directly",
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "service": "What do you need",
+      "budget": "Budget",
+      "message": "What the site has to do",
+      "messagePlaceholder": "The business, who it sells to, and what the current site fails to do.",
+      "choose": "Choose one",
+      "optional": "optional",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "note": "No newsletter, no CRM sequence. Just a reply.",
+      "networkError": "Could not reach the server. Check your connection and retry.",
+      "throttled": "Too many messages from this connection. Try again shortly.",
+      "successTitle": "Message sent",
+      "successBody": "We read everything that comes in and reply within a working day. If it is urgent, email is faster than waiting on us.",
+      "budgets": {
+        "b1": "Under €1,000",
+        "b2": "€1,000 – €3,000",
+        "b3": "€3,000 – €8,000",
+        "b4": "€8,000+",
+        "b5": "Not sure yet"
+      }
+    }
+  },
+  "about": {
+    "title": "About",
+    "description": "A small web development studio. Every site starts from an empty file, and the person who writes the code is the person you talk to.",
+    "heading": "A small studio, on purpose.",
+    "intro": "The person who writes the code is the person you talk to. There is no account manager relaying your question to someone else, and nothing gets lost on the way through.",
+    "beliefsHeading": "How we think about it",
+    "beliefs": {
+      "templates": {
+        "title": "No templates",
+        "body": "A template is someone else's answer to someone else's problem, and every hour after installing it goes on bending it toward yours. Starting empty is faster than it sounds, and what ships contains nothing you did not need."
+      },
+      "speed": {
+        "title": "Speed is a design decision",
+        "body": "Sites get slow because of what was added, not because of how they were built. A page that loads quickly is usually a page where someone said no to a few things — a slider, a font, a tracker nobody reads."
+      },
+      "control": {
+        "title": "You should not need us to change a price",
+        "body": "Every site ships with a dashboard and a walkthrough of it. Text, prices, images and translations are yours to edit. Coming back to us for a phone number change is a failure of the handover, not a business model."
+      },
+      "price": {
+        "title": "Fixed scope, fixed price",
+        "body": "The scope is written down and priced before work starts, so the number does not move underneath you. If something needs to change mid-project, that is a conversation — not an invoice you find out about later."
+      }
+    },
+    "deeperHeading": "Curious how it is actually built?",
+    "deeperBody": "The stack, the reasoning and the constraints, in more detail than most people want.",
+    "deeperLink": "How we build"
+  },
+  "approach": {
+    "title": "How we work",
+    "description": "The whole process, written down: every step of a JalimX project, what we need from you at each one, how long it takes, and what every site gets regardless of budget.",
+    "eyebrow": "Before you commit to anything",
+    "headlineTop": "The whole process,",
+    "headlineBottom": "written down.",
+    "body": "Most studios will tell you it depends. Here is the sequence instead — what we need from you at each step, roughly how long each one takes, and what happens when you want to change something halfway through.",
+    "telemetry": {
+      "label": "This page, in your browser",
+      "bytes": "Transferred",
+      "requests": "Requests",
+      "thirdParty": "Third-party",
+      "lcp": "Largest paint",
+      "note": "Read from your browser's Performance API as this page loaded. Not our numbers — yours. Reload and watch them settle."
+    },
+    "processHeading": "How a project goes",
+    "processIntro": "Five steps. The only one with a variable length is the build, and the scope document tells you which end of the range you are at before you pay anything.",
+    "processTerms": "Half at scope, half at launch. Two review rounds included.",
+    "needLabel": "What we need from you",
+    "phases": {
+      "call": {
+        "name": "The call",
+        "duration": "30–45 min",
+        "body": "A conversation, not a pitch. What the site has to do, who it is for, and what is not working now. If we are not the right people for it, you will hear that on this call rather than in week three.",
+        "need": "Forty-five minutes, and honesty about the budget."
+      },
+      "scope": {
+        "name": "The scope",
+        "duration": "2–4 days",
+        "body": "A written document: every page, every feature, what is explicitly not included, and one fixed price. You can hand it to another studio and get a comparable quote — that is rather the point of writing it down.",
+        "need": "Your content, or a decision that we write it."
+      },
+      "build": {
+        "name": "The build",
+        "duration": "2–5 weeks",
+        "body": "You get a link on the first day and it updates as we go. There is no reveal at the end. If something is wrong, it is wrong while it is still cheap to change.",
+        "need": "Answers within a day or two, from one person."
+      },
+      "review": {
+        "name": "Your review",
+        "duration": "3–5 days",
+        "body": "You go through the whole thing and write one list. We work through the list. Two rounds are included in the price, and we have not yet needed a third.",
+        "need": "One list, not five separate emails."
+      },
+      "live": {
+        "name": "Live",
+        "duration": "One day",
+        "body": "Domain, certificate, redirects from whatever was there before, and a walkthrough of your dashboard — recorded, so you can watch it again in six months when you have forgotten.",
+        "need": "Access to the domain, or we buy it in your name."
+      }
+    },
+    "standardHeading": "What every site gets",
+    "standardIntro": "Not a package tier. These are not negotiable down, because a site without them costs you more later than it saved you now.",
+    "standard": {
+      "a": "Fast on a phone on a bad connection — not just on a laptop on office wifi.",
+      "b": "Usable with a keyboard, and readable by a screen reader.",
+      "c": "Findable: real markup, real metadata, a real sitemap.",
+      "d": "Editable by you, from a dashboard built for your site rather than a generic admin panel.",
+      "e": "In both languages, if your customers are in both.",
+      "f": "Still standing in two years without a monthly retainer to keep it upright."
+    },
+    "ownHeading": "What you own afterwards",
+    "own": {
+      "a": {
+        "title": "The content",
+        "body": "Text, prices, images and translations, editable from a dashboard built for your site rather than a generic admin panel."
+      },
+      "b": {
+        "title": "The code",
+        "body": "The repository is yours. If we stop working together another developer picks it up — it is ordinary code in a framework you can hire for, not a proprietary system."
+      },
+      "c": {
+        "title": "The domain and the accounts",
+        "body": "Registered in your name, hosted under your account. Nothing is held hostage by being registered under ours."
+      }
+    },
+    "limitsHeading": "What we do not do",
+    "limitsIntro": "Saying this out loud saves us both a call.",
+    "limits": {
+      "a": "Customise a WordPress or Shopify theme. If a theme is the right answer, you do not need us.",
+      "b": "Patch an existing page-builder site. Working inside one costs more than starting over, and the result is still built on the thing that caused the problem.",
+      "c": "Start without someone who can decide. We need one person on your side who can answer questions and sign things off. No amount of planning rescues a project that cannot get an answer."
+    },
+    "sheet": {
+      "doc": "Doc · How we work",
+      "of": "Sheet 1 of 1",
+      "termsLabel": "Terms",
+      "termsValue": "50 / 50",
+      "typicalLabel": "Typical",
+      "typicalValue": "3–7 weeks",
+      "revisionsLabel": "Revisions",
+      "revisionsValue": "2 included"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+# --- node ---
+node_modules/
+.pnpm-store/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# --- php / laravel ---
+/backend/vendor/
+/backend/storage/*.key
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+/backend/public/storage
+/backend/public/build
+/backend/bootstrap/cache/*.php
+/backend/database/*.sqlite
+/backend/.phpunit.result.cache
+
+# --- env ---
+.env
+.env.local
+.env*.local
+!.env.example
+
+# --- generated ---
+/frontend/lib/api/schema.d.ts
+
+# --- os / editor ---
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# --- internal, not for the repo ---
+# The plan and the working docs stay off GitHub: docs/collecting-testimonials.md
+# carries client names with draft quotes they have not approved yet, and that is
+# the one thing here that would actually cost something if it leaked.
+# They are on this machine only — git is not backing them up.
+/PLAN.md
+/docs/
