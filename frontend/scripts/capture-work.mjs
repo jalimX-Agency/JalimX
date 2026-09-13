@@ -31,6 +31,13 @@ const VIEWPORTS = [
   // screen; 2x just doubled the bytes for pixels nothing ever shows.
   { name: "desktop", width: 1440, height: 900, deviceScaleFactor: 1.5 },
   { name: "mobile", ...devices["iPhone 13"] },
+  /*
+   * The whole page in one tall image, so the work section can scroll a site
+   * inside a frame rather than showing a single frozen fold. 1x here: these
+   * run to several thousand pixels and a retina copy of that is megabytes for
+   * detail nobody reads at the size it renders.
+   */
+  { name: "full", width: 1440, height: 900, deviceScaleFactor: 1, full: true },
 ];
 
 /**
@@ -85,8 +92,11 @@ async function dismissOverlays(page) {
 }
 
 async function capture(browser, site, viewport) {
+  // `full` is ours, not Playwright's — it would be an unknown context option.
+  const { full = false, name: _name, ...contextOptions } = viewport;
+
   const context = await browser.newContext({
-    ...viewport,
+    ...contextOptions,
     // Some hosts serve a stripped page to unknown agents.
     userAgent:
       viewport.userAgent ??
@@ -164,6 +174,23 @@ async function capture(browser, site, viewport) {
       }
     }, HIDE);
 
+    /*
+     * A full-page shot photographs lazy images as empty boxes unless something
+     * has scrolled past them first. Walk the page, then come back to the top so
+     * the capture starts where the visitor would.
+     */
+    if (full) {
+      await page.evaluate(async () => {
+        const step = window.innerHeight;
+        for (let y = 0; y < document.body.scrollHeight; y += step) {
+          window.scrollTo(0, y);
+          await new Promise((r) => setTimeout(r, 260));
+        }
+        window.scrollTo(0, 0);
+      });
+      await page.waitForTimeout(1200);
+    }
+
     await page.waitForTimeout(250);
 
     /*
@@ -173,10 +200,34 @@ async function capture(browser, site, viewport) {
      * out anyway, so the only thing PNG would buy us is a heavier repo.
      */
     const file = path.join(OUT, `${site.slug}-${viewport.name}.jpg`);
-    await page.screenshot({ path: file, type: "jpeg", quality: 86 });
+    await page.screenshot({
+      path: file,
+      type: "jpeg",
+      quality: full ? 78 : 86,
+      fullPage: full,
+    });
+
+    /*
+     * The capture's own pixel size travels with it. The work index scrolls a
+     * tall page inside a short frame and needs the real dimensions to know how
+     * far to travel; reading them back off the file at request time would mean
+     * decoding a JPEG header on the server for every render.
+     */
+    const shape = await page.evaluate(() => ({
+      width: document.documentElement.clientWidth,
+      height: Math.max(document.body.scrollHeight, window.innerHeight),
+    }));
+    const scale = viewport.deviceScaleFactor ?? 1;
 
     console.log(`  ok      ${label}`);
-    return { ...site, viewport: viewport.name, file, ok: true };
+    return {
+      ...site,
+      viewport: viewport.name,
+      file,
+      ok: true,
+      width: Math.round((full ? shape.width : viewport.width ?? shape.width) * scale),
+      height: Math.round((full ? shape.height : viewport.height ?? shape.height) * scale),
+    };
   } catch (error) {
     console.log(`  FAILED  ${label} — ${error.message.split("\n")[0]}`);
     return { ...site, viewport: viewport.name, ok: false };
@@ -230,7 +281,14 @@ const bySrc = new Map(existing.map((shot) => [shot.src, shot]));
 
 for (const r of results.filter((r) => r.ok)) {
   const src = `/work/${r.slug}-${r.viewport}.jpg`;
-  bySrc.set(src, { slug: r.slug, viewport: r.viewport, url: r.url, src });
+  bySrc.set(src, {
+    slug: r.slug,
+    viewport: r.viewport,
+    url: r.url,
+    src,
+    width: r.width,
+    height: r.height,
+  });
 }
 
 await writeFile(

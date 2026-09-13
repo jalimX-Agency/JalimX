@@ -1,41 +1,77 @@
 {
-  "captured_at": "2026-09-08T11:01:09.678Z",
+  "captured_at": "2026-09-13T13:52:46.472Z",
   "shots": [
     {
       "slug": "arabian-desert-home",
       "viewport": "desktop",
       "url": "https://www.arabiandeserthome.ma/",
-      "src": "/work/arabian-desert-home-desktop.jpg"
+      "src": "/work/arabian-desert-home-desktop.jpg",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "slug": "arabian-desert-home",
+      "viewport": "full",
+      "url": "https://www.arabiandeserthome.ma/",
+      "src": "/work/arabian-desert-home-full.jpg",
+      "width": 1280,
+      "height": 7618
     },
     {
       "slug": "arabian-desert-home",
       "viewport": "mobile",
       "url": "https://www.arabiandeserthome.ma/",
-      "src": "/work/arabian-desert-home-mobile.jpg"
+      "src": "/work/arabian-desert-home-mobile.jpg",
+      "width": 1170,
+      "height": 1992
     },
     {
       "slug": "families-tours",
       "viewport": "desktop",
       "url": "https://www.familiestours.com/en",
-      "src": "/work/families-tours-desktop.jpg"
+      "src": "/work/families-tours-desktop.jpg",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "slug": "families-tours",
+      "viewport": "full",
+      "url": "https://www.familiestours.com/en",
+      "src": "/work/families-tours-full.jpg",
+      "width": 1280,
+      "height": 5071
     },
     {
       "slug": "families-tours",
       "viewport": "mobile",
       "url": "https://www.familiestours.com/en",
-      "src": "/work/families-tours-mobile.jpg"
+      "src": "/work/families-tours-mobile.jpg",
+      "width": 1170,
+      "height": 1992
     },
     {
       "slug": "globale-explore-tours",
       "viewport": "desktop",
       "url": "https://www.globaleexploretours.com/fr",
-      "src": "/work/globale-explore-tours-desktop.jpg"
+      "src": "/work/globale-explore-tours-desktop.jpg",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "slug": "globale-explore-tours",
+      "viewport": "full",
+      "url": "https://www.globaleexploretours.com/fr",
+      "src": "/work/globale-explore-tours-full.jpg",
+      "width": 1280,
+      "height": 5281
     },
     {
       "slug": "globale-explore-tours",
       "viewport": "mobile",
       "url": "https://www.globaleexploretours.com/fr",
-      "src": "/work/globale-explore-tours-mobile.jpg"
+      "src": "/work/globale-explore-tours-mobile.jpg",
+      "width": 1170,
+      "height": 1992
     }
   ]
 }

@@ -11,9 +11,17 @@ import path from "node:path";
 
 export type WorkShot = {
   slug: string;
-  viewport: "desktop" | "mobile";
+  /**
+   * `full` is the whole page in one tall image — what the work index scrolls
+   * inside its frame. `desktop` and `mobile` are single folds, for anywhere a
+   * fixed crop is wanted instead.
+   */
+  viewport: "desktop" | "mobile" | "full";
   url: string;
   src: string;
+  /** Natural pixel size, recorded at capture time. */
+  width?: number;
+  height?: number;
 };
 
 type Manifest = { captured_at: string; shots: WorkShot[] };
@@ -47,7 +55,7 @@ export async function getWorkShots(): Promise<Map<string, WorkShot[]>> {
 export function shotFor(
   shots: Map<string, WorkShot[]>,
   slug: string,
-  viewport: WorkShot["viewport"] = "desktop"
+  viewport: WorkShot["viewport"] = "desktop",
 ): WorkShot | undefined {
   return shots.get(slug)?.find((s) => s.viewport === viewport);
 }
