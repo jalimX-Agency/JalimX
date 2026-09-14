@@ -115,7 +115,9 @@
         "b4": "€8,000+",
         "b5": "Not sure yet"
       }
-    }
+    },
+    "costHeading": "What it costs to find out",
+    "costBody": "Nothing. The call and the written scope are free, and you pay nothing until you have accepted a fixed price."
   },
   "about": {
     "title": "About",

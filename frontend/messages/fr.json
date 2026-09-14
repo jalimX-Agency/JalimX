@@ -115,7 +115,9 @@
         "b4": "Plus de 8 000 €",
         "b5": "Je ne sais pas encore"
       }
-    }
+    },
+    "costHeading": "Ce que ça coûte de se renseigner",
+    "costBody": "Rien. L'appel et le document de cadrage sont gratuits, et vous ne payez rien tant que vous n'avez pas accepté un prix fixe."
   },
   "about": {
     "title": "À propos",

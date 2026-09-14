@@ -155,6 +155,28 @@
    ========================================================================== */
 
 @layer base {
+  /* The light set, as the default.
+   *
+   * Until now these only existed inside .surface-light / .surface-dark, which
+   * is fine for anything in the page — and wrong for anything portalled out of
+   * it. A Radix dropdown renders at <body>, outside every surface, so --panel
+   * resolved to nothing and the menu came up with a transparent background and
+   * the textarea showing through it. Anything else portalled later (a dialog, a
+   * tooltip) would have hit the same wall.
+   *
+   * The surfaces below still win wherever one is declared; this is only the
+   * floor. */
+  :root {
+    --ground: var(--color-paper);
+    --panel: var(--color-panel);
+    --fg: var(--color-ink);
+    --fg-dim: var(--color-ink-dim);
+    --fg-faint: var(--color-ink-faint);
+    --hairline: var(--color-hairline);
+    --link: var(--color-jx-deep);
+    --jx-accent: var(--color-jx-deep);
+  }
+
   .surface-dark {
     --ground: var(--color-graphite);
     --panel: var(--color-surface);
@@ -190,26 +212,32 @@
 @layer components {
   /* Form controls. Built on the semantic tokens so one definition serves the
      light contact page and any dark surface a form ends up on later. */
+  /* The control itself carries nothing — no border, no ground, no radius.
+
+     The cell around it is the box, sharing its edges with its neighbours the
+     way the title block on /approach does. A field that draws its own border
+     inside a bordered cell is two boxes, and rounded white boxes floating on a
+     light ground were the one place this site stopped sounding like itself. */
   .field {
     width: 100%;
-    background: var(--panel);
+    background: transparent;
     color: var(--fg);
-    border: 1px solid var(--hairline);
-    border-radius: 8px;
-    padding: 0.7rem 0.85rem;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
     font: inherit;
-    font-size: 0.95rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   .field::placeholder {
     color: var(--fg-faint);
   }
 
-  .field:focus {
+  /* The cell lights on focus-within, so a ring here would say it twice — but
+     only for a pointer. A keyboard still gets the global :focus-visible mark. */
+  .field:focus:not(:focus-visible) {
     outline: none;
-    border-color: var(--link);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--link) 18%, transparent);
   }
 
   .field:disabled {

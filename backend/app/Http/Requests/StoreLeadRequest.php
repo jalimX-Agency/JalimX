@@ -18,7 +18,8 @@ class StoreLeadRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email:rfc', 'max:190'],
-            'phone' => ['nullable', 'string', 'max:40'],
+            // Required: a number is how these conversations actually start.
+            'phone' => ['required', 'string', 'min:6', 'max:40'],
             'company' => ['nullable', 'string', 'max:120'],
             'budget_range' => ['nullable', 'string', 'max:60'],
             'service_interest' => ['nullable', 'string', 'max:60'],
