@@ -47,6 +47,30 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Cloudflare R2, over the S3 driver it is compatible with.
+         *
+         * `region` is literally "auto" — R2 has no regions, but the AWS SDK
+         * refuses to sign a request without one. Path-style addressing because
+         * R2 does not serve virtual-host style bucket subdomains.
+         *
+         * `url` is the public bucket or custom domain, and is a separate thing
+         * from `endpoint`: the endpoint is where we write, the url is where a
+         * visitor reads. Signing against the public host would fail, and
+         * serving from the signing host would leak the account id into markup.
+         */
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'url' => env('R2_PUBLIC_URL'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
