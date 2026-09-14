@@ -44,7 +44,9 @@
     "solution": "Ce que nous avons construit",
     "result": "Le résultat",
     "onPhone": "Sur mobile",
-    "notFound": "Introuvable"
+    "notFound": "Introuvable",
+    "captured": "Capture",
+    "device": "Appareil"
   },
   "process": {
     "heading": "Comment ça se passe",

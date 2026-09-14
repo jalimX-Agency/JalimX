@@ -44,7 +44,9 @@
     "solution": "What we built",
     "result": "The result",
     "onPhone": "On a phone",
-    "notFound": "Not found"
+    "notFound": "Not found",
+    "captured": "Captured",
+    "device": "Device"
   },
   "process": {
     "heading": "How it goes",

@@ -5,12 +5,28 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import type { Locale, Project } from "@/lib/api/client";
 import { api, t as pickLocale } from "@/lib/api/client";
 import { text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
+
+/**
+ * One case study.
+ *
+ * A walkthrough of the thing rather than a description of it: the whole site
+ * scrolls inside its frame at the top, the narrative runs underneath, and the
+ * phone sits where the narrative talks about it. The reader sees the finished
+ * work before reading a word about it, and the live address is on screen the
+ * whole time so nothing here has to be taken on trust.
+ *
+ * Gone: "Built with Next.js · Laravel · PostgreSQL" and the WEB / BOOKING / SEO
+ * chips. This is an agency's site rather than a developer's portfolio, and the
+ * person deciding whether to hire us has no use for either — if they ask, that
+ * is an answer on a call.
+ */
 
 type Params = { params: Promise<{ locale: string; slug: string }> };
 
@@ -24,7 +40,7 @@ export async function generateStaticParams() {
     const projects = await api.projects.list();
 
     return routing.locales.flatMap((locale) =>
-      projects.map((project) => ({ locale, slug: project.slug }))
+      projects.map((project) => ({ locale, slug: project.slug })),
     );
   } catch {
     return [];
@@ -58,10 +74,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 function Chapter({ label, body }: { label: string; body: string }) {
+  // A chapter with nothing in it is worse than no chapter: an empty heading
+  // reads as a claim the page failed to make.
   if (!body) return null;
 
   return (
-    <section className="grid gap-4 border-t border-[var(--hairline)] pt-8 md:grid-cols-[14rem_1fr] md:gap-12">
+    <section className="grid gap-4 border-t border-[var(--hairline)] pt-8 md:grid-cols-[13rem_1fr] md:gap-12">
       <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
         {label}
       </h2>
@@ -87,8 +105,10 @@ export default async function CaseStudy({ params }: Params) {
 
   if (!project) notFound();
 
-  const desktop = shotFor(shots, project.slug, "desktop");
-  const mobile = shotFor(shots, project.slug, "mobile");
+  // The whole page where we have it; a single fold is the fallback.
+  const site = shotFor(shots, project.slug, "full") ?? shotFor(shots, project.slug, "desktop");
+  const phone = shotFor(shots, project.slug, "mobile");
+  const metrics = project.metrics ?? [];
 
   return (
     <>
@@ -98,113 +118,142 @@ export default async function CaseStudy({ params }: Params) {
         <main className="mx-auto max-w-6xl px-6 py-14 sm:px-10 md:py-20">
           <Link
             href="/work"
-            className="inline-flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] hover:text-[var(--fg)]"
+            className="group inline-flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] hover:text-[var(--fg)]"
           >
-            <span aria-hidden="true">←</span> {t("allWork")}
+            <span
+              aria-hidden="true"
+              className="transition-transform duration-200 group-hover:-translate-x-1"
+            >
+              ←
+            </span>{" "}
+            {t("allWork")}
           </Link>
 
-          <header className="mt-10 max-w-[56ch]">
-            <p className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-[var(--link)]">
-              {project.client_name}
-              {project.year ? ` · ${project.year}` : ""}
-            </p>
-            <h1 className="mt-5 font-display text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.03] tracking-[-0.02em] text-balance">
-              {pickLocale(project.title, active)}
-            </h1>
-            <p className="mt-6 text-lg leading-relaxed text-[var(--fg-dim)]">
-              {pickLocale(project.summary, active)}
-            </p>
+          <header className="mt-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
+            <div className="max-w-[56ch]">
+              <p className="font-mono text-[0.72rem] uppercase tracking-[0.16em] text-[var(--link)]">
+                {project.client_name}
+                {project.year ? ` · ${project.year}` : ""}
+              </p>
+              <h1 className="mt-5 font-display text-[clamp(2.2rem,5vw,3.6rem)] font-semibold leading-[1.03] tracking-[-0.02em] text-balance">
+                {pickLocale(project.title, active)}
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-[var(--fg-dim)]">
+                {pickLocale(project.summary, active)}
+              </p>
+            </div>
+
+            {project.project_url && (
+              <p className="shrink-0">
+                <span className="block font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                  {t("live")}
+                </span>
+                <a
+                  href={project.project_url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="group mt-1.5 inline-flex items-center gap-2 text-[var(--link)] underline-offset-4 hover:underline"
+                >
+                  {new URL(project.project_url).hostname.replace(/^www\./, "")}
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  >
+                    ↗
+                  </span>
+                </a>
+              </p>
+            )}
           </header>
 
-          <dl className="mt-10 flex flex-wrap gap-x-12 gap-y-6">
-            {project.stack.length > 0 && (
-              <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-                  {t("builtWith")}
-                </dt>
-                <dd className="mt-1.5 text-sm">{project.stack.join(" · ")}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-                {t("scope")}
-              </dt>
-              <dd className="mt-1.5 text-sm">{project.tags.join(" · ")}</dd>
-            </div>
-            {project.project_url && (
-              <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-                  {t("live")}
-                </dt>
-                <dd className="mt-1.5 text-sm">
-                  <a
-                    href={project.project_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[var(--link)] underline-offset-4 hover:underline"
-                  >
-                    {new URL(project.project_url).hostname.replace(/^www\./, "")}{" "}
-                    <span aria-hidden="true">↗</span>
-                  </a>
-                </dd>
-              </div>
-            )}
-          </dl>
-
-          {desktop && (
-            <div className="mt-14 overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
-              <Image
-                src={desktop.src}
-                alt={`${project.client_name} — desktop`}
-                width={2160}
-                height={1350}
+          {site && (
+            <div className="mt-12 md:mt-14">
+              <SiteFrame
+                src={site.src}
+                url={site.url}
+                alt={`${project.client_name} — ${pickLocale(project.title, active)}`}
+                width={site.width ?? 1280}
+                height={site.height ?? 800}
+                ratio="16 / 9"
                 priority
-                sizes="(min-width: 1024px) 1120px, 100vw"
-                className="w-full"
               />
             </div>
           )}
 
-          {/* Metrics only render when they exist. An empty stat row is worse
-              than none — it reads as a claim the page failed to make. */}
-          {project.metrics.length > 0 && (
-            <ul className="mt-14 grid gap-8 sm:grid-cols-3">
-              {project.metrics.map((metric) => (
-                <li key={metric.label.en} className="flex flex-col gap-2">
-                  <span className="font-display text-4xl font-semibold tracking-tight text-[var(--link)]">
-                    {metric.value}
-                  </span>
-                  <span className="text-sm text-[var(--fg-dim)]">
-                    {pickLocale(metric.label, active)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          {/* Figures only where a project has them. An empty stat row reads as
+              a claim the page failed to make. */}
+          {metrics.length > 0 && (
+            <dl className="mt-14 grid gap-8 border-t border-[var(--hairline)] pt-10 sm:grid-cols-3">
+              {metrics.map((metric) => {
+                const label = pickLocale(metric.label, active);
+                return (
+                  <div key={label} className="flex flex-col">
+                    <dd className="font-display text-[2.75rem] font-semibold leading-none tabular-nums tracking-tight text-[var(--link)]">
+                      {metric.value}
+                    </dd>
+                    <dt className="mt-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                      {label}
+                    </dt>
+                  </div>
+                );
+              })}
+            </dl>
           )}
 
-          <div className="mt-20 flex flex-col gap-12">
-            <Chapter label={t("problem")} body={pickLocale(project.challenge, active)} />
-            <Chapter label={t("solution")} body={pickLocale(project.solution, active)} />
-            <Chapter label={t("result")} body={pickLocale(project.outcome, active)} />
+          <div className="mt-16 flex flex-col gap-12 md:mt-20">
+            <Chapter
+              label={t("problem")}
+              body={pickLocale(project.challenge, active)}
+            />
+            <Chapter
+              label={t("solution")}
+              body={pickLocale(project.solution, active)}
+            />
+
+            {phone && (
+              <section className="grid gap-8 border-t border-[var(--hairline)] pt-8 md:grid-cols-[13rem_1fr] md:gap-12">
+                <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                  {t("onPhone")}
+                </h2>
+                <div className="flex flex-wrap items-end gap-x-10 gap-y-6">
+                  {/* A device rather than a bare screenshot: at this width a
+                      1170px-wide image with square corners reads as a stray
+                      graphic instead of as a phone. */}
+                  <div className="w-[248px] shrink-0 overflow-hidden rounded-[1.75rem] border-[6px] border-[var(--color-ink)] bg-[var(--color-ink)] shadow-lg">
+                    <Image
+                      src={phone.src}
+                      alt={`${project.client_name} — ${t("onPhone")}`}
+                      width={phone.width ?? 1170}
+                      height={phone.height ?? 1992}
+                      sizes="248px"
+                      className="block w-full rounded-[1.3rem]"
+                    />
+                  </div>
+
+                  {/* The capture's own profile. It fills the space beside the
+                      device with something checkable rather than a caption
+                      written to fill it. */}
+                  <dl className="font-mono text-[0.66rem] uppercase tracking-[0.14em]">
+                    <div className="flex gap-3 py-1">
+                      <dt className="w-24 text-[var(--fg-faint)]">{t("captured")}</dt>
+                      <dd className="tabular-nums text-[var(--fg-dim)]">
+                        {phone.width ?? 1170} × {phone.height ?? 1992}
+                      </dd>
+                    </div>
+                    <div className="flex gap-3 py-1">
+                      <dt className="w-24 text-[var(--fg-faint)]">{t("device")}</dt>
+                      <dd className="text-[var(--fg-dim)]">iPhone 13</dd>
+                    </div>
+                  </dl>
+                </div>
+              </section>
+            )}
+
+            <Chapter
+              label={t("result")}
+              body={pickLocale(project.outcome, active)}
+            />
           </div>
-
-          {mobile && (
-            <div className="mt-20 grid items-center gap-10 border-t border-[var(--hairline)] pt-14 md:grid-cols-[14rem_1fr] md:gap-12">
-              <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-                {t("onPhone")}
-              </h2>
-              <div className="max-w-[300px] overflow-hidden rounded-2xl border border-[var(--hairline)] bg-[var(--panel)]">
-                <Image
-                  src={mobile.src}
-                  alt={`${project.client_name} — mobile`}
-                  width={1170}
-                  height={1992}
-                  sizes="300px"
-                  className="w-full"
-                />
-              </div>
-            </div>
-          )}
 
           {project.testimonials && project.testimonials.length > 0 && (
             <div className="mt-20 border-t border-[var(--hairline)] pt-14">
