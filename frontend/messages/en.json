@@ -119,31 +119,50 @@
   },
   "about": {
     "title": "About",
-    "description": "A small web development studio. Every site starts from an empty file, and the person who writes the code is the person you talk to.",
-    "heading": "A small studio, on purpose.",
-    "intro": "The person who writes the code is the person you talk to. There is no account manager relaying your question to someone else, and nothing gets lost on the way through.",
-    "beliefsHeading": "How we think about it",
-    "beliefs": {
+    "description": "Four things we will not do to your site, and four we will. Fixed scope, fixed price, no retainer, and the code is yours the day it ships.",
+    "heading": "Four things we will not do. Four we will.",
+    "intro": "No hedging, no small print. If any of this stops being true you will be the first to notice, which is rather the point of writing it down.",
+    "refuseHeading": "Not on your site",
+    "refuse": {
       "templates": {
-        "title": "No templates",
-        "body": "A template is someone else's answer to someone else's problem, and every hour after installing it goes on bending it toward yours. Starting empty is faster than it sounds, and what ships contains nothing you did not need."
+        "term": "Templates.",
+        "note": "Someone else's answer to someone else's problem, and every hour after installing it goes on bending it toward yours."
       },
-      "speed": {
-        "title": "Speed is a design decision",
-        "body": "Sites get slow because of what was added, not because of how they were built. A page that loads quickly is usually a page where someone said no to a few things — a slider, a font, a tracker nobody reads."
+      "builders": {
+        "term": "Page builders.",
+        "note": "Nested containers that mean nothing to a screen reader, a search engine, or the next developer who opens the file."
       },
-      "control": {
-        "title": "You should not need us to change a price",
-        "body": "Every site ships with a dashboard and a walkthrough of it. Text, prices, images and translations are yours to edit. Coming back to us for a phone number change is a failure of the handover, not a business model."
+      "retainers": {
+        "term": "Monthly retainers.",
+        "note": "A site should not need a subscription to stay upright. If it does, something was built wrong."
       },
-      "price": {
-        "title": "Fixed scope, fixed price",
-        "body": "The scope is written down and priced before work starts, so the number does not move underneath you. If something needs to change mid-project, that is a conversation — not an invoice you find out about later."
+      "surprises": {
+        "term": "Surprise invoices.",
+        "note": "A change halfway through is a conversation. You will never find out what it cost by reading a bill."
       }
     },
-    "deeperHeading": "Curious how it is actually built?",
-    "deeperBody": "The stack, the reasoning and the constraints, in more detail than most people want.",
-    "deeperLink": "How we build"
+    "promiseHeading": "On every site",
+    "promise": {
+      "scope": {
+        "term": "Fixed scope.",
+        "note": "Every page and every feature written down before anything is built — including what is explicitly not included."
+      },
+      "price": {
+        "term": "Fixed price.",
+        "note": "Priced with the scope, and it does not move underneath you."
+      },
+      "code": {
+        "term": "Your code.",
+        "note": "The repository is yours the day it ships. Another developer can pick it up without asking us for anything."
+      },
+      "accounts": {
+        "term": "Your accounts.",
+        "note": "Domain, hosting and analytics in your name. Nothing is held hostage by being registered under ours."
+      }
+    },
+    "deeperHeading": "How a project actually runs",
+    "deeperBody": "Every step, what we need from you at each one, and roughly how long it takes.",
+    "deeperLink": "See the process"
   },
   "approach": {
     "title": "How we work",

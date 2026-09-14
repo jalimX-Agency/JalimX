@@ -119,31 +119,50 @@
   },
   "about": {
     "title": "À propos",
-    "description": "Un petit studio de développement web. Chaque site part d'un fichier vide, et la personne qui écrit le code est celle à qui vous parlez.",
-    "heading": "Un petit studio, volontairement.",
-    "intro": "La personne qui écrit le code est celle à qui vous parlez. Pas de chef de projet qui transmet votre question à quelqu'un d'autre, et rien ne se perd en chemin.",
-    "beliefsHeading": "Notre façon de voir les choses",
-    "beliefs": {
+    "description": "Quatre choses que nous ne ferons pas à votre site, et quatre que nous ferons. Cadrage fixe, prix fixe, aucun abonnement, et le code est à vous le jour de la mise en ligne.",
+    "heading": "Quatre choses que nous ne ferons pas. Quatre que nous ferons.",
+    "intro": "Sans détour et sans petits caractères. Si l'un de ces points cessait d'être vrai, vous seriez le premier à le remarquer — c'est bien l'intérêt de l'écrire.",
+    "refuseHeading": "Jamais sur votre site",
+    "refuse": {
       "templates": {
-        "title": "Aucun gabarit",
-        "body": "Un gabarit, c'est la réponse de quelqu'un d'autre au problème de quelqu'un d'autre — et chaque heure passée après l'installation sert à le tordre vers le vôtre. Partir de zéro est plus rapide qu'il n'y paraît, et ce qui est livré ne contient rien dont vous n'aviez pas besoin."
+        "term": "Les gabarits.",
+        "note": "La réponse de quelqu'un d'autre au problème de quelqu'un d'autre, et chaque heure après l'installation passe à la tordre vers le vôtre."
       },
-      "speed": {
-        "title": "La vitesse est un choix de conception",
-        "body": "Un site devient lent à cause de ce qu'on lui a ajouté, pas de la façon dont il a été construit. Une page rapide est presque toujours une page où quelqu'un a dit non à deux ou trois choses — un carrousel, une police, un traceur que personne ne lit."
+      "builders": {
+        "term": "Les page builders.",
+        "note": "Des conteneurs imbriqués qui ne veulent rien dire pour un lecteur d'écran, un moteur de recherche, ou le prochain développeur qui ouvre le fichier."
       },
-      "control": {
-        "title": "Changer un tarif ne devrait pas passer par nous",
-        "body": "Chaque site est livré avec un tableau de bord et sa prise en main. Textes, tarifs, images et traductions vous appartiennent. Devoir nous rappeler pour changer un numéro de téléphone est un échec de la remise, pas un modèle économique."
+      "retainers": {
+        "term": "Les abonnements mensuels.",
+        "note": "Un site ne devrait pas avoir besoin d'un abonnement pour rester debout. S'il en a besoin, quelque chose a été mal construit."
       },
-      "price": {
-        "title": "Périmètre ferme, prix ferme",
-        "body": "Le périmètre est écrit et chiffré avant le début du travail : le montant ne bouge pas sous vos pieds. Si quelque chose doit changer en cours de route, c'est une conversation — pas une facture que vous découvrez après."
+      "surprises": {
+        "term": "Les factures surprises.",
+        "note": "Un changement en cours de route, ça se discute. Vous n'apprendrez jamais son coût en lisant une facture."
       }
     },
-    "deeperHeading": "Curieux de savoir comment c'est construit ?",
-    "deeperBody": "La stack, le raisonnement et les contraintes, plus en détail que la plupart des gens ne le souhaitent.",
-    "deeperLink": "Notre façon de construire"
+    "promiseHeading": "Sur chaque site",
+    "promise": {
+      "scope": {
+        "term": "Cadrage fixe.",
+        "note": "Chaque page et chaque fonctionnalité écrites avant que rien ne soit construit — y compris ce qui est explicitement exclu."
+      },
+      "price": {
+        "term": "Prix fixe.",
+        "note": "Chiffré avec le cadrage, et il ne bouge pas sous vos pieds."
+      },
+      "code": {
+        "term": "Votre code.",
+        "note": "Le dépôt est à vous le jour de la mise en ligne. Un autre développeur peut le reprendre sans rien nous demander."
+      },
+      "accounts": {
+        "term": "Vos comptes.",
+        "note": "Domaine, hébergement et analytics à votre nom. Rien n'est retenu en otage parce que ce serait enregistré au nôtre."
+      }
+    },
+    "deeperHeading": "Comment se déroule vraiment un projet",
+    "deeperBody": "Chaque étape, ce dont nous avons besoin de vous à chacune, et combien de temps elle prend à peu près.",
+    "deeperLink": "Voir le processus"
   },
   "approach": {
     "title": "Notre façon de travailler",
