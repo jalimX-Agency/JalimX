@@ -27,6 +27,14 @@ return [
         'revalidate_secret' => env('REVALIDATE_SECRET'),
     ],
 
+    /*
+     * Where "someone filled in the contact form" is emailed. Unset, no email
+     * is sent; the lead is still saved and waits in the dashboard.
+     */
+    'leads' => [
+        'notify' => env('LEADS_NOTIFY_EMAIL'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

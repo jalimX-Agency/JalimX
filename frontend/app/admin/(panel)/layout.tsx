@@ -19,13 +19,17 @@ import { admin, ApiError, type User } from "@/lib/admin/client";
 const UserContext = createContext<User | null>(null);
 export const useAdminUser = () => useContext(UserContext);
 
-const NAV = [{ href: "/admin/projects", label: "Projects" }];
+const NAV = [
+  { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/projects", label: "Projects" },
+];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     admin.me().then(setUser, (e) => {
@@ -33,6 +37,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       else setFailed("The API is not responding. Is Laravel running?");
     });
   }, [router]);
+
+  // Re-counted on every navigation, so opening a lead clears its share of the
+  // badge by the time the person is back on the list.
+  useEffect(() => {
+    if (!user) return;
+    admin.leads().then((r) => setUnread(r.meta.unread), () => {});
+  }, [user, pathname]);
 
   async function signOut() {
     await admin.logout().catch(() => {});
@@ -53,44 +64,52 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <UserContext.Provider value={user}>
-      <div className="flex min-h-screen">
-        <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-[var(--hairline)] bg-[var(--panel)]">
-          <div className="flex items-center gap-2.5 border-b border-[var(--hairline)] px-5 py-5">
+      <div className="flex min-h-screen flex-col md:flex-row">
+        {/* A top bar on a phone — leads get read there — and a sidebar from md up. */}
+        <aside className="sticky top-0 z-20 flex shrink-0 items-center border-b border-[var(--hairline)] bg-[var(--panel)] md:h-screen md:w-60 md:flex-col md:items-stretch md:border-b-0 md:border-r">
+          <div className="flex items-center gap-2.5 px-4 py-3 md:border-b md:border-[var(--hairline)] md:px-5 md:py-5">
             <JxMark className="h-5 w-auto" />
-            <span className="font-display text-sm font-semibold uppercase tracking-[0.075em]">
+            <span className="hidden font-display text-sm font-semibold uppercase tracking-[0.075em] sm:inline">
               JalimX
             </span>
           </div>
 
-          <nav className="flex flex-col gap-px p-3">
+          <nav className="flex gap-px py-2 md:flex-col md:p-3">
             {NAV.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-2 text-sm transition-colors ${
+                  className={`min-w-24 px-3 py-2 text-sm transition-colors md:min-w-0 ${
                     active
                       ? "bg-[color-mix(in_oklab,var(--link)_9%,transparent)] text-[var(--fg)]"
                       : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
                   }`}
                 >
-                  {item.label}
+                  <span className="flex items-center justify-between">
+                    {item.label}
+                    {item.href === "/admin/leads" && unread > 0 && (
+                      <span className="min-w-5 bg-[var(--color-signal)] px-1.5 text-center font-mono text-[0.6rem] leading-[1.15rem] tabular-nums text-white">
+                        {unread}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="mt-auto border-t border-[var(--hairline)] px-5 py-4">
-            <p className="truncate font-mono text-[0.66rem] text-[var(--fg-faint)]">
+          <div className="ml-auto px-4 md:mt-auto md:ml-0 md:border-t md:border-[var(--hairline)] md:px-5 md:py-4">
+            <p className="hidden truncate font-mono text-[0.66rem] text-[var(--fg-faint)] md:block">
               {user.email}
             </p>
-            <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 md:mt-3">
               <a
                 href="/"
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-[var(--link)] underline-offset-4 hover:underline"
+                className="hidden text-xs text-[var(--link)] underline-offset-4 hover:underline md:inline"
               >
                 View site ↗
               </a>
@@ -105,7 +124,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 px-8 py-10 lg:px-12">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-8 md:px-8 md:py-10 lg:px-12">{children}</main>
       </div>
     </UserContext.Provider>
   );

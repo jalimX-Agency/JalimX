@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
-
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -66,6 +66,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/projects/{project}/media', [ProjectMediaController::class, 'store'])
                 ->middleware('throttle:60,1');
             Route::delete('/media/{media}', [ProjectMediaController::class, 'destroy']);
+
+            Route::get('/leads', [AdminLeadController::class, 'index']);
+            Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);
+            Route::patch('/leads/{lead}', [AdminLeadController::class, 'update']);
+            Route::delete('/leads/{lead}', [AdminLeadController::class, 'destroy']);
         });
 
         Route::get('/auth/me', function (Request $request) {

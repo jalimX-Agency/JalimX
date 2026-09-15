@@ -43,6 +43,37 @@ export type ProjectDetail = ProjectSummary & {
 
 export type User = { id: number; name: string; email: string };
 
+export const LEAD_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const;
+export type LeadStatus = (typeof LEAD_STATUSES)[number];
+
+export type Lead = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  service_interest: string | null;
+  budget_range: string | null;
+  message: string;
+  note: string | null;
+  status: LeadStatus;
+  locale: string;
+  source: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type LeadPage = {
+  data: Lead[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    total: number;
+    counts: Record<LeadStatus, number>;
+    unread: number;
+  };
+};
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -122,6 +153,30 @@ export const admin = {
     request<{ data: ProjectDetail }>(`/api/v1/admin/projects/${slug}`).then(
       (r) => r.data,
     ),
+
+  leads(params: { status?: LeadStatus; q?: string; page?: number } = {}) {
+    const query = new URLSearchParams();
+    if (params.status) query.set("status", params.status);
+    if (params.q) query.set("q", params.q);
+    if (params.page && params.page > 1) query.set("page", String(params.page));
+    const qs = query.toString();
+    return request<LeadPage>(`/api/v1/admin/leads${qs ? `?${qs}` : ""}`);
+  },
+
+  lead: (id: number | string) =>
+    request<{ data: Lead }>(`/api/v1/admin/leads/${id}`).then((r) => r.data),
+
+  updateLead: (
+    id: number,
+    change: Partial<Pick<Lead, "status" | "note" | "is_read">>,
+  ) =>
+    request<{ data: Lead }>(`/api/v1/admin/leads/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(change),
+    }).then((r) => r.data),
+
+  removeLead: (id: number) =>
+    request(`/api/v1/admin/leads/${id}`, { method: "DELETE" }),
 
   removeMedia: (id: number) =>
     request(`/api/v1/admin/media/${id}`, { method: "DELETE" }),

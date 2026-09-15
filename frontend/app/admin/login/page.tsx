@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     try {
       await admin.login(String(form.get("email")), String(form.get("password")));
-      router.replace("/admin/projects");
+      router.replace("/admin/leads");
     } catch (e) {
       // Laravel answers a wrong password and an unknown email with the same
       // message on purpose; show it as it comes rather than guessing which.
