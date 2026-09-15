@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { ProjectImage } from "@/components/site/project-media";
 import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -67,6 +68,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${project.client_name} — ${pickLocale(project.title, active)}`,
     description: pickLocale(project.summary, active),
+    // The cover is what a shared link shows. Without one, the platform picks
+    // whatever image it finds first on the page, which is rarely the right one.
+    ...(project.cover
+      ? {
+          openGraph: {
+            images: [
+              {
+                url: project.cover.url,
+                ...(project.cover.width && project.cover.height
+                  ? { width: project.cover.width, height: project.cover.height }
+                  : {}),
+                alt: project.cover.alt || project.client_name,
+              },
+            ],
+          },
+        }
+      : {}),
     alternates: {
       languages: { en: `/work/${slug}`, fr: `/fr/work/${slug}` },
     },
@@ -109,6 +127,8 @@ export default async function CaseStudy({ params }: Params) {
   const site = shotFor(shots, project.slug, "full") ?? shotFor(shots, project.slug, "desktop");
   const phone = shotFor(shots, project.slug, "mobile");
   const metrics = project.metrics ?? [];
+  const gallery = project.gallery ?? [];
+  const dashboard = project.dashboard ?? [];
 
   return (
     <>
@@ -166,6 +186,18 @@ export default async function CaseStudy({ params }: Params) {
             )}
           </header>
 
+          {!site && project.cover && (
+            <div className="mt-12 overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)] md:mt-14">
+              <ProjectImage
+                media={project.cover}
+                alt={`${project.client_name} — ${pickLocale(project.title, active)}`}
+                sizes="(min-width: 1152px) 1072px, 100vw"
+                priority
+                className="w-full"
+              />
+            </div>
+          )}
+
           {site && (
             <div className="mt-12 md:mt-14">
               <SiteFrame
@@ -210,6 +242,43 @@ export default async function CaseStudy({ params }: Params) {
               body={pickLocale(project.solution, active)}
             />
 
+            {/*
+              The client's own admin, right after the claim that they run the
+              site themselves. It is the only evidence for that sentence a
+              reader can actually look at.
+            */}
+            {dashboard.length > 0 && (
+              <section className="grid gap-8 border-t border-[var(--hairline)] pt-8 md:grid-cols-[13rem_1fr] md:gap-12">
+                <div>
+                  <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                    {t("owner")}
+                  </h2>
+                  <p className="mt-3 max-w-[22ch] text-sm leading-relaxed text-[var(--fg-dim)]">
+                    {t("ownerNote")}
+                  </p>
+                </div>
+                <div className="grid gap-5">
+                  {dashboard.map((media) => (
+                    <figure
+                      key={media.id}
+                      // A screenshot of the admin on a phone is portrait; at
+                      // full column width it would run several screens tall.
+                      className={`overflow-hidden rounded-lg border border-[var(--hairline)] bg-[var(--panel)] shadow-sm ${
+                        (media.height ?? 0) > (media.width ?? 0) ? "max-w-sm" : ""
+                      }`}
+                    >
+                      <ProjectImage
+                        media={media}
+                        alt={`${project.client_name} — ${t("owner")}`}
+                        sizes="(min-width: 1152px) 810px, 100vw"
+                        className="block w-full"
+                      />
+                    </figure>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {phone && (
               <section className="grid gap-8 border-t border-[var(--hairline)] pt-8 md:grid-cols-[13rem_1fr] md:gap-12">
                 <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
@@ -253,6 +322,39 @@ export default async function CaseStudy({ params }: Params) {
               label={t("result")}
               body={pickLocale(project.outcome, active)}
             />
+
+            {/* The business itself, last: after the reader knows what was done
+                for it, rather than as decoration before they do. */}
+            {gallery.length > 0 && (
+              <section className="grid gap-8 border-t border-[var(--hairline)] pt-8 md:grid-cols-[13rem_1fr] md:gap-12">
+                <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                  {t("onLocation")}
+                </h2>
+                <div
+                  className={`grid gap-4 ${gallery.length > 1 ? "sm:grid-cols-2" : ""}`}
+                >
+                  {gallery.map((media, i) => (
+                    <figure
+                      key={media.id}
+                      // An odd count would leave the last photo alone in its
+                      // row; let it take the full width instead.
+                      className={`overflow-hidden rounded-lg bg-[var(--panel)] ${
+                        gallery.length % 2 === 1 && i === gallery.length - 1 && gallery.length > 1
+                          ? "sm:col-span-2"
+                          : ""
+                      }`}
+                    >
+                      <ProjectImage
+                        media={media}
+                        alt={`${project.client_name} — ${t("onLocation")}`}
+                        sizes="(min-width: 1152px) 400px, (min-width: 640px) 50vw, 100vw"
+                        className="block h-full w-full object-cover"
+                      />
+                    </figure>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           {project.testimonials && project.testimonials.length > 0 && (

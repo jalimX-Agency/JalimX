@@ -4,14 +4,24 @@
     {
       "name": "frontend",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "frontend", "dev"],
+      "runtimeArgs": [
+        "--dir",
+        "frontend",
+        "dev"
+      ],
       "port": 3200
     },
     {
       "name": "backend",
       "runtimeExecutable": "php",
-      "runtimeArgs": ["backend/artisan", "serve", "--port=8000"],
-      "port": 8000
+      "runtimeArgs": [
+        "backend/artisan",
+        "serve",
+        "--host=localhost",
+        "--port=8000"
+      ],
+      "port": 8000,
+      "autoPort": false
     }
   ]
 }

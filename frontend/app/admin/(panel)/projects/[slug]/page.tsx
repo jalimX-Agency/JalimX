@@ -84,7 +84,7 @@ export default function ProjectPage() {
           slug={project.slug}
           collection="cover"
           title="Cover"
-          hint="One image · used on the work index and when the link is shared"
+          hint="One image · the homepage card and link previews"
           items={project.cover ? [project.cover] : []}
           single
           onChange={load}

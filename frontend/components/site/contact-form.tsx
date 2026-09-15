@@ -54,7 +54,9 @@ export function ContactForm({ services, locale }: Props) {
       await api.leads.create({
         name: String(form.get("name") ?? ""),
         email: String(form.get("email") ?? ""),
-        phone: String(form.get("phone") ?? "") || null,
+        // Required now, so an empty field is sent as empty and the server's
+        // "phone is required" message comes back against the right field.
+        phone: String(form.get("phone") ?? ""),
         company: String(form.get("company") ?? "") || null,
         budget_range: String(form.get("budget_range") ?? "") || null,
         service_interest: String(form.get("service_interest") ?? "") || null,

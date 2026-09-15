@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 
+import { ProjectImage } from "@/components/site/project-media";
 import { Link } from "@/i18n/navigation";
 import type { Locale, Project } from "@/lib/api/client";
 import { t as pickLocale } from "@/lib/api/client";
@@ -44,7 +45,23 @@ function Card({
 }) {
   return (
     <article className="group flex flex-col gap-6">
-      {shot ? (
+      {/* The cover uploaded from the dashboard wins; the captured screenshot
+          is what shows until someone uploads one. */}
+      {project.cover ? (
+        <div className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
+          <ProjectImage
+            media={project.cover}
+            alt={`${project.client_name} — ${pickLocale(project.title, locale)}`}
+            priority={featured}
+            sizes={
+              featured
+                ? "(min-width: 1024px) 1120px, 100vw"
+                : "(min-width: 1024px) 550px, 100vw"
+            }
+            className="w-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
+          />
+        </div>
+      ) : shot ? (
         <div className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
           <Image
             src={shot.src}

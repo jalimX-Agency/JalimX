@@ -16,9 +16,14 @@ class MediaResource extends JsonResource
             'id' => $this->id,
             'url' => $this->getFullUrl(),
             'name' => $this->name,
-            'alt' => $this->getCustomProperty('alt'),
-            'width' => $this->getCustomProperty('width'),
-            'height' => $this->getCustomProperty('height'),
+            /*
+             * Cast explicitly. getCustomProperty() returns mixed, which the
+             * OpenAPI generator could only describe as an empty object — and
+             * that is what the frontend's types then said a width was.
+             */
+            'alt' => $this->hasCustomProperty('alt') ? (string) $this->getCustomProperty('alt') : null,
+            'width' => $this->hasCustomProperty('width') ? (int) $this->getCustomProperty('width') : null,
+            'height' => $this->hasCustomProperty('height') ? (int) $this->getCustomProperty('height') : null,
         ];
     }
 

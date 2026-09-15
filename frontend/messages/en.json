@@ -46,7 +46,10 @@
     "onPhone": "On a phone",
     "notFound": "Not found",
     "captured": "Captured",
-    "device": "Device"
+    "device": "Device",
+    "owner": "The owner's side",
+    "ownerNote": "Their own admin, as they use it. Nothing here needs us.",
+    "onLocation": "On location"
   },
   "process": {
     "heading": "How it goes",

@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
      */
     deviceSizes: [640, 828, 1080, 1440, 2160],
     imageSizes: [256, 384],
+
+    /*
+     * Images uploaded from the dashboard live on Cloudflare R2 behind this
+     * host. Named exactly rather than wildcarded: the optimiser fetches
+     * whatever it is pointed at, and an open pattern turns it into a free
+     * image proxy for anyone who finds the endpoint.
+     */
+    remotePatterns: [{ protocol: "https", hostname: "cdn.jalimx.com" }],
   },
 };
 

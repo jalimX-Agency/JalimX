@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { ProjectImage } from "@/components/site/project-media";
 import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -110,6 +111,18 @@ export default async function WorkPage({
                             // would be three large images racing the LCP.
                             priority={i === 0}
                           />
+                        ) : project.cover ? (
+                          // No capture of the live site yet: the cover from
+                          // the dashboard stands in for the scrolling frame.
+                          <div className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
+                            <ProjectImage
+                              media={project.cover}
+                              alt={`${project.client_name} — ${pickLocale(project.title, active)}`}
+                              sizes="(min-width: 1024px) 660px, 100vw"
+                              priority={i === 0}
+                              className="w-full"
+                            />
+                          </div>
                         ) : (
                           <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
                             <span className="font-mono text-xs text-[var(--fg-faint)]">

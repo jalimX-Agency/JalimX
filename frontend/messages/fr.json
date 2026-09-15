@@ -46,7 +46,10 @@
     "onPhone": "Sur mobile",
     "notFound": "Introuvable",
     "captured": "Capture",
-    "device": "Appareil"
+    "device": "Appareil",
+    "owner": "Côté propriétaire",
+    "ownerNote": "Leur propre administration, telle qu'ils l'utilisent. Rien ici n'a besoin de nous.",
+    "onLocation": "Sur place"
   },
   "process": {
     "heading": "Comment ça se passe",
