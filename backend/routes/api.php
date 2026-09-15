@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
+
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -54,6 +56,18 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:12,60');
 
     Route::middleware('auth:sanctum')->group(function () {
+        /*
+         * The dashboard. Everything under /admin can see unpublished work, so
+         * nothing here is reachable without the session.
+         */
+        Route::prefix('admin')->group(function () {
+            Route::get('/projects', [ProjectMediaController::class, 'index']);
+            Route::get('/projects/{project}', [ProjectMediaController::class, 'show']);
+            Route::post('/projects/{project}/media', [ProjectMediaController::class, 'store'])
+                ->middleware('throttle:60,1');
+            Route::delete('/media/{media}', [ProjectMediaController::class, 'destroy']);
+        });
+
         Route::get('/auth/me', function (Request $request) {
             $user = $request->user();
 

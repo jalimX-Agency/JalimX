@@ -12,6 +12,8 @@ class MediaResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            // The id is what the dashboard deletes by; harmless in public.
+            'id' => $this->id,
             'url' => $this->getFullUrl(),
             'name' => $this->name,
             'alt' => $this->getCustomProperty('alt'),

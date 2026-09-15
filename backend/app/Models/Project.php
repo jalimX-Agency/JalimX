@@ -66,5 +66,12 @@ class Project extends Model implements HasMedia
     {
         $this->addMediaCollection('cover')->singleFile();
         $this->addMediaCollection('gallery');
+
+        /*
+         * Screenshots of the client's own admin, for the case study. Public,
+         * so the dashboard warns at upload time: nothing with a customer's
+         * name, email or booking in it belongs in this collection.
+         */
+        $this->addMediaCollection('dashboard');
     }
 }

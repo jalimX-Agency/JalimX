@@ -5,8 +5,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Internal reference page — useful to us, noise in an index.
-      disallow: ["/design-system", "/api/"],
+      // Internal pages — useful to us, noise in an index. The dashboard also
+      // sends noindex itself; robots.txt alone is a request, not a lock.
+      disallow: ["/design-system", "/api/", "/admin"],
     },
     sitemap: "https://jalimx.com/sitemap.xml",
   };
