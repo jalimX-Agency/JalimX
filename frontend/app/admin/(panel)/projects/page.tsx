@@ -5,9 +5,10 @@
    remote-pattern config and a resize round-trip for a 56px square. */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { admin, type ProjectSummary } from "@/lib/admin/client";
+import { admin, ApiError, type ProjectSummary } from "@/lib/admin/client";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
@@ -22,12 +23,15 @@ export default function ProjectsPage() {
       <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">
         Content
       </p>
-      <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">
-        Projects
-      </h1>
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+        <h1 className="font-display text-3xl font-semibold tracking-tight">
+          Projects
+        </h1>
+        <NewProject />
+      </div>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         Every case study, including the ones not on the site yet. Open one to
-        add its cover, gallery and dashboard screenshots.
+        edit its words and figures, or add its images.
       </p>
 
       {error && (
@@ -93,5 +97,62 @@ export default function ProjectsPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * Just a name and a headline: a new project starts hidden, and everything else
+ * is filled in on its own page, where there is room for it.
+ */
+function NewProject() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    try {
+      const project = await admin.createProject({
+        client_name: String(form.get("client_name") ?? ""),
+        title_en: String(form.get("title_en") ?? ""),
+      });
+      router.push(`/admin/projects/${project.slug}`);
+    } catch (err) {
+      setErrors(err instanceof ApiError ? err.errors : { client_name: ["Could not create the project."] });
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+      >
+        + New project
+      </button>
+    );
+  }
+
+  const error = errors.client_name?.[0] ?? errors.title_en?.[0] ?? errors.slug?.[0];
+
+  return (
+    <form onSubmit={submit} className="flex w-full flex-col gap-3 border border-[var(--hairline)] bg-[var(--panel)] p-4 sm:flex-row sm:flex-wrap sm:items-start">
+      <input name="client_name" required maxLength={120} placeholder="Client, e.g. Riad Atlas" aria-label="Client" className="admin-input" autoFocus />
+      <input name="title_en" required maxLength={160} placeholder="Headline in English" aria-label="Headline in English" className="admin-input" />
+      <div className="flex shrink-0 items-center gap-3">
+        <button type="submit" disabled={busy} className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40">
+          {busy ? "Creating…" : "Create"}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className="text-sm text-[var(--fg-dim)]">
+          Cancel
+        </button>
+      </div>
+      {error && <p role="alert" className="text-xs text-[var(--color-signal)] sm:basis-full">{error}</p>}
+    </form>
   );
 }

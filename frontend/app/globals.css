@@ -245,6 +245,40 @@
     cursor: not-allowed;
   }
 
+  /* The dashboard's boxed control. Unlike .field it carries its own border,
+     because an admin form is a grid of many inputs, not one sheet. */
+  .admin-input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    background: var(--ground);
+    color: var(--fg);
+    border: 1px solid var(--hairline);
+    border-radius: 0;
+    padding: 0.5rem 0.7rem;
+    font: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 150ms;
+  }
+
+  .admin-input::placeholder {
+    color: var(--fg-faint);
+  }
+
+  .admin-input:focus {
+    border-color: var(--link);
+  }
+
+  .admin-input[aria-invalid="true"] {
+    border-color: var(--color-signal);
+  }
+
+  .admin-input:read-only {
+    color: var(--fg-dim);
+    cursor: default;
+  }
+
   /* A disabled primary action has to stop looking clickable, or people keep
      pressing it while the request is still in flight. */
   .cta:disabled {

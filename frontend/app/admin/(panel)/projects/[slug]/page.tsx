@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { MediaDrop } from "@/components/admin/media-drop";
+import { ProjectForm } from "@/components/admin/project-form";
 import { admin, type ProjectDetail } from "@/lib/admin/client";
 
 export default function ProjectPage() {
+  return (
+    <Suspense>
+      <Project />
+    </Suspense>
+  );
+}
+
+function Project() {
   const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
+  // The tab lives in the URL so a reload, or a link to the images, lands there.
+  const tab = useSearchParams().get("tab") === "images" ? "images" : "content";
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +31,11 @@ export default function ProjectPage() {
   useEffect(load, [load]);
 
   if (error) {
-    return <p role="alert" className="text-sm text-[var(--color-signal)]">{error}</p>;
+    return (
+      <p role="alert" className="text-sm text-[var(--color-signal)]">
+        {error}
+      </p>
+    );
   }
   if (!project) return null;
 
@@ -74,39 +90,81 @@ export default function ProjectPage() {
         </div>
       </div>
 
+      <div role="tablist" className="mt-8 flex border-b border-[var(--hairline)]">
+        {(["content", "images"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() =>
+              router.replace(
+                `/admin/projects/${project.slug}${t === "images" ? "?tab=images" : ""}`
+              )
+            }
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm ${
+              tab === t
+                ? "border-[var(--link)] text-[var(--fg)]"
+                : "border-transparent text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            }`}
+          >
+            {t === "content"
+              ? "Content"
+              : `Images · ${(project.cover ? 1 : 0) + project.gallery.length + project.dashboard.length}`}
+          </button>
+        ))}
+      </div>
+
       <p className="mt-4 max-w-[64ch] text-sm text-[var(--fg-dim)]">
-        Changes here reach the public site on their own — the page rebuilds a
-        few seconds after an image is added or removed.
+        Changes reach the public site on their own, a few seconds after they are saved.
       </p>
 
-      <div className="mt-10 flex flex-col gap-8">
-        <MediaDrop
-          slug={project.slug}
-          collection="cover"
-          title="Cover"
-          hint="One image · the homepage card and link previews"
-          items={project.cover ? [project.cover] : []}
-          single
-          onChange={load}
-        />
-        <MediaDrop
-          slug={project.slug}
-          collection="gallery"
-          title="Gallery"
-          hint="Photos of the client's business, shown through the case study"
-          items={project.gallery}
-          onChange={load}
-        />
-        <MediaDrop
-          slug={project.slug}
-          collection="dashboard"
-          title="Dashboard screenshots"
-          hint="The client's admin, as proof the owner runs it"
-          warning="No customer names, emails, phone numbers or bookings in these. Use pages like prices, rooms or tours — never reservations or messages."
-          items={project.dashboard}
-          onChange={load}
-        />
+      {/* Hidden rather than unmounted, so switching to the images and back
+          does not throw away words that have not been saved yet. */}
+      <div hidden={tab !== "content"}>
+        <div className="mt-8">
+          <ProjectForm
+            key={project.slug}
+            project={project}
+            onSaved={(next) => {
+              setProject(next);
+              // A renamed address moves the dashboard page along with it.
+              if (next.slug !== slug) router.replace(`/admin/projects/${next.slug}`);
+            }}
+          />
+        </div>
       </div>
+
+      {tab === "images" && (
+        <div className="mt-8 flex flex-col gap-8">
+          <MediaDrop
+            slug={project.slug}
+            collection="cover"
+            title="Cover"
+            hint="One image · the homepage card and link previews"
+            items={project.cover ? [project.cover] : []}
+            single
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="gallery"
+            title="Gallery"
+            hint="Photos of the client's business, shown through the case study"
+            items={project.gallery}
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="dashboard"
+            title="Dashboard screenshots"
+            hint="The client's admin, as proof the owner runs it"
+            warning="No customer names, emails, phone numbers or bookings in these. Use pages like prices, rooms or tours — never reservations or messages."
+            items={project.dashboard}
+            onChange={load}
+          />
+        </div>
+      )}
     </div>
   );
 }

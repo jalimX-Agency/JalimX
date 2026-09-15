@@ -102,7 +102,7 @@ class ProjectMediaController extends Controller
         return [
             'slug' => $project->slug,
             'client_name' => $project->client_name,
-            'title' => $project->getTranslations('title'),
+            'title' => $this->pair($project, 'title'),
             'year' => $project->year,
             'is_published' => $project->is_published,
             'is_featured' => $project->is_featured,
@@ -114,12 +114,31 @@ class ProjectMediaController extends Controller
         ];
     }
 
+    /** @return array{en: string, fr: string} */
+    private function pair(Project $project, string $field): array
+    {
+        $stored = $project->getTranslations($field);
+
+        return ['en' => (string) ($stored['en'] ?? ''), 'fr' => (string) ($stored['fr'] ?? '')];
+    }
+
     /** @return array<string, mixed> */
     private function detail(Project $project): array
     {
         return [
             ...$this->summary($project),
             'project_url' => $project->project_url,
+            'position' => $project->position,
+            'is_live' => $project->published_at !== null,
+            'summary' => $this->pair($project, 'summary'),
+            'challenge' => $this->pair($project, 'challenge'),
+            'solution' => $this->pair($project, 'solution'),
+            'outcome' => $this->pair($project, 'outcome'),
+            'tags' => array_values($project->tags ?? []),
+            'metrics' => array_map(fn ($m) => [
+                'value' => (string) ($m['value'] ?? ''),
+                'label' => ['en' => (string) ($m['label']['en'] ?? ''), 'fr' => (string) ($m['label']['fr'] ?? '')],
+            ], $project->metrics ?? []),
             'gallery' => MediaResource::collection($project->getMedia('gallery')),
             'dashboard' => MediaResource::collection($project->getMedia('dashboard')),
         ];

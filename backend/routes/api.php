@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -62,6 +63,8 @@ Route::prefix('v1')->group(function () {
          */
         Route::prefix('admin')->group(function () {
             Route::get('/projects', [ProjectMediaController::class, 'index']);
+            Route::post('/projects', [ProjectContentController::class, 'store']);
+            Route::put('/projects/{project}', [ProjectContentController::class, 'update']);
             Route::get('/projects/{project}', [ProjectMediaController::class, 'show']);
             Route::post('/projects/{project}/media', [ProjectMediaController::class, 'store'])
                 ->middleware('throttle:60,1');

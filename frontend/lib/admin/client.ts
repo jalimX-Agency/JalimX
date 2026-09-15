@@ -35,10 +35,38 @@ export type ProjectSummary = {
   counts: { gallery: number; dashboard: number };
 };
 
+export type Metric = { value: string; label: Translated };
+
 export type ProjectDetail = ProjectSummary & {
   project_url: string | null;
+  position: number;
+  /** Has been published at least once, so its address is locked. */
+  is_live: boolean;
+  summary: Translated;
+  challenge: Translated;
+  solution: Translated;
+  outcome: Translated;
+  tags: string[];
+  metrics: Metric[];
   gallery: Media[];
   dashboard: Media[];
+};
+
+export type ProjectInput = {
+  slug: string;
+  client_name: string;
+  year: number | null;
+  project_url: string | null;
+  position: number;
+  is_published: boolean;
+  is_featured: boolean;
+  title: Translated;
+  summary: Translated;
+  challenge: Translated;
+  solution: Translated;
+  outcome: Translated;
+  tags: string[];
+  metrics: Metric[];
 };
 
 export type User = { id: number; name: string; email: string };
@@ -177,6 +205,18 @@ export const admin = {
 
   removeLead: (id: number) =>
     request(`/api/v1/admin/leads/${id}`, { method: "DELETE" }),
+
+  createProject: (input: { client_name: string; title_en: string; slug?: string }) =>
+    request<{ data: ProjectDetail }>("/api/v1/admin/projects", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateProject: (slug: string, input: ProjectInput) =>
+    request<{ data: ProjectDetail }>(`/api/v1/admin/projects/${slug}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
 
   removeMedia: (id: number) =>
     request(`/api/v1/admin/media/${id}`, { method: "DELETE" }),
