@@ -71,6 +71,23 @@ export type ProjectInput = {
 
 export type User = { id: number; name: string; email: string };
 
+export type ServiceRow = {
+  slug: string;
+  position: number;
+  is_published: boolean;
+  title: Translated;
+  tagline: Translated;
+  body: Translated;
+};
+
+export type SiteSettings = {
+  hero_headline: Translated;
+  hero_body: Translated;
+  contact_email: string;
+  contact_phone: string;
+  contact_location: string;
+};
+
 export const LEAD_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
@@ -214,6 +231,24 @@ export const admin = {
 
   updateProject: (slug: string, input: ProjectInput) =>
     request<{ data: ProjectDetail }>(`/api/v1/admin/projects/${slug}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  services: () =>
+    request<{ data: ServiceRow[] }>("/api/v1/admin/services").then((r) => r.data),
+
+  updateService: (row: ServiceRow) =>
+    request<{ data: ServiceRow }>(`/api/v1/admin/services/${row.slug}`, {
+      method: "PUT",
+      body: JSON.stringify(row),
+    }).then((r) => r.data),
+
+  settings: () =>
+    request<{ data: SiteSettings }>("/api/v1/admin/settings").then((r) => r.data),
+
+  updateSettings: (input: SiteSettings) =>
+    request<{ data: SiteSettings }>("/api/v1/admin/settings", {
       method: "PUT",
       body: JSON.stringify(input),
     }).then((r) => r.data),

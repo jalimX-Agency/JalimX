@@ -28,7 +28,18 @@ function Project() {
     admin.project(slug).then(setProject, (e) => setError(e.message));
   }, [slug]);
 
-  useEffect(load, [load]);
+  // First load ignores a response that lands after teardown, so React's
+  // development double-load cannot replace the project once editing began.
+  useEffect(() => {
+    let live = true;
+    admin.project(slug).then(
+      (p) => live && setProject(p),
+      (e) => live && setError(e.message),
+    );
+    return () => {
+      live = false;
+    };
+  }, [slug]);
 
   if (error) {
     return (

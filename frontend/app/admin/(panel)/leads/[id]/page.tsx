@@ -28,13 +28,20 @@ export default function LeadPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    // Ignore a response that lands after teardown: a late duplicate load would
+    // otherwise wipe a note that is being typed.
+    let live = true;
     admin.lead(id).then(
       (l) => {
+        if (!live) return;
         setLead(l);
         setNote(l.note ?? "");
       },
-      (e) => setError(e.status === 404 ? "This lead no longer exists." : e.message),
+      (e) => live && setError(e.status === 404 ? "This lead no longer exists." : e.message),
     );
+    return () => {
+      live = false;
+    };
   }, [id]);
 
   if (error) return <p role="alert" className="text-sm text-[var(--color-signal)]">{error}</p>;

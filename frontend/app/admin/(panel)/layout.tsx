@@ -22,6 +22,8 @@ export const useAdminUser = () => useContext(UserContext);
 const NAV = [
   { href: "/admin/leads", label: "Leads" },
   { href: "/admin/projects", label: "Projects" },
+  { href: "/admin/services", label: "Services" },
+  { href: "/admin/settings", label: "Settings" },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -74,14 +76,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
 
-          <nav className="flex gap-px py-2 md:flex-col md:p-3">
+          <nav className="flex min-w-0 gap-px overflow-x-auto py-2 md:flex-col md:overflow-visible md:p-3">
             {NAV.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`min-w-24 px-3 py-2 text-sm transition-colors md:min-w-0 ${
+                  className={`shrink-0 px-3 py-2 text-sm transition-colors ${
                     active
                       ? "bg-[color-mix(in_oklab,var(--link)_9%,transparent)] text-[var(--fg)]"
                       : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
@@ -116,7 +118,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <button
                 type="button"
                 onClick={signOut}
-                className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                className="whitespace-nowrap text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
               >
                 Sign out
               </button>

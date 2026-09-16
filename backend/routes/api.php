@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
+use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -69,6 +71,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/projects/{project}/media', [ProjectMediaController::class, 'store'])
                 ->middleware('throttle:60,1');
             Route::delete('/media/{media}', [ProjectMediaController::class, 'destroy']);
+
+            Route::get('/services', [AdminServiceController::class, 'index']);
+            Route::put('/services/{service}', [AdminServiceController::class, 'update']);
+
+            Route::get('/settings', [AdminSettingController::class, 'show']);
+            Route::put('/settings', [AdminSettingController::class, 'update']);
 
             Route::get('/leads', [AdminLeadController::class, 'index']);
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);
