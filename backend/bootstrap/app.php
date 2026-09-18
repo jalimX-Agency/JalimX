@@ -22,6 +22,15 @@ return Application::configure(basePath: dirname(__DIR__))
          * SANCTUM_STATEFUL_DOMAINS; everything else stays token-only.
          */
         $middleware->statefulApi();
+
+        /*
+         * Railway (like Heroku, Render, Vercel) terminates TLS at its own edge
+         * and forwards plain HTTP to the container, with the original scheme
+         * in X-Forwarded-Proto. Without this, Laravel thinks every request is
+         * HTTP: url()/secure cookies/CSRF all end up wrong behind the proxy.
+         * '*' is standard for a PaaS whose edge IPs aren't fixed or published.
+         */
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
