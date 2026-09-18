@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { LeadStatusChip, STATUS_LABEL, when } from "@/components/admin/lead-status";
-import { admin, LEAD_STATUSES, type LeadPage, type LeadStatus } from "@/lib/admin/client";
+import { RowsSkeleton } from "@/components/admin/skeleton";
+import { admin, isSignedOut, LEAD_STATUSES, type LeadPage, type LeadStatus } from "@/lib/admin/client";
 
 export default function LeadsPage() {
   // useSearchParams needs a boundary for the static build of /admin.
@@ -35,7 +36,7 @@ function Inbox() {
     let live = true;
     admin.leads({ status, q, page }).then(
       (r) => live && setResult(r),
-      (e) => live && setError(e.message),
+      (e) => live && !isSignedOut(e) && setError(e.message),
     );
     return () => {
       live = false;
@@ -121,6 +122,8 @@ function Inbox() {
           {error}
         </p>
       )}
+
+      {!result && !error && <RowsSkeleton rows={6} />}
 
       {result && result.data.length === 0 && (
         <p className="mt-12 text-center text-sm text-[var(--fg-faint)]">

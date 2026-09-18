@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { JxMark } from "@/components/brand/logo";
+import { Block } from "@/components/admin/skeleton";
 import { admin, ApiError, type User } from "@/lib/admin/client";
 
 /**
@@ -40,12 +41,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     });
   }, [router]);
 
-  // Re-counted on every navigation, so opening a lead clears its share of the
-  // badge by the time the person is back on the list.
+  // Counted once, then again whenever the person is somewhere in Leads, so
+  // opening one clears its share of the badge. Every call is a round trip to
+  // a database in Europe, so the other pages do not pay for it.
+  const leadsPath = pathname.startsWith("/admin/leads") ? pathname : "";
   useEffect(() => {
     if (!user) return;
     admin.leads().then((r) => setUnread(r.meta.unread), () => {});
-  }, [user, pathname]);
+  }, [user, leadsPath]);
 
   async function signOut() {
     await admin.logout().catch(() => {});
@@ -59,10 +62,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       </p>
     );
   }
-
-  // Nothing until the session is confirmed: a flash of the panel before the
-  // redirect reads as a door that was briefly open.
-  if (!user) return null;
 
   return (
     <UserContext.Provider value={user}>
@@ -103,9 +102,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </nav>
 
           <div className="ml-auto px-4 md:mt-auto md:ml-0 md:border-t md:border-[var(--hairline)] md:px-5 md:py-4">
-            <p className="hidden truncate font-mono text-[0.66rem] text-[var(--fg-faint)] md:block">
-              {user.email}
-            </p>
+            {user ? (
+              <p className="hidden truncate font-mono text-[0.66rem] text-[var(--fg-faint)] md:block">
+                {user.email}
+              </p>
+            ) : (
+              <Block className="mb-1 hidden h-2.5 w-28 md:block" />
+            )}
             <div className="flex items-center justify-between gap-4 md:mt-3">
               <a
                 href="/"

@@ -6,7 +6,8 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { MediaDrop } from "@/components/admin/media-drop";
 import { ProjectForm } from "@/components/admin/project-form";
-import { admin, type ProjectDetail } from "@/lib/admin/client";
+import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { admin, isSignedOut, type ProjectDetail } from "@/lib/admin/client";
 
 export default function ProjectPage() {
   return (
@@ -34,7 +35,7 @@ function Project() {
     let live = true;
     admin.project(slug).then(
       (p) => live && setProject(p),
-      (e) => live && setError(e.message),
+      (e) => live && !isSignedOut(e) && setError(e.message),
     );
     return () => {
       live = false;
@@ -48,7 +49,13 @@ function Project() {
       </p>
     );
   }
-  if (!project) return null;
+  if (!project) {
+    return (
+      <PageSkeleton>
+        <PanelsSkeleton panels={3} />
+      </PageSkeleton>
+    );
+  }
 
   return (
     <div className="max-w-5xl">

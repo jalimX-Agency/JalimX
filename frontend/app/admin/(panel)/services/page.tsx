@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { Field, SaveBar, Toggle, useUnsavedWarning } from "@/components/admin/fields";
-import { admin, ApiError, type ServiceRow, type Translated } from "@/lib/admin/client";
+import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { admin, ApiError, isSignedOut, type ServiceRow, type Translated } from "@/lib/admin/client";
 
 const TEXT = [
   { key: "title", label: "Name", rows: 1, max: 60 },
@@ -31,7 +32,7 @@ export default function ServicesPage() {
         setInitial(list);
         setRows(list);
       },
-      (e) => live && setMessage(e.message),
+      (e) => live && !isSignedOut(e) && setMessage(e.message),
     );
     return () => {
       live = false;
@@ -45,7 +46,13 @@ export default function ServicesPage() {
   useUnsavedWarning(dirty);
 
   if (!rows) {
-    return message ? <p role="alert" className="text-sm text-[var(--color-signal)]">{message}</p> : null;
+    return message ? (
+      <p role="alert" className="text-sm text-[var(--color-signal)]">{message}</p>
+    ) : (
+      <PageSkeleton>
+        <PanelsSkeleton panels={4} lines={6} />
+      </PageSkeleton>
+    );
   }
 
   const update = (slug: string, change: (r: ServiceRow) => ServiceRow) =>

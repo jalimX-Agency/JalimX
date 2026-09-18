@@ -8,14 +8,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { admin, ApiError, type ProjectSummary } from "@/lib/admin/client";
+import { RowsSkeleton } from "@/components/admin/skeleton";
+import { admin, ApiError, isSignedOut, type ProjectSummary } from "@/lib/admin/client";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    admin.projects().then(setProjects, (e) => setError(e.message));
+    admin.projects().then(setProjects, (e) => !isSignedOut(e) && setError(e.message));
   }, []);
 
   return (
@@ -39,6 +40,8 @@ export default function ProjectsPage() {
           {error}
         </p>
       )}
+
+      {!projects && !error && <RowsSkeleton rows={5} thumb />}
 
       {projects && (
         <ul className="mt-10 grid gap-px border border-[var(--hairline)] bg-[var(--hairline)]">

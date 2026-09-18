@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { STATUS_LABEL } from "@/components/admin/lead-status";
-import { admin, LEAD_STATUSES, type Lead, type LeadStatus } from "@/lib/admin/client";
+import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { admin, isSignedOut, LEAD_STATUSES, type Lead, type LeadStatus } from "@/lib/admin/client";
 
 /**
  * wa.me wants the number in international form with no symbols. Most of
@@ -37,7 +38,7 @@ export default function LeadPage() {
         setLead(l);
         setNote(l.note ?? "");
       },
-      (e) => live && setError(e.status === 404 ? "This lead no longer exists." : e.message),
+      (e) => live && !isSignedOut(e) && setError(e.status === 404 ? "This lead no longer exists." : e.message),
     );
     return () => {
       live = false;
@@ -45,7 +46,13 @@ export default function LeadPage() {
   }, [id]);
 
   if (error) return <p role="alert" className="text-sm text-[var(--color-signal)]">{error}</p>;
-  if (!lead) return null;
+  if (!lead) {
+    return (
+      <PageSkeleton>
+        <PanelsSkeleton panels={2} lines={2} />
+      </PageSkeleton>
+    );
+  }
 
   async function setStatus(status: LeadStatus) {
     if (!lead || status === lead.status) return;

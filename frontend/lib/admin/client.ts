@@ -129,6 +129,13 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Signed out. The panel layout is already redirecting when this happens, so a
+ * page keeps its skeleton rather than flashing "Unauthenticated." on the way
+ * to the login screen.
+ */
+export const isSignedOut = (e: unknown) => e instanceof ApiError && e.status === 401;
+
 function xsrf(): string {
   const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : "";
