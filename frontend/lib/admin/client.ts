@@ -88,6 +88,42 @@ export type SiteSettings = {
   contact_location: string;
 };
 
+export type Client = {
+  id: number;
+  name: string;
+  legal_name: string | null;
+  ice: string | null;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  city: string | null;
+  country: string;
+  currency: string;
+  notes: string | null;
+  lead_id: number | null;
+  created_at: string;
+};
+
+/** What the form sends: everything editable, no id and no provenance. */
+export type ClientInput = Omit<Client, "id" | "lead_id" | "created_at">;
+
+export const emptyClient = (): ClientInput => ({
+  name: "",
+  legal_name: null,
+  ice: null,
+  contact_name: null,
+  email: null,
+  phone: null,
+  website: null,
+  address: null,
+  city: null,
+  country: "Morocco",
+  currency: "MAD",
+  notes: null,
+});
+
 export const LEAD_STATUSES = ["new", "contacted", "quoted", "won", "lost"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
@@ -105,6 +141,8 @@ export type Lead = {
   locale: string;
   source: string | null;
   is_read: boolean;
+  /** The client this enquiry became, or null if it hasn't been converted. */
+  client: { id: number; name: string } | null;
   created_at: string;
 };
 
@@ -205,6 +243,35 @@ export const admin = {
     request<{ data: ProjectDetail }>(`/api/v1/admin/projects/${slug}`).then(
       (r) => r.data,
     ),
+
+  clients: (q?: string) =>
+    request<{ data: Client[] }>(`/api/v1/admin/clients${q ? `?q=${encodeURIComponent(q)}` : ""}`).then(
+      (r) => r.data,
+    ),
+
+  client: (id: number | string) =>
+    request<{ data: Client }>(`/api/v1/admin/clients/${id}`).then((r) => r.data),
+
+  createClient: (input: ClientInput) =>
+    request<{ data: Client }>("/api/v1/admin/clients", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateClient: (id: number, input: ClientInput) =>
+    request<{ data: Client }>(`/api/v1/admin/clients/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  removeClient: (id: number) =>
+    request(`/api/v1/admin/clients/${id}`, { method: "DELETE" }),
+
+  /** Makes a client from an enquiry; returns the existing one if already converted. */
+  convertLead: (leadId: number) =>
+    request<{ data: Client }>(`/api/v1/admin/leads/${leadId}/convert`, {
+      method: "POST",
+    }).then((r) => r.data),
 
   leads(params: { status?: LeadStatus; q?: string; page?: number } = {}) {
     const query = new URLSearchParams();

@@ -33,7 +33,10 @@ export const useAdminUser = () => useContext(UserContext);
 const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   {
     group: "Agency",
-    items: [{ href: "/admin/leads", label: "Leads" }],
+    items: [
+      { href: "/admin/leads", label: "Leads" },
+      { href: "/admin/clients", label: "Clients" },
+    ],
   },
   {
     group: "The site",

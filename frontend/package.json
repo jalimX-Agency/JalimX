@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,css,md,json}\"",
-    "api:types": "openapi-typescript http://127.0.0.1:8000/docs/api.json -o lib/api/schema.d.ts",
+    "api:types": "php ../backend/artisan scramble:export --path=../frontend/lib/api/openapi.json && openapi-typescript lib/api/openapi.json -o lib/api/schema.d.ts && node -e \"require('fs').unlinkSync('lib/api/openapi.json')\"",
     "capture:work": "node scripts/capture-work.mjs",
     "shot": "node scripts/preview-shot.mjs",
     "fold": "node scripts/fold-shot.mjs",

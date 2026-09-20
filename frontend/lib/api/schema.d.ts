@@ -92,6 +92,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["client.index"];
+        put?: never;
+        post: operations["client.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/clients/{client}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["client.show"];
+        put: operations["client.update"];
+        post?: never;
+        delete: operations["client.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/leads/{lead}/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn an enquiry into a client, carrying over what the form already
+         *     asked for so the same details are not typed twice.
+         *
+         *     Idempotent by lead: converting the same enquiry twice returns the
+         *     client already made from it rather than creating a duplicate
+         */
+        post: operations["client.convertLead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/leads": {
         parameters: {
             query?: never;
@@ -368,6 +423,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ClientResource */
+        ClientResource: {
+            id: number;
+            name: string;
+            legal_name: string | null;
+            ice: string | null;
+            contact_name: string | null;
+            email: string | null;
+            phone: string | null;
+            website: string | null;
+            address: string | null;
+            city: string | null;
+            country: string;
+            currency: string;
+            notes: string | null;
+            lead_id: number | null;
+            created_at: string | null;
+        };
         /** LeadResource */
         LeadResource: {
             id: number;
@@ -538,6 +611,246 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "client.index": {
+        parameters: {
+            query?: {
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated set of `ClientResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"][];
+                        links: {
+                            first: string | null;
+                            last: string | null;
+                            prev: string | null;
+                            next: string | null;
+                        };
+                        meta: {
+                            current_page: number;
+                            from: number | null;
+                            last_page: number;
+                            /** @description Generated paginator links. */
+                            links: {
+                                url: string | null;
+                                label: string;
+                                active: boolean;
+                            }[];
+                            /** @description Base path for paginator generated URLs. */
+                            path: string | null;
+                            /** @description Number of items shown per page. */
+                            per_page: number;
+                            /** @description Number of the last item in the slice. */
+                            to: number | null;
+                            /** @description Total number of items being paginated. */
+                            total: number;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "client.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    legal_name?: string | null;
+                    /**
+                     * @description Morocco's ICE is 15 digits. Loose enough for a foreign client's
+                     *     equivalent, strict enough to catch a pasted phone number.
+                     */
+                    ice?: string | null;
+                    contact_name?: string | null;
+                    /** Format: email */
+                    email?: string | null;
+                    phone?: string | null;
+                    /** Format: uri */
+                    website?: string | null;
+                    address?: string | null;
+                    city?: string | null;
+                    country: string;
+                    currency: string;
+                    notes?: string | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "client.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `ClientResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "client.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    legal_name?: string | null;
+                    /**
+                     * @description Morocco's ICE is 15 digits. Loose enough for a foreign client's
+                     *     equivalent, strict enough to catch a pasted phone number.
+                     */
+                    ice?: string | null;
+                    contact_name?: string | null;
+                    /** Format: email */
+                    email?: string | null;
+                    phone?: string | null;
+                    /** Format: uri */
+                    website?: string | null;
+                    address?: string | null;
+                    city?: string | null;
+                    country: string;
+                    currency: string;
+                    notes?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description `ClientResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "client.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "client.convertLead": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The lead ID */
+                lead: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"];
+                    };
+                };
+            };
+            /**
+             * @description Refreshed before serialising: country and currency come from column
+             *     defaults, which the freshly built model has never read, so without
+             *     this the dashboard is handed empty strings for both — and saving
+             *     that form would write the blanks back over the real values.
+             */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ClientResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "lead.store": {
         parameters: {
             query?: never;

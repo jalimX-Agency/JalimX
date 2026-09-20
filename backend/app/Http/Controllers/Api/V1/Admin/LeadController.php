@@ -29,6 +29,7 @@ class LeadController extends Controller
         ]);
 
         $leads = Lead::query()
+            ->with('client')
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->when($validated['q'] ?? null, function ($q, $term) {
                 // ILIKE: Postgres LIKE is case-sensitive, and nobody types an
@@ -65,7 +66,7 @@ class LeadController extends Controller
             $lead->forceFill(['read_at' => now()])->save();
         }
 
-        return new LeadResource($lead);
+        return new LeadResource($lead->load('client'));
     }
 
     public function update(Request $request, Lead $lead): LeadResource
@@ -83,7 +84,7 @@ class LeadController extends Controller
 
         $lead->fill($validated)->save();
 
-        return new LeadResource($lead);
+        return new LeadResource($lead->load('client'));
     }
 
     /** For spam. A real enquiry that went nowhere is marked lost, not deleted. */

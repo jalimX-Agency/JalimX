@@ -29,6 +29,14 @@ class LeadResource extends JsonResource
             'locale' => $this->locale,
             'source' => $this->source,
             'is_read' => $this->read_at !== null,
+            /*
+             * Whether this enquiry already became a client, so the dashboard
+             * can link to them instead of offering to convert a second time.
+             */
+            'client' => $this->whenLoaded('client', fn () => $this->client ? [
+                'id' => $this->client->id,
+                'name' => (string) $this->client->name,
+            ] : null),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

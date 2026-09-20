@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
@@ -77,6 +78,13 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/settings', [AdminSettingController::class, 'show']);
             Route::put('/settings', [AdminSettingController::class, 'update']);
+
+            Route::get('/clients', [AdminClientController::class, 'index']);
+            Route::post('/clients', [AdminClientController::class, 'store']);
+            Route::get('/clients/{client}', [AdminClientController::class, 'show']);
+            Route::put('/clients/{client}', [AdminClientController::class, 'update']);
+            Route::delete('/clients/{client}', [AdminClientController::class, 'destroy']);
+            Route::post('/leads/{lead}/convert', [AdminClientController::class, 'convertLead']);
 
             Route::get('/leads', [AdminLeadController::class, 'index']);
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);

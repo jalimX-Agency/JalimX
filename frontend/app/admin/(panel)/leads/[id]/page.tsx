@@ -27,6 +27,7 @@ export default function LeadPage() {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState<"status" | "note" | null>(null);
   const [saved, setSaved] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     // Ignore a response that lands after teardown: a late duplicate load would
@@ -78,6 +79,23 @@ export default function LeadPage() {
       setTimeout(() => setSaved(false), 2000);
     } finally {
       setSaving(null);
+    }
+  }
+
+  /**
+   * The enquiry becomes a client. Deliberately does not touch the lead's
+   * status: making a client record is bookkeeping, not a closed deal, and
+   * deciding it was "won" is a judgement only the person can make.
+   */
+  async function convert() {
+    if (!lead) return;
+    setConverting(true);
+    try {
+      const client = await admin.convertLead(lead.id);
+      router.push(`/admin/clients/${client.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create the client.");
+      setConverting(false);
     }
   }
 
@@ -170,6 +188,40 @@ export default function LeadPage() {
         </div>
 
         <aside className="flex flex-col gap-8">
+          <section className="border border-[var(--hairline)] bg-[var(--panel)]">
+            <h2 className="border-b border-[var(--hairline)] px-5 py-3.5 font-mono text-[0.66rem] uppercase tracking-[0.14em]">
+              Client
+            </h2>
+            {lead.client ? (
+              <div className="px-5 py-4 text-sm">
+                <Link
+                  href={`/admin/clients/${lead.client.id}`}
+                  className="text-[var(--link)] underline-offset-4 hover:underline"
+                >
+                  {lead.client.name} ↗
+                </Link>
+                <p className="mt-1 text-xs text-[var(--fg-faint)]">
+                  Already a client.
+                </p>
+              </div>
+            ) : (
+              <div className="px-5 py-4">
+                <button
+                  type="button"
+                  onClick={convert}
+                  disabled={converting}
+                  className="w-full bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40"
+                >
+                  {converting ? "Creating…" : "Convert to client"}
+                </button>
+                <p className="mt-2 text-xs leading-snug text-[var(--fg-faint)]">
+                  Copies what they already gave you. Does not change the status
+                  above.
+                </p>
+              </div>
+            )}
+          </section>
+
           <section className="border border-[var(--hairline)] bg-[var(--panel)]">
             <h2 className="border-b border-[var(--hairline)] px-5 py-3.5 font-mono text-[0.66rem] uppercase tracking-[0.14em]">
               Reach them

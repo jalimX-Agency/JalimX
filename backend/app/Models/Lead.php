@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lead extends Model
 {
@@ -25,4 +26,10 @@ class Lead extends Model
      * only by the team.
      */
     protected $hidden = ['ip'];
+
+    /** The client this enquiry became, once it was converted. */
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class);
+    }
 }
