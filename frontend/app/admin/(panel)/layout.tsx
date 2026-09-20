@@ -20,11 +20,29 @@ import { admin, ApiError, type User } from "@/lib/admin/client";
 const UserContext = createContext<User | null>(null);
 export const useAdminUser = () => useContext(UserContext);
 
-const NAV = [
-  { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/projects", label: "Projects" },
-  { href: "/admin/services", label: "Services" },
-  { href: "/admin/settings", label: "Settings" },
+/*
+ * Two groups, because they answer two different questions.
+ *
+ * "Agency" is the work: who is asking, who is a client, what is owed. It is
+ * what gets opened every day. "The site" is jalimx.com's own content — one
+ * asset the agency happens to own, edited when something changes, not daily.
+ *
+ * Sections fill out as the agency side is built (clients, projects, invoices);
+ * an empty nav item that leads nowhere is worse than no item at all.
+ */
+const NAV: { group: string; items: { href: string; label: string }[] }[] = [
+  {
+    group: "Agency",
+    items: [{ href: "/admin/leads", label: "Leads" }],
+  },
+  {
+    group: "The site",
+    items: [
+      { href: "/admin/settings/site", label: "Site" },
+      { href: "/admin/settings/services", label: "Services" },
+      { href: "/admin/settings/case-studies", label: "Case studies" },
+    ],
+  },
 ];
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
@@ -75,30 +93,40 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
 
-          <nav className="flex min-w-0 gap-px overflow-x-auto py-2 md:flex-col md:overflow-visible md:p-3">
-            {NAV.map((item) => {
-              const active = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`shrink-0 px-3 py-2 text-sm transition-colors ${
-                    active
-                      ? "bg-[color-mix(in_oklab,var(--link)_9%,transparent)] text-[var(--fg)]"
-                      : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
-                  }`}
-                >
-                  <span className="flex items-center justify-between">
-                    {item.label}
-                    {item.href === "/admin/leads" && unread > 0 && (
-                      <span className="min-w-5 bg-[var(--color-signal)] px-1.5 text-center font-mono text-[0.6rem] leading-[1.15rem] tabular-nums text-white">
-                        {unread}
+          {/* Group headings only exist from md up: the phone bar is one
+              scrolling row, where a label per group costs more room than the
+              grouping is worth. */}
+          <nav className="flex min-w-0 gap-px overflow-x-auto py-2 md:flex-col md:gap-0 md:overflow-visible md:p-3">
+            {NAV.map((section) => (
+              <div key={section.group} className="flex gap-px md:flex-col md:gap-0 md:[&+div]:mt-5">
+                <p className="hidden px-3 pb-1.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] md:block">
+                  {section.group}
+                </p>
+                {section.items.map((item) => {
+                  const active = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`shrink-0 px-3 py-2 text-sm transition-colors ${
+                        active
+                          ? "bg-[color-mix(in_oklab,var(--link)_9%,transparent)] text-[var(--fg)]"
+                          : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                      }`}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        {item.label}
+                        {item.href === "/admin/leads" && unread > 0 && (
+                          <span className="min-w-5 bg-[var(--color-signal)] px-1.5 text-center font-mono text-[0.6rem] leading-[1.15rem] tabular-nums text-white">
+                            {unread}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </Link>
-              );
-            })}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           <div className="ml-auto px-4 md:mt-auto md:ml-0 md:border-t md:border-[var(--hairline)] md:px-5 md:py-4">

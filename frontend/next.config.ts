@@ -14,6 +14,22 @@ const nextConfig: NextConfig = {
     return [
       { source: "/development", destination: "/approach", permanent: true },
       { source: "/fr/development", destination: "/fr/approach", permanent: true },
+
+      /*
+       * The dashboard split in two: the agency's own work at the top level,
+       * and everything jalimx.com renders under /admin/settings. Temporary
+       * redirects, not permanent — these are private URLs in one person's
+       * bookmarks, not addresses anything else links to, and a 308 would sit
+       * in that browser's cache long after it stopped being useful.
+       */
+      { source: "/admin/settings", destination: "/admin/settings/site", permanent: false },
+      { source: "/admin/services", destination: "/admin/settings/services", permanent: false },
+      { source: "/admin/projects", destination: "/admin/settings/case-studies", permanent: false },
+      {
+        source: "/admin/projects/:slug",
+        destination: "/admin/settings/case-studies/:slug",
+        permanent: false,
+      },
     ];
   },
 

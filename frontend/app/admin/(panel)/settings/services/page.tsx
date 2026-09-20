@@ -94,7 +94,7 @@ export default function ServicesPage() {
 
   return (
     <div className="max-w-5xl pb-28">
-      <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">Content</p>
+      <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">The site</p>
       <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">Services</h1>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         What the homepage says JalimX does, and the choices in the contact

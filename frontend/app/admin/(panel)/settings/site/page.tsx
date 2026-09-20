@@ -84,8 +84,8 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-5xl pb-28">
-      <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">Site</p>
-      <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">Settings</h1>
+      <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">The site</p>
+      <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">Homepage &amp; contact</h1>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         The words that open the homepage, and the contact details shown in the
         footer of every page and on the contact page.

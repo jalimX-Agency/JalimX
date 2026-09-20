@@ -60,10 +60,10 @@ function Project() {
   return (
     <div className="max-w-5xl">
       <Link
-        href="/admin/projects"
+        href="/admin/settings/case-studies"
         className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] hover:text-[var(--fg)]"
       >
-        ← Projects
+        ← Case studies
       </Link>
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
@@ -117,7 +117,7 @@ function Project() {
             aria-selected={tab === t}
             onClick={() =>
               router.replace(
-                `/admin/projects/${project.slug}${t === "images" ? "?tab=images" : ""}`
+                `/admin/settings/case-studies/${project.slug}${t === "images" ? "?tab=images" : ""}`
               )
             }
             className={`-mb-px border-b-2 px-4 py-2.5 text-sm ${
@@ -147,7 +147,7 @@ function Project() {
             onSaved={(next) => {
               setProject(next);
               // A renamed address moves the dashboard page along with it.
-              if (next.slug !== slug) router.replace(`/admin/projects/${next.slug}`);
+              if (next.slug !== slug) router.replace(`/admin/settings/case-studies/${next.slug}`);
             }}
           />
         </div>

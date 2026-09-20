@@ -22,11 +22,11 @@ export default function ProjectsPage() {
   return (
     <div className="max-w-5xl">
       <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">
-        Content
+        The site
       </p>
       <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Projects
+          Case studies
         </h1>
         <NewProject />
       </div>
@@ -48,7 +48,7 @@ export default function ProjectsPage() {
           {projects.map((p) => (
             <li key={p.slug}>
               <Link
-                href={`/admin/projects/${p.slug}`}
+                href={`/admin/settings/case-studies/${p.slug}`}
                 className="group flex items-center gap-5 bg-[var(--panel)] px-5 py-4 transition-colors hover:bg-[color-mix(in_oklab,var(--link)_4%,var(--panel))]"
               >
                 <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden bg-[var(--ground)]">
@@ -122,7 +122,7 @@ function NewProject() {
         client_name: String(form.get("client_name") ?? ""),
         title_en: String(form.get("title_en") ?? ""),
       });
-      router.push(`/admin/projects/${project.slug}`);
+      router.push(`/admin/settings/case-studies/${project.slug}`);
     } catch (err) {
       setErrors(err instanceof ApiError ? err.errors : { client_name: ["Could not create the project."] });
       setBusy(false);
@@ -136,7 +136,7 @@ function NewProject() {
         onClick={() => setOpen(true)}
         className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
       >
-        + New project
+        + New case study
       </button>
     );
   }
