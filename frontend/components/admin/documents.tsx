@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import {
   admin,
@@ -457,6 +458,7 @@ function DraftEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const ask = useConfirm();
 
   const err = (key: string) => errors[key]?.[0];
   const set = <K extends keyof DocumentInput>(key: K, value: DocumentInput[K]) =>
@@ -506,9 +508,11 @@ function DraftEditor({
 
   async function issue() {
     if (
-      !window.confirm(
-        `Issue this ${doc.type}? It gets its number and can no longer be edited — only paid or cancelled.`,
-      )
+      !(await ask({
+        title: `Issue this ${doc.type}?`,
+        body: "It gets its number and can no longer be edited — only paid, or cancelled.",
+        confirmLabel: "Issue",
+      }))
     ) {
       return;
     }
@@ -516,7 +520,16 @@ function DraftEditor({
   }
 
   async function remove() {
-    if (!window.confirm("Delete this draft? Nothing has been sent, so nothing is lost.")) return;
+    if (
+      !(await ask({
+        title: "Delete this draft?",
+        body: "Nothing has been sent, so nothing is lost.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       await admin.removeDocument(doc.id);
@@ -805,6 +818,7 @@ function IssuedPanel({
   const [paidOn, setPaidOn] = useState(today());
   const [method, setMethod] = useState<PaymentMethod>("transfer");
   const [reference, setReference] = useState("");
+  const ask = useConfirm();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -1007,11 +1021,14 @@ function IssuedPanel({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    window.confirm(
-                      "Cancel this? It keeps its number and stays in the list, marked cancelled.",
-                    )
+                    await ask({
+                      title: `Cancel ${doc.number ?? `this ${doc.type}`}?`,
+                      body: "It keeps its number and stays in the list, marked cancelled.",
+                      confirmLabel: "Cancel it",
+                      cancelLabel: "Keep it",
+                    })
                   ) {
                     run(() => admin.setDocumentStatus(doc.id, "cancelled"));
                   }
@@ -1030,19 +1047,24 @@ function IssuedPanel({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
+              onClick={async () => {
                 const parts = [
-                  `Delete ${doc.number ?? `this ${doc.type}`} for good?`,
                   doc.payments.length > 0
                     ? `The ${doc.payments.length === 1 ? "payment" : `${doc.payments.length} payments`} recorded against it go too.`
                     : null,
                   doc.number
                     ? `${doc.number} will be missing from the numbering, which is the first thing an inspector asks about. Cancelling keeps the number and marks it cancelled.`
                     : null,
-                  "This cannot be undone.",
-                ].filter(Boolean);
+                ].filter((p): p is string => Boolean(p));
 
-                if (window.confirm(parts.join("\n\n"))) {
+                if (
+                  await ask({
+                    title: `Delete ${doc.number ?? `this ${doc.type}`} for good?`,
+                    body: parts,
+                    confirmLabel: "Delete",
+                    tone: "danger",
+                  })
+                ) {
                   setBusy(true);
                   admin.removeDocument(doc.id).then(onDeleted, (e) => {
                     setMessage(e instanceof Error ? e.message : "Could not delete it.");

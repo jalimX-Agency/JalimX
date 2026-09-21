@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { RowsSkeleton } from "@/components/admin/skeleton";
 import { admin, ApiError, isSignedOut, type WorkType, type WorkTypeInput } from "@/lib/admin/client";
@@ -150,6 +151,7 @@ function TypeEditor({
   const [input, setInput] = useState<WorkTypeInput>(value);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const ask = useConfirm();
 
   async function submit() {
     setBusy(true);
@@ -168,7 +170,16 @@ function TypeEditor({
 
   async function remove() {
     if (!onDeleted) return;
-    if (!window.confirm(`Delete "${input.name}"?`)) return;
+    if (
+      !(await ask({
+        title: `Delete "${input.name}"?`,
+        body: "Only possible while no work is filed under it. Otherwise switch it off instead.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       await onDeleted();

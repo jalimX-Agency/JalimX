@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import {
   admin,
   ATTACHMENT_KINDS,
@@ -48,6 +49,7 @@ export function Attachments({
   const [progress, setProgress] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+  const ask = useConfirm();
 
   const files = engagement.attachments;
 
@@ -69,7 +71,16 @@ export function Attachments({
   }
 
   async function remove(file: Attachment) {
-    if (!window.confirm(`Delete ${file.name}? This cannot be undone.`)) return;
+    if (
+      !(await ask({
+        title: `Delete ${file.name}?`,
+        body: "The file is removed from storage, not just from this list.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     try {
       await admin.removeAttachment(file.id);
       replaceFiles(files.filter((f) => f.id !== file.id));

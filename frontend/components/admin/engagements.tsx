@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Attachments } from "@/components/admin/attachments";
+import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import {
   admin,
@@ -263,6 +264,7 @@ function EngagementEditor({
   const [busy, setBusy] = useState(false);
   const [writing, setWriting] = useState(false);
   const [section, setSection] = useState<"details" | "files">("details");
+  const ask = useConfirm();
 
   const err = (key: string) => errors[key]?.[0];
   const set = (key: keyof EngagementInput, v: string) =>
@@ -302,7 +304,16 @@ function EngagementEditor({
 
   async function remove() {
     if (!onDeleted) return;
-    if (!window.confirm(`Delete "${input.title || "this work"}"? This cannot be undone.`)) return;
+    if (
+      !(await ask({
+        title: `Delete "${input.title || "this work"}"?`,
+        body: "Its files go with it. Work that has been quoted or invoiced cannot be deleted — mark it cancelled instead.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       await onDeleted();

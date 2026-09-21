@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * A client's logins, handed over on paper.
@@ -80,13 +81,27 @@ class CredentialSheetController extends Controller
         // forwarded, archived and backed up in places nobody here controls.
         $password = $this->password();
 
-        Mail::to($to)->send(new ClientLoginsMail(
-            client: $client,
-            pdf: $this->render($client, $credentials, $password),
-            filename: $this->filename($client),
-            count: $credentials->count(),
-            note: $data['note'] ?? null,
-        ));
+        /*
+         * A refused send is reported, not thrown: a bare 500 told the
+         * person nothing, and the reason — an unverified domain, a key
+         * without sending rights — is the one thing they need to fix it.
+         */
+        try {
+            Mail::to($to)->send(new ClientLoginsMail(
+                client: $client,
+                pdf: $this->render($client, $credentials, $password),
+                filename: $this->filename($client),
+                count: $credentials->count(),
+                note: $data['note'] ?? null,
+            ));
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'message' => 'The email service refused it: '.Str::limit($e->getMessage(), 240)
+                    .' Nothing was sent.',
+            ], 502);
+        }
 
         return response()->json([
             'data' => [

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { ClientForm } from "@/components/admin/client-form";
 import { Documents } from "@/components/admin/documents";
 import { Engagements } from "@/components/admin/engagements";
@@ -32,6 +33,7 @@ export default function ClientPage() {
   const [tab, setTab] = useState<Tab>("Work");
   const [detailsDirty, setDetailsDirty] = useState(false);
   const [refusedDelete, setRefusedDelete] = useState<string | null>(null);
+  const ask = useConfirm();
 
   useEffect(() => {
     let live = true;
@@ -65,9 +67,15 @@ export default function ClientPage() {
   async function remove() {
     if (!client) return;
     if (
-      !window.confirm(
-        `Delete ${client.name}? This cannot be undone. Everything you have written about them, and all their work, goes too.`,
-      )
+      !(await ask({
+        title: `Delete ${client.name}?`,
+        body: [
+          "Everything written about them goes too: their work, files and logins.",
+          "A client who has been quoted or invoiced cannot be deleted — the paperwork has to stay.",
+        ],
+        confirmLabel: "Delete client",
+        tone: "danger",
+      }))
     ) {
       return;
     }

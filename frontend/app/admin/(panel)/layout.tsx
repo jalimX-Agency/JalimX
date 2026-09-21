@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 
 import { JxMark } from "@/components/brand/logo";
+import { ConfirmProvider } from "@/components/admin/confirm";
 import { Block } from "@/components/admin/skeleton";
 import { admin, ApiError, type User } from "@/lib/admin/client";
 
@@ -166,7 +167,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-8 md:px-8 md:py-10 lg:px-12">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-8 md:px-8 md:py-10 lg:px-12">
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </main>
       </div>
     </UserContext.Provider>
   );

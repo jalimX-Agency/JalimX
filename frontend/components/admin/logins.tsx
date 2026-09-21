@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import {
   admin,
@@ -35,6 +36,7 @@ export function Logins({ client }: { client: Client }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [handed, setHanded] = useState<{ password: string | null; sentTo?: string } | null>(null);
+  const ask = useConfirm();
 
   const works = client.engagements ?? [];
   const ids = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
@@ -74,12 +76,14 @@ export function Logins({ client }: { client: Client }) {
     const recipient = to.trim() || client.email || "";
     const count = `${ids.length} ${ids.length === 1 ? "login" : "logins"}`;
     if (
-      !window.confirm(
-        [
-          `Email ${count} to ${recipient}?`,
-          "They go as a password-protected PDF. The password is not in the email: you will see it here, to send by phone or WhatsApp.",
-        ].join("\n\n"),
-      )
+      !(await ask({
+        title: `Email ${count} to ${recipient}?`,
+        body: [
+          "They go as a password-protected PDF.",
+          "The password is not in the email. You will see it here, to send by phone or WhatsApp.",
+        ],
+        confirmLabel: "Send",
+      }))
     ) {
       return;
     }
@@ -521,6 +525,7 @@ function LoginEditor({
   /* Typed in the open by default: a password you cannot read is a password
      you mistype, and nobody is reading over your shoulder here. */
   const [showSecret, setShowSecret] = useState(true);
+  const ask = useConfirm();
   const [touchedNotes, setTouchedNotes] = useState(!credential);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -557,7 +562,16 @@ function LoginEditor({
 
   async function remove() {
     if (!onDeleted) return;
-    if (!window.confirm(`Delete "${input.label || "this login"}"? This cannot be undone.`)) return;
+    if (
+      !(await ask({
+        title: `Delete "${input.label || "this login"}"?`,
+        body: "The stored password goes with it, and cannot be recovered from here.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     setBusy(true);
     try {
       await onDeleted();

@@ -17,6 +17,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "3.0",
+        "resend/resend-php": "^1.15",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-permission": "^6.25",
         "spatie/laravel-query-builder": "^6.4",

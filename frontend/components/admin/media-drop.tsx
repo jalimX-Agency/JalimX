@@ -5,6 +5,7 @@
 
 import { useRef, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { admin, ApiError, type Media } from "@/lib/admin/client";
 
 /**
@@ -36,6 +37,7 @@ export function MediaDrop({ slug, collection, title, hint, warning, items, singl
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [dragging, setDragging] = useState(false);
   const [removing, setRemoving] = useState<number | null>(null);
+  const ask = useConfirm();
 
   const patch = (id: string, change: Partial<Upload>) =>
     setUploads((list) => list.map((u) => (u.id === id ? { ...u, ...change } : u)));
@@ -79,7 +81,16 @@ export function MediaDrop({ slug, collection, title, hint, warning, items, singl
   }
 
   async function remove(media: Media) {
-    if (!window.confirm(`Remove this image? It will disappear from the site.`)) return;
+    if (
+      !(await ask({
+        title: "Remove this image?",
+        body: "It disappears from the site as soon as the page is rebuilt.",
+        confirmLabel: "Remove",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     setRemoving(media.id);
     try {
       await admin.removeMedia(media.id);

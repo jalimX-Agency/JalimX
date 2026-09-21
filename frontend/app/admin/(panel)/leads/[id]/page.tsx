@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { STATUS_LABEL } from "@/components/admin/lead-status";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
 import { admin, isSignedOut, LEAD_STATUSES, type Lead, type LeadStatus } from "@/lib/admin/client";
@@ -28,6 +29,7 @@ export default function LeadPage() {
   const [saving, setSaving] = useState<"status" | "note" | null>(null);
   const [saved, setSaved] = useState(false);
   const [converting, setConverting] = useState(false);
+  const ask = useConfirm();
 
   useEffect(() => {
     // Ignore a response that lands after teardown: a late duplicate load would
@@ -107,7 +109,16 @@ export default function LeadPage() {
 
   async function remove() {
     if (!lead) return;
-    if (!window.confirm(`Delete the lead from ${lead.name}? This cannot be undone. For a real enquiry that went nowhere, mark it Lost instead.`)) return;
+    if (
+      !(await ask({
+        title: `Delete the enquiry from ${lead.name}?`,
+        body: "This is for spam. For a real enquiry that went nowhere, mark it Lost instead — it keeps the history.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
     await admin.removeLead(lead.id);
     router.push("/admin/leads");
   }
