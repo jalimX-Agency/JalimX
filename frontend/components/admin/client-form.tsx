@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Field, Heading, SaveBar, useUnsavedWarning } from "@/components/admin/fields";
 import { admin, ApiError, type Client, type ClientInput } from "@/lib/admin/client";
@@ -19,9 +19,11 @@ type Props = {
   /** Absent when creating. */
   client?: Client;
   onSaved?: (next: Client) => void;
+  /** Lets the page mark its tab, so unsaved work is visible from elsewhere. */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function ClientForm({ client, onSaved }: Props) {
+export function ClientForm({ client, onSaved, onDirtyChange }: Props) {
   const router = useRouter();
   const initial: ClientInput = {
     name: client?.name ?? "",
@@ -46,6 +48,7 @@ export function ClientForm({ client, onSaved }: Props) {
 
   const dirty = JSON.stringify(input) !== JSON.stringify(initial);
   useUnsavedWarning(dirty);
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange]);
 
   const err = (key: string) => errors[key]?.[0];
   // Empty is absent, not "": a blank optional field should be null in the

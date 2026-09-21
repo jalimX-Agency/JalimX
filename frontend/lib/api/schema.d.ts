@@ -135,12 +135,63 @@ export interface paths {
         put?: never;
         /**
          * Turn an enquiry into a client, carrying over what the form already
-         *     asked for so the same details are not typed twice.
-         *
-         *     Idempotent by lead: converting the same enquiry twice returns the
-         *     client already made from it rather than creating a duplicate
+         *     asked for so the same details are not typed twice
+         * @description Idempotent by lead: converting the same enquiry twice returns the
+         *     client already made from it rather than creating a duplicate.
          */
         post: operations["client.convertLead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/clients/{client}/engagements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["engagement.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/engagements/{engagement}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["engagement.update"];
+        post?: never;
+        delete: operations["engagement.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/case-study-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The case studies an engagement can be linked to. Slim on purpose: the
+         *     picker needs a name and an id, not five translated paragraphs
+         */
+        get: operations["engagement.caseStudyOptions"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -176,9 +227,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Newest first, optionally narrowed to one status or a search
-         * @description The counts ride along with every page so the status tabs stay honest
-         *     after a lead moves between them, without a second request.
+         * Newest first, optionally narrowed to one status or a search.
+         *
+         *     The counts ride along with every page so the status tabs stay honest
+         *     after a lead moves between them, without a second request
          */
         get: operations["lead.index"];
         put?: never;
@@ -439,6 +491,35 @@ export interface components {
             currency: string;
             notes: string | null;
             lead_id: number | null;
+            /**
+             * @description The work, when the caller asked for it. The client page shows
+             *     everything about one client on one screen, so its single
+             *     request carries the engagements with it.
+             */
+            engagements?: components["schemas"]["EngagementResource"][];
+            engagements_count?: number;
+            created_at: string | null;
+        };
+        /** EngagementResource */
+        EngagementResource: {
+            id: number;
+            client_id: number;
+            title: string;
+            status: string;
+            /**
+             * @description A string, not a float: money read back as a float is money one
+             *     rounding away from disagreeing with the invoice.
+             */
+            budget: string | null;
+            starts_on: string | null;
+            ends_on: string | null;
+            description: string | null;
+            case_study_id: number | null;
+            case_study?: {
+                slug: string;
+                title: string;
+                is_published: boolean;
+            } | null;
             created_at: string | null;
         };
         /** LeadResource */
@@ -456,6 +537,14 @@ export interface components {
             locale: string;
             source: string | null;
             is_read: boolean;
+            /**
+             * @description Whether this enquiry already became a client, so the dashboard
+             *     can link to them instead of offering to convert a second time.
+             */
+            client?: {
+                id: number;
+                name: string;
+            } | null;
             created_at: string | null;
         };
         /** MediaResource */
@@ -727,7 +816,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ClientResource"];
+                        data: components["schemas"]["ClientResource"] & Record<string, never>;
                     };
                 };
             };
@@ -851,6 +940,149 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "engagement.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    /** @enum {string} */
+                    status: "planned" | "active" | "paused" | "done" | "cancelled";
+                    /**
+                     * @description Kept as a string through validation so 12000.50 is checked as
+                     *     written rather than after a float has had its say.
+                     */
+                    budget?: number | null;
+                    /** Format: date-time */
+                    starts_on?: string | null;
+                    /** Format: date-time */
+                    ends_on?: string | null;
+                    description?: string | null;
+                    case_study_id?: number | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EngagementResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "engagement.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The engagement ID */
+                engagement: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    /** @enum {string} */
+                    status: "planned" | "active" | "paused" | "done" | "cancelled";
+                    /**
+                     * @description Kept as a string through validation so 12000.50 is checked as
+                     *     written rather than after a float has had its say.
+                     */
+                    budget?: number | null;
+                    /** Format: date-time */
+                    starts_on?: string | null;
+                    /** Format: date-time */
+                    ends_on?: string | null;
+                    description?: string | null;
+                    case_study_id?: number | null;
+                };
+            };
+        };
+        responses: {
+            /** @description `EngagementResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EngagementResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "engagement.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The engagement ID */
+                engagement: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "engagement.caseStudyOptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            slug: string;
+                            title: string;
+                            is_published: boolean;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+        };
+    };
     "lead.store": {
         parameters: {
             query?: never;
@@ -897,7 +1129,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["LeadResource"][];
+                        data: (components["schemas"]["LeadResource"] & Record<string, never>)[];
                         links: {
                             first: string | null;
                             last: string | null;
@@ -951,7 +1183,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["LeadResource"];
+                        data: components["schemas"]["LeadResource"] & Record<string, never>;
                     };
                 };
             };
@@ -1010,7 +1242,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["LeadResource"];
+                        data: components["schemas"]["LeadResource"] & Record<string, never>;
                     };
                 };
             };

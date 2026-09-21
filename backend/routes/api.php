@@ -1,11 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
+use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
+use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
-use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -85,6 +86,16 @@ Route::prefix('v1')->group(function () {
             Route::put('/clients/{client}', [AdminClientController::class, 'update']);
             Route::delete('/clients/{client}', [AdminClientController::class, 'destroy']);
             Route::post('/leads/{lead}/convert', [AdminClientController::class, 'convertLead']);
+
+            /*
+             * Work for a client. Created under the client it belongs to, then
+             * edited by its own id — there is no list of all engagements,
+             * because the client page is the only place they are read.
+             */
+            Route::post('/clients/{client}/engagements', [AdminEngagementController::class, 'store']);
+            Route::put('/engagements/{engagement}', [AdminEngagementController::class, 'update']);
+            Route::delete('/engagements/{engagement}', [AdminEngagementController::class, 'destroy']);
+            Route::get('/case-study-options', [AdminEngagementController::class, 'caseStudyOptions']);
 
             Route::get('/leads', [AdminLeadController::class, 'index']);
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);

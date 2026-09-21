@@ -107,6 +107,14 @@ function Clients() {
                   </p>
                 </div>
 
+                {/* How much work is on their page, so the list says who is
+                    active without opening anyone. */}
+                {c.engagements_count ? (
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                    {c.engagements_count} {c.engagements_count === 1 ? "project" : "projects"}
+                  </span>
+                ) : null}
+
                 {/* The ICE is the tell for "ready to invoice": without it a
                     Moroccan invoice is not compliant, so it is worth seeing
                     from the list rather than opening each client to check. */}

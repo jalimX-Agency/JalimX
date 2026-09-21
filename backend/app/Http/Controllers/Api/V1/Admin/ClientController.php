@@ -41,6 +41,7 @@ class ClientController extends Controller
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
 
         $clients = Client::query()
+            ->withCount('engagements')
             ->when($validated['q'] ?? null, function ($query, $term) {
                 // ILIKE: Postgres LIKE is case-sensitive, and nobody types a
                 // client's name with the capitals it was saved with.
@@ -68,7 +69,9 @@ class ClientController extends Controller
 
     public function show(Client $client): ClientResource
     {
-        return new ClientResource($client);
+        return new ClientResource(
+            $client->loadCount('engagements')->load('engagements.caseStudy')
+        );
     }
 
     public function update(Request $request, Client $client): ClientResource

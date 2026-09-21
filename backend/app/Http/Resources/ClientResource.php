@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * A client as the dashboard sees it. Never public — clients only exist
  * behind auth:sanctum, and nothing on jalimx.com reads this.
  *
- * @mixin \App\Models\Client
+ * @mixin Client
  */
 class ClientResource extends JsonResource
 {
@@ -30,6 +31,15 @@ class ClientResource extends JsonResource
             'currency' => (string) $this->currency,
             'notes' => $this->notes,
             'lead_id' => $this->lead_id,
+            /*
+             * The work, when the caller asked for it. The client page shows
+             * everything about one client on one screen, so its single
+             * request carries the engagements with it.
+             */
+            'engagements' => EngagementResource::collection(
+                $this->whenLoaded('engagements')
+            ),
+            'engagements_count' => $this->whenCounted('engagements'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

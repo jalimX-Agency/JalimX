@@ -103,11 +103,59 @@ export type Client = {
   currency: string;
   notes: string | null;
   lead_id: number | null;
+  /** Loaded on the client's own page, absent from the list. */
+  engagements?: Engagement[];
+  engagements_count?: number;
   created_at: string;
 };
 
+export const ENGAGEMENT_STATUSES = ["planned", "active", "paused", "done", "cancelled"] as const;
+export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
+
+/** A piece of work for a client — the internal side of a "project". */
+export type Engagement = {
+  id: number;
+  client_id: number;
+  title: string;
+  status: EngagementStatus;
+  /** A decimal string, in the client's currency. Never a float. */
+  budget: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  description: string | null;
+  case_study_id: number | null;
+  case_study: { slug: string; title: string; is_published: boolean } | null;
+  created_at: string;
+};
+
+export type EngagementInput = Omit<
+  Engagement,
+  "id" | "client_id" | "case_study" | "created_at"
+>;
+
+export const emptyEngagement = (): EngagementInput => ({
+  title: "",
+  status: "planned",
+  budget: null,
+  starts_on: null,
+  ends_on: null,
+  description: null,
+  case_study_id: null,
+});
+
+/** Just enough of a case study to pick one from a list. */
+export type CaseStudyOption = {
+  id: number;
+  slug: string;
+  title: string;
+  is_published: boolean;
+};
+
 /** What the form sends: everything editable, no id and no provenance. */
-export type ClientInput = Omit<Client, "id" | "lead_id" | "created_at">;
+export type ClientInput = Omit<
+  Client,
+  "id" | "lead_id" | "engagements" | "engagements_count" | "created_at"
+>;
 
 export const emptyClient = (): ClientInput => ({
   name: "",
@@ -266,6 +314,26 @@ export const admin = {
 
   removeClient: (id: number) =>
     request(`/api/v1/admin/clients/${id}`, { method: "DELETE" }),
+
+  createEngagement: (clientId: number, input: EngagementInput) =>
+    request<{ data: Engagement }>(`/api/v1/admin/clients/${clientId}/engagements`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateEngagement: (id: number, input: EngagementInput) =>
+    request<{ data: Engagement }>(`/api/v1/admin/engagements/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  removeEngagement: (id: number) =>
+    request(`/api/v1/admin/engagements/${id}`, { method: "DELETE" }),
+
+  caseStudyOptions: () =>
+    request<{ data: CaseStudyOption[] }>("/api/v1/admin/case-study-options").then(
+      (r) => r.data,
+    ),
 
   /** Makes a client from an enquiry; returns the existing one if already converted. */
   convertLead: (leadId: number) =>
