@@ -606,6 +606,20 @@ export const admin = {
       `/api/v1/admin/credentials/${id}/reveal`,
     ).then((r) => r.data),
 
+  /** A PDF of the chosen logins, and its password when it has one. */
+  credentialSheet: (clientId: number, ids: number[], protect: boolean) =>
+    request<{ data: { filename: string; pdf: string; password: string | null } }>(
+      `/api/v1/admin/clients/${clientId}/credentials/sheet`,
+      { method: "POST", body: JSON.stringify({ ids, protect }) },
+    ).then((r) => r.data),
+
+  /** Emails the protected PDF; the password comes back here, never in the email. */
+  sendCredentials: (clientId: number, ids: number[], to: string | null, note: string | null) =>
+    request<{ data: { sent_to: string; count: number; password: string } }>(
+      `/api/v1/admin/clients/${clientId}/credentials/send`,
+      { method: "POST", body: JSON.stringify({ ids, to, note }) },
+    ).then((r) => r.data),
+
   removeCredential: (id: number) =>
     request(`/api/v1/admin/credentials/${id}`, { method: "DELETE" }),
 

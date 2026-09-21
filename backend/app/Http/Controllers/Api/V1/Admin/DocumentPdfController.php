@@ -52,7 +52,11 @@ class DocumentPdfController extends Controller
                     $document->totalCentimes() - $document->paidCentimes()
                 ),
             ],
-        ])->setPaper('a4');
+        ])
+            ->setPaper('a4')
+            // Only the glyphs actually used. Embedding the whole font made a
+            // one-page invoice close to a megabyte.
+            ->setOption('isFontSubsettingEnabled', true);
 
         $name = $document->number
             ?: strtoupper($document->type).'-brouillon-'.$document->id;

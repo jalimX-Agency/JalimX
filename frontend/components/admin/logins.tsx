@@ -27,17 +27,106 @@ import {
 export function Logins({ client }: { client: Client }) {
   const [rows, setRows] = useState<Credential[]>(client.credentials ?? []);
   const [open, setOpen] = useState<number | "new" | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [protect, setProtect] = useState(true);
+  const [emailing, setEmailing] = useState(false);
+  const [to, setTo] = useState(client.email ?? "");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [handed, setHanded] = useState<{ password: string | null; sentTo?: string } | null>(null);
 
   const works = client.engagements ?? [];
+  const ids = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
+  const all = rows.length > 0 && ids.length === rows.length;
+
+  const toggle = (id: number) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  /** Decoded in the browser and saved; the PDF never sits behind a URL. */
+  async function downloadSheet() {
+    setBusy(true);
+    setError(null);
+    setHanded(null);
+    try {
+      const sheet = await admin.credentialSheet(client.id, ids, protect);
+      const bytes = Uint8Array.from(atob(sheet.pdf), (c) => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = sheet.filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      setHanded({ password: sheet.password });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not make the PDF.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function emailSheet() {
+    const recipient = to.trim() || client.email || "";
+    const count = `${ids.length} ${ids.length === 1 ? "login" : "logins"}`;
+    if (
+      !window.confirm(
+        [
+          `Email ${count} to ${recipient}?`,
+          "They go as a password-protected PDF. The password is not in the email: you will see it here, to send by phone or WhatsApp.",
+        ].join("\n\n"),
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setHanded(null);
+    try {
+      const sent = await admin.sendCredentials(
+        client.id,
+        ids,
+        to.trim() || null,
+        note.trim() || null,
+      );
+      setHanded({ password: sent.password, sentTo: sent.sent_to });
+      setEmailing(false);
+      setNote("");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 422) {
+        setError(Object.values(e.errors)[0]?.[0] ?? e.message);
+      } else {
+        setError(e instanceof Error ? e.message : "Could not send it.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className="border border-[var(--hairline)] bg-[var(--panel)]">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
-        <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-dim)]">
-          {rows.length === 0
-            ? "Logins"
-            : `${rows.length} ${rows.length === 1 ? "login" : "logins"}`}
-        </h2>
+        <div className="flex items-center gap-3">
+          {rows.length > 0 && (
+            <input
+              type="checkbox"
+              aria-label="Select every login"
+              checked={all}
+              onChange={() => setSelected(all ? new Set() : new Set(rows.map((r) => r.id)))}
+            />
+          )}
+          <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-dim)]">
+            {rows.length === 0
+              ? "Logins"
+              : ids.length > 0
+                ? `${ids.length} of ${rows.length} selected`
+                : `${rows.length} ${rows.length === 1 ? "login" : "logins"}`}
+          </h2>
+        </div>
         <button
           type="button"
           onClick={() => setOpen(open === "new" ? null : "new")}
@@ -46,6 +135,93 @@ export function Logins({ client }: { client: Client }) {
           {open === "new" ? "Cancel" : "+ Add login"}
         </button>
       </header>
+
+      {/* Handing logins over. Only shown once something is chosen, so the
+          everyday view stays a plain list. */}
+      {ids.length > 0 && (
+        <div className="border-b border-[var(--hairline)] bg-[color-mix(in_oklab,var(--fg)_3%,transparent)] px-5 py-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <button
+              type="button"
+              onClick={downloadSheet}
+              disabled={busy}
+              className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            >
+              {busy && !emailing ? "Making it…" : "Download PDF"}
+            </button>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--fg-dim)]">
+              <input
+                type="checkbox"
+                checked={protect}
+                onChange={(e) => setProtect(e.target.checked)}
+              />
+              Protect with a password
+            </label>
+            <button
+              type="button"
+              onClick={() => setEmailing((v) => !v)}
+              disabled={busy}
+              className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
+            >
+              {emailing ? "Close" : "Email to client"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelected(new Set());
+                setEmailing(false);
+              }}
+              className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg)]"
+            >
+              Clear selection
+            </button>
+          </div>
+
+          {emailing && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Field label="Send to" hint="Their address, or whoever you deal with">
+                <input
+                  type="email"
+                  className="admin-input"
+                  value={to}
+                  placeholder={client.email ?? "name@company.ma"}
+                  onChange={(e) => setTo(e.target.value)}
+                />
+              </Field>
+              <Field label="A line of your own" hint="Optional, added to the email">
+                <input
+                  className="admin-input"
+                  maxLength={1000}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+              </Field>
+              <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={emailSheet}
+                  disabled={busy || !(to.trim() || client.email)}
+                  className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+                >
+                  {busy ? "Sending…" : "Send"}
+                </button>
+                <p className="text-xs text-[var(--fg-faint)]">
+                  Always sent protected. The password stays here, never in the
+                  email.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="border-b border-[var(--hairline)] px-5 py-3 text-sm text-[var(--color-signal)]">
+          {error}
+        </p>
+      )}
+
+      {handed && <Handed result={handed} onDone={() => setHanded(null)} />}
 
       {open === "new" && (
         <LoginEditor
@@ -99,17 +275,97 @@ export function Logins({ client }: { client: Client }) {
                   }}
                 />
               ) : (
-                <LoginRow
-                  credential={row}
-                  work={works.find((w) => w.id === row.engagement_id)?.title ?? null}
-                  onEdit={() => setOpen(row.id)}
-                />
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${row.label}`}
+                    className="mt-[1.15rem] ml-5 shrink-0"
+                    checked={selected.has(row.id)}
+                    onChange={() => toggle(row.id)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <LoginRow
+                      credential={row}
+                      work={works.find((w) => w.id === row.engagement_id)?.title ?? null}
+                      onEdit={() => setOpen(row.id)}
+                    />
+                  </div>
+                </div>
               )}
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * What just went out, and the password that did not go with it.
+ *
+ * Shown once. Closing it does not bring it back: a new PDF means a new
+ * password, which is the point.
+ */
+function Handed({
+  result,
+  onDone,
+}: {
+  result: { password: string | null; sentTo?: string };
+  onDone: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <div className="border-b border-[var(--hairline)] px-5 py-4" role="status">
+      <p className="text-sm">
+        {result.sentTo ? (
+          <>
+            Sent to <strong>{result.sentTo}</strong>.
+          </>
+        ) : (
+          "The PDF is downloading."
+        )}
+      </p>
+      {result.password && (
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+            PDF password
+          </span>
+          <span className="select-all border border-[var(--hairline)] bg-[var(--panel)] px-3 py-1.5 font-mono text-base tracking-wider">
+            {result.password}
+          </span>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(result.password ?? "");
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              } catch {
+                // The value is selectable, so copying by hand still works.
+              }
+            }}
+            className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
+      {result.password && (
+        <p className="mt-2 max-w-[60ch] text-xs text-[var(--color-signal)]">
+          {result.sentTo
+            ? "Send this by phone or WhatsApp, not by email. It is shown once."
+            : "Keep it apart from the file. It is shown once."}
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={onDone}
+        className="mt-3 text-xs text-[var(--fg-faint)] hover:text-[var(--fg)]"
+      >
+        Done
+      </button>
+    </div>
   );
 }
 
