@@ -21,6 +21,12 @@ class Client extends Model
         return $this->hasMany(Engagement::class)->latest('id');
     }
 
+    /** Their quotes and invoices, newest first. */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class)->latest('id');
+    }
+
     /** The enquiry this client came from, when they came from one. */
     public function lead(): BelongsTo
     {

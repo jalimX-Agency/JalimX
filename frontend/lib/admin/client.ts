@@ -105,8 +105,105 @@ export type Client = {
   lead_id: number | null;
   /** Loaded on the client's own page, absent from the list. */
   engagements?: Engagement[];
+  documents?: BillingDocument[];
   engagements_count?: number;
   created_at: string;
+};
+
+export const DOCUMENT_TYPES = ["quote", "invoice"] as const;
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+export type DocumentStatus = "draft" | "sent" | "accepted" | "declined" | "cancelled";
+
+export const PAYMENT_METHODS = ["transfer", "cheque", "cash", "card", "other"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export type LineItem = {
+  id: number;
+  position: number;
+  description: string;
+  /** Decimal strings throughout: money must not become a float on the way. */
+  quantity: string;
+  unit_price: string;
+  total: string;
+};
+
+export type LineItemInput = Pick<LineItem, "description" | "quantity" | "unit_price">;
+
+export type Payment = {
+  id: number;
+  amount: string;
+  paid_on: string;
+  method: PaymentMethod;
+  reference: string | null;
+};
+
+export type PaymentInput = Omit<Payment, "id">;
+
+/**
+ * A quote or an invoice. Named for the paper rather than "Document", which
+ * in a browser already means something else entirely.
+ */
+export type BillingDocument = {
+  id: number;
+  client_id: number;
+  engagement_id: number | null;
+  type: DocumentType;
+  status: DocumentStatus;
+  /** Null until it is issued; drafts have no number on purpose. */
+  number: string | null;
+  issue_date: string | null;
+  due_date: string | null;
+  currency: string;
+  tva_rate: string;
+  subject: string | null;
+  notes: string | null;
+  terms: string | null;
+  items: LineItem[];
+  payments: Payment[];
+  totals: {
+    subtotal: string;
+    tva: string;
+    total: string;
+    paid: string;
+    due: string;
+  };
+  settled: boolean;
+  overdue: boolean;
+  editable: boolean;
+  created_at: string;
+};
+
+/** What the draft editor sends back. */
+export type DocumentInput = {
+  engagement_id: number | null;
+  issue_date: string | null;
+  due_date: string | null;
+  tva_rate: string;
+  subject: string | null;
+  notes: string | null;
+  terms: string | null;
+  items: LineItemInput[];
+};
+
+/** Who the invoice is from. Every field but the name may be empty. */
+export type BillingProfile = {
+  name: string;
+  legal_name: string;
+  address: string;
+  city: string;
+  country: string;
+  email: string;
+  phone: string;
+  ice: string;
+  if: string;
+  rc: string;
+  patente: string;
+  bank_name: string;
+  rib: string;
+  tva_rate: string;
+  payment_terms: string;
+  footer_note: string;
 };
 
 export const ENGAGEMENT_STATUSES = ["planned", "active", "paused", "done", "cancelled"] as const;
@@ -154,7 +251,7 @@ export type CaseStudyOption = {
 /** What the form sends: everything editable, no id and no provenance. */
 export type ClientInput = Omit<
   Client,
-  "id" | "lead_id" | "engagements" | "engagements_count" | "created_at"
+  "id" | "lead_id" | "engagements" | "engagements_count" | "documents" | "created_at"
 >;
 
 export const emptyClient = (): ClientInput => ({
@@ -334,6 +431,62 @@ export const admin = {
     request<{ data: CaseStudyOption[] }>("/api/v1/admin/case-study-options").then(
       (r) => r.data,
     ),
+
+  createDocument: (
+    clientId: number,
+    body: { type: DocumentType; engagement_id?: number | null; preset?: "deposit" | "balance" | "full" },
+  ) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/clients/${clientId}/documents`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((r) => r.data),
+
+  updateDocument: (id: number, input: DocumentInput) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/documents/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  issueDocument: (id: number) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/documents/${id}/issue`, {
+      method: "POST",
+    }).then((r) => r.data),
+
+  setDocumentStatus: (id: number, status: DocumentStatus) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/documents/${id}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status }),
+    }).then((r) => r.data),
+
+  removeDocument: (id: number) =>
+    request(`/api/v1/admin/documents/${id}`, { method: "DELETE" }),
+
+  /**
+   * Opened in a tab rather than fetched: the browser renders the PDF.
+   * Deliberately not under /api — a new tab sends no Origin header, and
+   * Sanctum would refuse the session cookie on a request that has none.
+   */
+  documentPdf: (id: number) => `${API}/documents/${id}/pdf`,
+
+  addPayment: (documentId: number, input: PaymentInput) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/documents/${documentId}/payments`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  removePayment: (id: number) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/payments/${id}`, {
+      method: "DELETE",
+    }).then((r) => r.data),
+
+  billingProfile: () =>
+    request<{ data: BillingProfile }>("/api/v1/admin/billing-profile").then((r) => r.data),
+
+  updateBillingProfile: (input: BillingProfile) =>
+    request<{ data: BillingProfile }>("/api/v1/admin/billing-profile", {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
 
   /** Makes a client from an enquiry; returns the existing one if already converted. */
   convertLead: (leadId: number) =>

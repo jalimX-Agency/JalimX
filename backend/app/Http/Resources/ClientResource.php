@@ -40,6 +40,7 @@ class ClientResource extends JsonResource
                 $this->whenLoaded('engagements')
             ),
             'engagements_count' => $this->whenCounted('engagements'),
+            'documents' => DocumentResource::collection($this->whenLoaded('documents')),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

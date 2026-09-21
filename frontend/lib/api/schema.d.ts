@@ -92,6 +92,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/billing-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["billingProfile.show"];
+        put: operations["billingProfile.update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/clients": {
         parameters: {
             query?: never;
@@ -140,6 +156,84 @@ export interface paths {
          *     client already made from it rather than creating a duplicate.
          */
         post: operations["client.convertLead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/clients/{client}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["document.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/documents/{document}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * The whole document, lines included: the editor holds one form, and
+         *     sending it a line at a time would let a half-saved invoice exist
+         */
+        put: operations["document.update"];
+        post?: never;
+        /**
+         * Only drafts. An issued invoice is cancelled, never deleted: the
+         *     sequence has to stay whole, and a missing number is a question you
+         *     cannot answer a year later
+         */
+        delete: operations["document.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/documents/{document}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hand it over: give it its number, freeze who it is from and to, and
+         *     stop it being editable
+         */
+        post: operations["document.issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/documents/{document}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accepted, declined or cancelled — the states that follow issuing */
+        post: operations["document.status"];
         delete?: never;
         options?: never;
         head?: never;
@@ -227,10 +321,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Newest first, optionally narrowed to one status or a search.
-         *
-         *     The counts ride along with every page so the status tabs stay honest
-         *     after a lead moves between them, without a second request
+         * Newest first, optionally narrowed to one status or a search
+         * @description The counts ride along with every page so the status tabs stay honest
+         *     after a lead moves between them, without a second request.
          */
         get: operations["lead.index"];
         put?: never;
@@ -257,6 +350,39 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["lead.update"];
+        trace?: never;
+    };
+    "/v1/admin/documents/{document}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payment.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payments/{payment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Returns the invoice, so the dashboard sees the new balance at once */
+        delete: operations["payment.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/projects": {
@@ -498,6 +624,49 @@ export interface components {
              */
             engagements?: components["schemas"]["EngagementResource"][];
             engagements_count?: number;
+            documents?: components["schemas"]["DocumentResource"][];
+            created_at: string | null;
+        };
+        /** DocumentItemResource */
+        DocumentItemResource: {
+            id: number;
+            position: number;
+            description: string;
+            quantity: string;
+            unit_price: string;
+            total: string;
+        };
+        /** DocumentResource */
+        DocumentResource: {
+            id: number;
+            client_id: number;
+            engagement_id: number | null;
+            type: string;
+            status: string;
+            number: string | null;
+            issue_date: string | null;
+            due_date: string | null;
+            currency: string;
+            tva_rate: string;
+            subject: string | null;
+            notes: string | null;
+            terms: string | null;
+            items?: components["schemas"]["DocumentItemResource"][];
+            payments?: components["schemas"]["PaymentResource"][];
+            totals: {
+                subtotal: string;
+                tva: string;
+                total: string;
+                paid: string;
+                due: string;
+            };
+            /**
+             * @description Worked out here, not stored: "paid" is a fact about the
+             *     payments, and a column saying otherwise would be believed.
+             */
+            settled: string;
+            overdue: string;
+            editable: boolean;
             created_at: string | null;
         };
         /** EngagementResource */
@@ -561,6 +730,14 @@ export interface components {
             alt: string | null;
             width: number | null;
             height: number | null;
+        };
+        /** PaymentResource */
+        PaymentResource: {
+            id: number;
+            amount: string;
+            paid_on: string;
+            method: string;
+            reference: string | null;
         };
         /** ProjectResource */
         ProjectResource: {
@@ -700,6 +877,67 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "billingProfile.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+        };
+    };
+    "billingProfile.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    /** Format: email */
+                    email?: string | null;
+                    phone?: string | null;
+                    tva_rate: number;
+                    payment_terms?: string | null;
+                    footer_note?: string | null;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
     "client.index": {
         parameters: {
             query?: {
@@ -896,6 +1134,17 @@ export interface operations {
             };
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        message: "This client has quotes or invoices. They have to stay, so the client does too.";
+                    };
+                };
+            };
         };
     };
     "client.convertLead": {
@@ -938,6 +1187,179 @@ export interface operations {
             };
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "document.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    type: "quote" | "invoice";
+                    engagement_id?: number | null;
+                    /**
+                     * @description A 50/50 build is the usual arrangement, so the two halves are
+                     *     one click rather than arithmetic done twice.
+                     * @enum {string|null}
+                     */
+                    preset?: "deposit" | "balance" | "full" | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "document.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    engagement_id?: number | null;
+                    /** Format: date-time */
+                    issue_date?: string | null;
+                    /** Format: date-time */
+                    due_date?: string | null;
+                    tva_rate: number;
+                    subject?: string | null;
+                    notes?: string | null;
+                    terms?: string | null;
+                    items: {
+                        description: string;
+                        quantity: number;
+                        unit_price: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description `DocumentResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "document.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "document.issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `DocumentResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "document.status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    status: "sent" | "accepted" | "declined" | "cancelled";
+                };
+            };
+        };
+        responses: {
+            /** @description `DocumentResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
         };
     };
     "engagement.store": {
@@ -1249,6 +1671,70 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "payment.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document ID */
+                document: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    amount: number;
+                    /** Format: date-time */
+                    paid_on: string;
+                    /** @enum {string} */
+                    method: "transfer" | "cheque" | "cash" | "card" | "other";
+                    reference?: string | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "payment.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The payment ID */
+                payment: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DocumentResource"] & Record<string, never>;
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "project.index": {

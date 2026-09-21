@@ -85,6 +85,7 @@ export function SaveBar({
   saving,
   saved,
   message,
+  savedMessage = "Saved — the site updates in a few seconds.",
   onSave,
   onDiscard,
 }: {
@@ -92,6 +93,8 @@ export function SaveBar({
   saving: boolean;
   saved: boolean;
   message: string | null;
+  /** Overridden where a save changes nothing a visitor will ever see. */
+  savedMessage?: string;
   onSave: () => void;
   onDiscard: () => void;
 }) {
@@ -106,7 +109,7 @@ export function SaveBar({
           role="status"
           className={`text-sm ${message ? "text-[var(--color-signal)]" : saved ? "text-[var(--link)]" : "text-[var(--fg-dim)]"}`}
         >
-          {message ?? (saved && !dirty ? "Saved — the site updates in a few seconds." : "Unsaved changes")}
+          {message ?? (saved && !dirty ? savedMessage : "Unsaved changes")}
         </p>
         <div className="flex items-center gap-3">
           {dirty && (

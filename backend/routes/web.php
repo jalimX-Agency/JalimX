@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\DocumentPdfController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,20 @@ Route::get('/', function () {
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:20,1')
     ->name('login');
+
+/*
+ * The printable quote or invoice.
+ *
+ * On the web routes rather than under /api, because the dashboard opens it
+ * as a link in a new tab. A top-level navigation carries no Origin header,
+ * and Sanctum reads that as a token request with no token - so the same
+ * cookie that authenticates every other call would be ignored here. The
+ * session is checked in the controller rather than by the auth middleware,
+ * which would answer a signed-out visitor with a redirect to a login route
+ * that only accepts POST.
+ */
+Route::get('/documents/{document}/pdf', DocumentPdfController::class)
+    ->name('documents.pdf');
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum')

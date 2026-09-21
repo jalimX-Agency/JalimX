@@ -70,7 +70,8 @@ class ClientController extends Controller
     public function show(Client $client): ClientResource
     {
         return new ClientResource(
-            $client->loadCount('engagements')->load('engagements.caseStudy')
+            $client->loadCount('engagements')
+                ->load('engagements.caseStudy', 'documents.items', 'documents.payments')
         );
     }
 
@@ -83,6 +84,17 @@ class ClientController extends Controller
 
     public function destroy(Client $client): JsonResponse
     {
+        /*
+         * Checked here rather than left to the foreign key, which would
+         * answer a plain 500. An invoice is a record of money and outlives
+         * the working relationship, so the client stays as long as it does.
+         */
+        if ($client->documents()->exists()) {
+            return response()->json([
+                'message' => 'This client has quotes or invoices. They have to stay, so the client does too.',
+            ], 409);
+        }
+
         $client->delete();
 
         return response()->json(null, 204);

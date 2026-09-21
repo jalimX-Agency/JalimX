@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -9,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * A lead as the dashboard sees it. Only ever returned behind auth:sanctum;
  * the IP stays out even here — it is kept for abuse checks, not for reading.
  *
- * @mixin \App\Models\Lead
+ * @mixin Lead
  */
 class LeadResource extends JsonResource
 {

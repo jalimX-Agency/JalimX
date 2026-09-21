@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Engagement extends Model
 {
@@ -26,6 +27,12 @@ class Engagement extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /** What has been quoted and billed for this work. */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
     }
 
     /** The public case study written about this work, if there is one. */

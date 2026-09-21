@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLeadRequest;
 use App\Models\Lead;
 use App\Notifications\NewLeadReceived;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Notification;
 
 class LeadController extends Controller
 {

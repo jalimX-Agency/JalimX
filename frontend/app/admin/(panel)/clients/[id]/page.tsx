@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ClientForm } from "@/components/admin/client-form";
+import { Documents } from "@/components/admin/documents";
 import { Engagements } from "@/components/admin/engagements";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
 import { admin, isSignedOut, type Client } from "@/lib/admin/client";
@@ -19,7 +20,7 @@ import { admin, isSignedOut, type Client } from "@/lib/admin/client";
  * fetched again when you move between them.
  */
 
-const TABS = ["Work", "Details"] as const;
+const TABS = ["Work", "Money", "Details"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ClientPage() {
@@ -29,6 +30,7 @@ export default function ClientPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Work");
   const [detailsDirty, setDetailsDirty] = useState(false);
+  const [refusedDelete, setRefusedDelete] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -68,8 +70,16 @@ export default function ClientPage() {
     ) {
       return;
     }
-    await admin.removeClient(client.id);
-    router.push("/admin/clients");
+    try {
+      await admin.removeClient(client.id);
+      router.push("/admin/clients");
+    } catch (e) {
+      /*
+       * The API refuses to delete a client who has been billed, and says
+       * why. Swallowing that would leave the button looking broken.
+       */
+      setRefusedDelete(e instanceof Error ? e.message : "Could not delete them.");
+    }
   }
 
   const reach = [
@@ -182,6 +192,10 @@ export default function ClientPage() {
         <Engagements client={client} />
       </div>
 
+      <div className="mt-8" hidden={tab !== "Money"}>
+        <Documents client={client} />
+      </div>
+
       <div hidden={tab !== "Details"}>
         <div className="mt-8">
           <ClientForm
@@ -194,14 +208,19 @@ export default function ClientPage() {
 
         {/* Below the form and quiet: deleting is rare and should never sit
             next to Save. */}
-        <div className="-mt-20 pb-4">
+        <div className="-mt-20 flex flex-col gap-2 pb-4">
           <button
             type="button"
             onClick={remove}
-            className="text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)]"
+            className="self-start text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)]"
           >
             Delete this client
           </button>
+          {refusedDelete && (
+            <p role="alert" className="max-w-[48ch] text-xs text-[var(--color-signal)]">
+              {refusedDelete}
+            </p>
+          )}
         </div>
       </div>
     </div>

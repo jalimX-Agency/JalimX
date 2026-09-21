@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\BillingProfileController;
 use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
+use App\Http\Controllers\Api\V1\Admin\DocumentController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Api\V1\Admin\PaymentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
@@ -96,6 +99,23 @@ Route::prefix('v1')->group(function () {
             Route::put('/engagements/{engagement}', [AdminEngagementController::class, 'update']);
             Route::delete('/engagements/{engagement}', [AdminEngagementController::class, 'destroy']);
             Route::get('/case-study-options', [AdminEngagementController::class, 'caseStudyOptions']);
+
+            /*
+             * Quotes and invoices. Written under a client, then worked on by
+             * their own id. Issued ones are not editable and not deletable -
+             * only paid, accepted, declined or cancelled.
+             */
+            Route::post('/clients/{client}/documents', [DocumentController::class, 'store']);
+            Route::put('/documents/{document}', [DocumentController::class, 'update']);
+            Route::post('/documents/{document}/issue', [DocumentController::class, 'issue']);
+            Route::post('/documents/{document}/status', [DocumentController::class, 'status']);
+            Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+
+            Route::post('/documents/{document}/payments', [PaymentController::class, 'store']);
+            Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);
+
+            Route::get('/billing-profile', [BillingProfileController::class, 'show']);
+            Route::put('/billing-profile', [BillingProfileController::class, 'update']);
 
             Route::get('/leads', [AdminLeadController::class, 'index']);
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);
