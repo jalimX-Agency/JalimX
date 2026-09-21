@@ -111,8 +111,35 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        // noreply@: nothing reads that mailbox, which is why reply_to below
+        // points somewhere that does.
+        'address' => env('MAIL_FROM_ADDRESS', 'noreply@jalimx.com'),
+
+        /*
+         * "${APP_NAME}" is Laravel .env syntax, and only the .env reader
+         * expands it. Railway injects variables as they were typed, so the
+         * same value arrived as the literal text "${APP_NAME}" and went out
+         * as the sender's name. An unexpanded placeholder, or no value at
+         * all, falls back to the app's name.
+         */
+        'name' => (function () {
+            $name = env('MAIL_FROM_NAME');
+
+            return is_string($name) && $name !== '' && ! str_contains($name, '${')
+                ? $name
+                : env('APP_NAME', 'JalimX');
+        })(),
     ],
+
+    /*
+     * Where a client's reply should go, since noreply@ is not read.
+     *
+     * Deliberately not Laravel's global "reply_to": that one is added to
+     * every message rather than used as a default, so a lead notification
+     * went out replying to both contact@ and the enquirer — and answering
+     * it could land in your own inbox instead of theirs. Mail to clients
+     * sets this itself; lead notifications reply to the person who wrote.
+     */
+    'client_reply_to' => env('MAIL_REPLY_TO_ADDRESS', 'contact@jalimx.com'),
 
 ];
