@@ -36,6 +36,7 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   {
     group: "Agency",
     items: [
+      { href: "/admin", label: "Today" },
       { href: "/admin/leads", label: "Leads" },
       { href: "/admin/clients", label: "Clients" },
     ],
@@ -104,7 +105,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   {section.group}
                 </p>
                 {section.items.map((item) => {
-                  const active = pathname.startsWith(item.href);
+                  /*
+                   * "/admin" is every page's prefix, so the first screen is
+                   * matched exactly and everything else by prefix.
+                   */
+                  const active =
+                    item.href === "/admin"
+                      ? pathname === "/admin"
+                      : pathname.startsWith(item.href);
                   return (
                     <Link
                       key={item.href}

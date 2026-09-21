@@ -377,6 +377,65 @@ export type LeadPage = {
   };
 };
 
+/** What the first screen needs, in one shape. */
+export type Overview = {
+  /** One row per currency: adding dirhams to euros describes nothing. */
+  money: {
+    currency: string;
+    outstanding: string;
+    overdue: string;
+    paid_this_month: string;
+    recurring: string;
+  }[];
+  unbilled: {
+    engagement_id: number;
+    client_id: number;
+    client: string;
+    title: string;
+    period: string;
+    amount: string | null;
+    currency: string;
+  }[];
+  overdue: {
+    id: number;
+    number: string | null;
+    client_id: number;
+    client: string;
+    due_date: string | null;
+    days_late: number;
+    due: string;
+    currency: string;
+  }[];
+  drafts: {
+    id: number;
+    type: DocumentType;
+    client_id: number;
+    client: string;
+    subject: string | null;
+    total: string;
+    currency: string;
+    created_at: string;
+  }[];
+  leads: {
+    unread: number;
+    recent: {
+      id: number;
+      name: string;
+      company: string | null;
+      status: LeadStatus;
+      is_read: boolean;
+      created_at: string;
+    }[];
+  };
+  counts: {
+    clients: number;
+    clients_without_ice: number;
+    active_work: number;
+    planned_work: number;
+  };
+  as_of: string;
+};
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -443,6 +502,9 @@ export async function request<T>(
 
 export const admin = {
   me: () => request<{ data: User }>("/api/v1/auth/me").then((r) => r.data),
+
+  overview: () =>
+    request<{ data: Overview }>("/api/v1/admin/overview").then((r) => r.data),
 
   async login(email: string, password: string) {
     await csrf();

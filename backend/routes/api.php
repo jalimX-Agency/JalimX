@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\CredentialController;
 use App\Http\Controllers\Api\V1\Admin\DocumentController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Api\V1\Admin\OverviewController;
 use App\Http\Controllers\Api\V1\Admin\PaymentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
@@ -72,6 +73,9 @@ Route::prefix('v1')->group(function () {
          * nothing here is reachable without the session.
          */
         Route::prefix('admin')->group(function () {
+            // The first screen, in one request.
+            Route::get('/overview', OverviewController::class);
+
             Route::get('/projects', [ProjectMediaController::class, 'index']);
             Route::post('/projects', [ProjectContentController::class, 'store']);
             Route::put('/projects/{project}', [ProjectContentController::class, 'update']);

@@ -441,6 +441,22 @@ export interface paths {
         patch: operations["lead.update"];
         trace?: never;
     };
+    "/v1/admin/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["admin.overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/documents/{document}/payments": {
         parameters: {
             query?: never;
@@ -2079,6 +2095,86 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "admin.overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            money: {
+                                currency: string;
+                                ""?: {
+                                    [key: string]: string;
+                                };
+                            }[];
+                            unbilled: {
+                                engagement_id: string;
+                                client_id: string;
+                                client: string;
+                                title: string;
+                                period: string;
+                                amount: string | null;
+                                currency: string;
+                            }[];
+                            overdue: {
+                                id: number;
+                                number: string | null;
+                                client_id: number;
+                                client: string;
+                                due_date: string | null;
+                                days_late: number;
+                                due: string;
+                                currency: string;
+                            }[];
+                            drafts: {
+                                id: number;
+                                type: string;
+                                client_id: number;
+                                client: string;
+                                subject: string | null;
+                                total: string;
+                                currency: string;
+                                created_at: string | null;
+                            }[];
+                            leads: {
+                                unread: number;
+                                recent: {
+                                    id: number;
+                                    name: string;
+                                    company: string | null;
+                                    status: string;
+                                    is_read: boolean;
+                                    created_at: string | null;
+                                }[];
+                            };
+                            counts: {
+                                clients: number;
+                                /**
+                                 * @description Without an ICE a Moroccan invoice is not compliant, so this
+                                 *     is the one missing field worth counting.
+                                 */
+                                clients_without_ice: number;
+                                active_work: number;
+                                planned_work: number;
+                            };
+                            as_of: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
         };
     };
     "payment.store": {
