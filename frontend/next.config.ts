@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
        * in that browser's cache long after it stopped being useful.
        */
       { source: "/admin/settings", destination: "/admin/settings/site", permanent: false },
+      { source: "/admin/settings/billing", destination: "/admin/settings/invoicing", permanent: false },
       { source: "/admin/services", destination: "/admin/settings/services", permanent: false },
       { source: "/admin/projects", destination: "/admin/settings/case-studies", permanent: false },
       {

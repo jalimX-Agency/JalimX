@@ -20,11 +20,8 @@ export default function ProjectsPage() {
   }, []);
 
   return (
-    <div className="max-w-5xl">
-      <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">
-        The site
-      </p>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold tracking-tight">
           Case studies
         </h1>

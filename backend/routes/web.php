@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AttachmentController;
 use App\Http\Controllers\Api\V1\Admin\DocumentPdfController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,14 @@ Route::post('/login', [AuthController::class, 'login'])
  */
 Route::get('/documents/{document}/pdf', DocumentPdfController::class)
     ->name('documents.pdf');
+
+/*
+ * Downloading a file kept against a piece of work. Here for the same
+ * reason as the PDF above: it is followed as a link, and a link carries no
+ * Origin header for Sanctum to recognise.
+ */
+Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])
+    ->name('attachments.download');
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum')

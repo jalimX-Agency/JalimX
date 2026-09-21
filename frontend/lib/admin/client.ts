@@ -106,6 +106,7 @@ export type Client = {
   /** Loaded on the client's own page, absent from the list. */
   engagements?: Engagement[];
   documents?: BillingDocument[];
+  credentials?: Credential[];
   engagements_count?: number;
   created_at: string;
 };
@@ -154,6 +155,8 @@ export type BillingDocument = {
   number: string | null;
   issue_date: string | null;
   due_date: string | null;
+  /** For a retainer's invoice: the first day of the month it covers. */
+  period: string | null;
   currency: string;
   tva_rate: string;
   subject: string | null;
@@ -179,6 +182,7 @@ export type DocumentInput = {
   engagement_id: number | null;
   issue_date: string | null;
   due_date: string | null;
+  period: string | null;
   tva_rate: string;
   subject: string | null;
   notes: string | null;
@@ -206,8 +210,66 @@ export type BillingProfile = {
   footer_note: string;
 };
 
+export type WorkType = {
+  id: number;
+  name: string;
+  slug: string;
+  position: number;
+  /** Whether work of this kind involves signing in somewhere. */
+  needs_logins: boolean;
+  is_active: boolean;
+};
+
+export type WorkTypeInput = Pick<WorkType, "name" | "needs_logins" | "is_active">;
+
+export const ATTACHMENT_KINDS = [
+  "contract",
+  "quote",
+  "brief",
+  "image",
+  "invoice",
+  "other",
+] as const;
+export type AttachmentKind = (typeof ATTACHMENT_KINDS)[number];
+
+export type Attachment = {
+  id: number;
+  engagement_id: number;
+  kind: AttachmentKind;
+  name: string;
+  size: number;
+  created_at: string;
+};
+
+/** A login. The secret is never in this shape — it is asked for on its own. */
+export type Credential = {
+  id: number;
+  client_id: number;
+  engagement_id: number | null;
+  label: string;
+  url: string | null;
+  username: string | null;
+  has_secret: boolean;
+  has_notes: boolean;
+  updated_at: string | null;
+};
+
+export type CredentialInput = {
+  label: string;
+  engagement_id: number | null;
+  url: string | null;
+  username: string | null;
+  /** Left out entirely when unchanged, so saving a label keeps the password. */
+  secret?: string | null;
+  notes?: string | null;
+};
+
 export const ENGAGEMENT_STATUSES = ["planned", "active", "paused", "done", "cancelled"] as const;
 export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
+
+/** one_off: a job with an end. monthly: a retainer that runs on. */
+export const BILLINGS = ["one_off", "monthly"] as const;
+export type Billing = (typeof BILLINGS)[number];
 
 /** A piece of work for a client — the internal side of a "project". */
 export type Engagement = {
@@ -215,43 +277,54 @@ export type Engagement = {
   client_id: number;
   title: string;
   status: EngagementStatus;
-  /** A decimal string, in the client's currency. Never a float. */
+  billing: Billing;
+  /**
+   * A decimal string, in the client's currency. Never a float. The whole
+   * price for a one-off, the monthly charge for a retainer.
+   */
   budget: string | null;
   starts_on: string | null;
   ends_on: string | null;
   description: string | null;
   case_study_id: number | null;
   case_study: { slug: string; title: string; is_published: boolean } | null;
+  work_types: { id: number; name: string; needs_logins: boolean }[];
+  attachments: Attachment[];
   created_at: string;
 };
 
 export type EngagementInput = Omit<
   Engagement,
-  "id" | "client_id" | "case_study" | "created_at"
->;
+  | "id"
+  | "client_id"
+  | "case_study"
+  | "case_study_id"
+  | "work_types"
+  | "attachments"
+  | "created_at"
+> & { work_type_ids: number[] };
 
 export const emptyEngagement = (): EngagementInput => ({
   title: "",
   status: "planned",
+  billing: "one_off",
   budget: null,
   starts_on: null,
   ends_on: null,
   description: null,
-  case_study_id: null,
+  work_type_ids: [],
 });
-
-/** Just enough of a case study to pick one from a list. */
-export type CaseStudyOption = {
-  id: number;
-  slug: string;
-  title: string;
-  is_published: boolean;
-};
 
 /** What the form sends: everything editable, no id and no provenance. */
 export type ClientInput = Omit<
   Client,
-  "id" | "lead_id" | "engagements" | "engagements_count" | "documents" | "created_at"
+  | "id"
+  | "lead_id"
+  | "engagements"
+  | "engagements_count"
+  | "documents"
+  | "credentials"
+  | "created_at"
 >;
 
 export const emptyClient = (): ClientInput => ({
@@ -427,14 +500,66 @@ export const admin = {
   removeEngagement: (id: number) =>
     request(`/api/v1/admin/engagements/${id}`, { method: "DELETE" }),
 
-  caseStudyOptions: () =>
-    request<{ data: CaseStudyOption[] }>("/api/v1/admin/case-study-options").then(
-      (r) => r.data,
-    ),
+  /** Starts the public page about a piece of work, and links the two. */
+  createCaseStudy: (engagementId: number) =>
+    request<{ data: Engagement }>(`/api/v1/admin/engagements/${engagementId}/case-study`, {
+      method: "POST",
+    }).then((r) => r.data),
+
+  workTypes: () =>
+    request<{ data: WorkType[] }>("/api/v1/admin/work-types").then((r) => r.data),
+
+  createWorkType: (input: WorkTypeInput) =>
+    request<{ data: WorkType }>("/api/v1/admin/work-types", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateWorkType: (id: number, input: WorkTypeInput) =>
+    request<{ data: WorkType }>(`/api/v1/admin/work-types/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  removeWorkType: (id: number) =>
+    request(`/api/v1/admin/work-types/${id}`, { method: "DELETE" }),
+
+  createCredential: (clientId: number, input: CredentialInput) =>
+    request<{ data: Credential }>(`/api/v1/admin/clients/${clientId}/credentials`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateCredential: (id: number, input: CredentialInput) =>
+    request<{ data: Credential }>(`/api/v1/admin/credentials/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  /** Fetched only when the person asks to see one. */
+  revealCredential: (id: number) =>
+    request<{ data: { id: number; secret: string; notes: string } }>(
+      `/api/v1/admin/credentials/${id}/reveal`,
+    ).then((r) => r.data),
+
+  removeCredential: (id: number) =>
+    request(`/api/v1/admin/credentials/${id}`, { method: "DELETE" }),
+
+  removeAttachment: (id: number) =>
+    request(`/api/v1/admin/attachments/${id}`, { method: "DELETE" }),
+
+  /** Followed as a link, so it goes to the session-backed web route. */
+  attachmentDownload: (id: number) => `${API}/attachments/${id}/download`,
 
   createDocument: (
     clientId: number,
-    body: { type: DocumentType; engagement_id?: number | null; preset?: "deposit" | "balance" | "full" },
+    body: {
+      type: DocumentType;
+      engagement_id?: number | null;
+      preset?: "deposit" | "balance" | "full" | "month";
+      /** Which month a retainer's invoice covers. */
+      period?: string;
+    },
   ) =>
     request<{ data: BillingDocument }>(`/api/v1/admin/clients/${clientId}/documents`, {
       method: "POST",
@@ -550,6 +675,55 @@ export const admin = {
 
   removeMedia: (id: number) =>
     request(`/api/v1/admin/media/${id}`, { method: "DELETE" }),
+
+  /** Same XHR reasoning as `upload` below: a contract on a slow line. */
+  uploadAttachment(
+    engagementId: number,
+    kind: AttachmentKind,
+    file: File,
+    onProgress: (fraction: number) => void,
+  ): Promise<Attachment> {
+    return new Promise((resolve, reject) => {
+      const send = () => {
+        const form = new FormData();
+        form.append("kind", kind);
+        form.append("file", file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API}/api/v1/admin/engagements/${engagementId}/attachments`);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Accept", "application/json");
+        xhr.setRequestHeader("X-XSRF-TOKEN", xsrf());
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(e.loaded / e.total);
+        };
+        xhr.onerror = () => reject(new ApiError(0, "Network error — check the connection."));
+        xhr.onload = () => {
+          const body = (() => {
+            try {
+              return JSON.parse(xhr.responseText);
+            } catch {
+              return null;
+            }
+          })();
+          if (xhr.status >= 200 && xhr.status < 300) resolve(body.data);
+          else
+            reject(
+              new ApiError(
+                xhr.status,
+                body?.message ?? `Upload failed (${xhr.status})`,
+                body?.errors ?? {},
+              ),
+            );
+        };
+        xhr.send(form);
+      };
+
+      if (xsrf()) send();
+      else csrf().then(send, reject);
+    });
+  },
 
   /*
    * XMLHttpRequest rather than fetch, for one reason: fetch still cannot report

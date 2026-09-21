@@ -31,6 +31,9 @@ class DocumentResource extends JsonResource
             'number' => $this->number,
             'issue_date' => $this->issue_date?->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
+            // The month a retainer's invoice covers, as its first day. It
+            // is what lets the dashboard say which months are still owed.
+            'period' => $this->period?->toDateString(),
             'currency' => (string) $this->currency,
             'tva_rate' => (string) $this->tva_rate,
             'subject' => $this->subject,

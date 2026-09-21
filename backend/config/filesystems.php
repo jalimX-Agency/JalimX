@@ -71,6 +71,30 @@ return [
             'throw' => true,
         ],
 
+        /*
+         * Client paperwork: contracts, briefs, scans.
+         *
+         * Deliberately has no `url`. The images on the site are meant to be
+         * fetched by strangers; a signed contract is not, and a disk that
+         * cannot produce a public link cannot leak one by accident. Every
+         * download is streamed by the app, behind the session.
+         *
+         * R2_FILES_BUCKET should be a bucket with no public access. Until
+         * one exists it falls back to the media bucket under a files/
+         * prefix, which is served publicly - so keep anything sensitive out
+         * until the private bucket is set.
+         */
+        'files' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_FILES_BUCKET', env('R2_BUCKET')),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

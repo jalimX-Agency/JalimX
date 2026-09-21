@@ -25,7 +25,7 @@ class Document extends Model
 
     protected $fillable = [
         'client_id', 'engagement_id', 'type', 'status',
-        'issue_date', 'due_date', 'currency', 'tva_rate',
+        'issue_date', 'due_date', 'period', 'currency', 'tva_rate',
         'subject', 'notes', 'terms',
     ];
 
@@ -34,6 +34,7 @@ class Document extends Model
         return [
             'issue_date' => 'date',
             'due_date' => 'date',
+            'period' => 'date',
             'tva_rate' => 'decimal:2',
             'bill_to' => 'array',
             'issued_by' => 'array',

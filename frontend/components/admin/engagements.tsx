@@ -1,26 +1,30 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Attachments } from "@/components/admin/attachments";
 import { Field } from "@/components/admin/fields";
 import {
   admin,
   ApiError,
+  BILLINGS,
   emptyEngagement,
   ENGAGEMENT_STATUSES,
-  type CaseStudyOption,
+  type Billing,
   type Client,
   type Engagement,
   type EngagementInput,
   type EngagementStatus,
+  type WorkType,
 } from "@/lib/admin/client";
 
 /**
  * The work done for one client, edited in place.
  *
  * No page of its own per piece of work, and no list of everyone's work: a
- * project only makes sense next to the client paying for it, so it opens as
- * a row on their page and closes again there.
+ * project only makes sense next to the client paying for it, so it opens
+ * as a row on their page and closes again there.
  */
 
 const STATUS_LABEL: Record<EngagementStatus, string> = {
@@ -38,6 +42,11 @@ const STATUS_TONE: Record<EngagementStatus, string> = {
   paused: "text-[var(--color-signal)]",
   done: "text-[var(--fg-dim)]",
   cancelled: "text-[var(--fg-faint)]",
+};
+
+const BILLING_LABEL: Record<Billing, string> = {
+  one_off: "One-off",
+  monthly: "Monthly",
 };
 
 function money(amount: string | null, currency: string): string | null {
@@ -68,34 +77,43 @@ function span(from: string | null, to: string | null): string | null {
 export function Engagements({ client }: { client: Client }) {
   const [rows, setRows] = useState<Engagement[]>(client.engagements ?? []);
   const [open, setOpen] = useState<number | "new" | null>(null);
-  const [options, setOptions] = useState<CaseStudyOption[]>([]);
+  const [types, setTypes] = useState<WorkType[]>([]);
 
-  // Fetched when the first editor opens, not on page load: most visits to a
-  // client are to read, and the picker is the only thing that needs this.
+  // Fetched when the first editor opens, not on page load: most visits to
+  // a client are to read, and only the editor needs the list.
   useEffect(() => {
-    if (open === null || options.length) return;
+    if (open === null || types.length) return;
     let live = true;
-    admin.caseStudyOptions().then(
-      (o) => live && setOptions(o),
+    admin.workTypes().then(
+      (t) => live && setTypes(t),
       () => {},
     );
     return () => {
       live = false;
     };
-  }, [open, options.length]);
+  }, [open, types.length]);
 
   /*
-   * Cancelled work is left out of the total: it was never money, and a
-   * figure that counts it reads as a lie the first time you check it.
+   * Cancelled work is left out: it was never money, and a figure that
+   * counts it reads as a lie the first time you check it. Retainers are
+   * summarised apart from one-off prices — adding a monthly fee to a fixed
+   * total gives a number that means nothing.
    */
-  const counted = rows.filter((r) => r.status !== "cancelled");
-  const agreed = counted.reduce((sum, r) => sum + Number(r.budget ?? 0), 0);
+  const live = rows.filter((r) => r.status !== "cancelled");
+  const oneOff = live
+    .filter((r) => r.billing === "one_off")
+    .reduce((sum, r) => sum + Number(r.budget ?? 0), 0);
+  const perMonth = live
+    .filter((r) => r.billing === "monthly" && r.status === "active")
+    .reduce((sum, r) => sum + Number(r.budget ?? 0), 0);
+
   const summary =
     rows.length === 0
       ? "Work"
       : [
           `${rows.length} ${rows.length === 1 ? "project" : "projects"}`,
-          agreed > 0 ? `${money(String(agreed), client.currency)} agreed` : null,
+          oneOff > 0 ? `${money(String(oneOff), client.currency)} agreed` : null,
+          perMonth > 0 ? `${money(String(perMonth), client.currency)} a month` : null,
         ]
           .filter(Boolean)
           .join(" · ");
@@ -103,7 +121,7 @@ export function Engagements({ client }: { client: Client }) {
   return (
     <section className="border border-[var(--hairline)] bg-[var(--panel)]">
       {/* The tab above already says "Work", so this line spends itself on
-          the two numbers you would otherwise add up by hand. */}
+          the numbers you would otherwise add up by hand. */}
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
         <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-dim)]">
           {summary}
@@ -120,7 +138,7 @@ export function Engagements({ client }: { client: Client }) {
       {open === "new" && (
         <EngagementEditor
           client={client}
-          options={options}
+          types={types}
           value={emptyEngagement()}
           onCancel={() => setOpen(null)}
           onSave={async (input) => {
@@ -133,8 +151,8 @@ export function Engagements({ client }: { client: Client }) {
 
       {rows.length === 0 && open !== "new" ? (
         <p className="px-5 py-8 text-sm text-[var(--fg-faint)]">
-          Nothing yet. Add the work you agreed on — a name and a status is enough
-          to start.
+          Nothing yet. Add the work you agreed on — a name and a status is
+          enough to start.
         </p>
       ) : (
         <ul>
@@ -143,24 +161,28 @@ export function Engagements({ client }: { client: Client }) {
               {open === row.id ? (
                 <EngagementEditor
                   client={client}
-                  options={options}
+                  types={types}
+                  engagement={row}
                   value={{
                     title: row.title,
                     status: row.status,
+                    billing: row.billing,
                     budget: row.budget,
                     starts_on: row.starts_on,
                     ends_on: row.ends_on,
                     description: row.description,
-                    case_study_id: row.case_study_id,
+                    work_type_ids: row.work_types.map((t) => t.id),
                   }}
-                  current={row.case_study ? { id: row.case_study_id!, title: row.case_study.title } : null}
                   onCancel={() => setOpen(null)}
                   onSave={async (input) => {
                     const next = await admin.updateEngagement(row.id, input);
                     setRows((r) => r.map((x) => (x.id === row.id ? next : x)));
                     setOpen(null);
                   }}
-                  onDelete={async () => {
+                  onChanged={(next) =>
+                    setRows((r) => r.map((x) => (x.id === next.id ? next : x)))
+                  }
+                  onDeleted={async () => {
                     await admin.removeEngagement(row.id);
                     setRows((r) => r.filter((x) => x.id !== row.id));
                     setOpen(null);
@@ -176,17 +198,27 @@ export function Engagements({ client }: { client: Client }) {
                     <span className="block truncate text-sm font-medium">{row.title}</span>
                     <span className="mt-1 block text-xs text-[var(--fg-faint)]">
                       {[
-                        span(row.starts_on, row.ends_on),
-                        row.case_study && `Case study: ${row.case_study.title}`,
+                        row.work_types.map((t) => t.name).join(", ") || null,
+                        row.billing === "monthly"
+                          ? row.starts_on
+                            ? `Monthly since ${day(row.starts_on)}`
+                            : "Monthly"
+                          : span(row.starts_on, row.ends_on),
+                        row.attachments.length
+                          ? `${row.attachments.length} ${row.attachments.length === 1 ? "file" : "files"}`
+                          : null,
                       ]
                         .filter(Boolean)
-                        .join(" · ") || "No dates yet"}
+                        .join(" · ") || "Nothing filled in yet"}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-baseline gap-5 text-sm">
                     {row.budget !== null && (
                       <span className="tabular-nums text-[var(--fg-dim)]">
                         {money(row.budget, client.currency)}
+                        {row.billing === "monthly" && (
+                          <span className="text-[var(--fg-faint)]"> /month</span>
+                        )}
                       </span>
                     )}
                     <span
@@ -207,31 +239,46 @@ export function Engagements({ client }: { client: Client }) {
 
 function EngagementEditor({
   client,
-  options,
+  types,
+  engagement,
   value,
-  current,
   onSave,
   onCancel,
-  onDelete,
+  onChanged,
+  onDeleted,
 }: {
   client: Client;
-  options: CaseStudyOption[];
-  /** The case study already linked, so the picker can name it before the
-      full list has arrived over a slow connection. */
-  current?: { id: number; title: string } | null;
+  types: WorkType[];
+  /** Absent while adding: the parts that need a saved row stay hidden. */
+  engagement?: Engagement;
   value: EngagementInput;
   onSave: (input: EngagementInput) => Promise<void>;
   onCancel: () => void;
-  onDelete?: () => Promise<void>;
+  onChanged?: (next: Engagement) => void;
+  onDeleted?: () => Promise<void>;
 }) {
   const [input, setInput] = useState<EngagementInput>(value);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [writing, setWriting] = useState(false);
 
   const err = (key: string) => errors[key]?.[0];
   const set = (key: keyof EngagementInput, v: string) =>
     setInput((i) => ({ ...i, [key]: v === "" ? null : v }));
+
+  const monthly = input.billing === "monthly";
+
+  const toggleType = (id: number) =>
+    setInput((i) => ({
+      ...i,
+      work_type_ids: i.work_type_ids.includes(id)
+        ? i.work_type_ids.filter((n) => n !== id)
+        : [...i.work_type_ids, id],
+    }));
+
+  /* A retired kind still shows when this work already carries it. */
+  const offered = types.filter((t) => t.is_active || input.work_type_ids.includes(t.id));
 
   async function submit() {
     setBusy(true);
@@ -253,14 +300,28 @@ function EngagementEditor({
   }
 
   async function remove() {
-    if (!onDelete) return;
+    if (!onDeleted) return;
     if (!window.confirm(`Delete "${input.title || "this work"}"? This cannot be undone.`)) return;
     setBusy(true);
     try {
-      await onDelete();
+      await onDeleted();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Could not delete it.");
       setBusy(false);
+    }
+  }
+
+  /** Starts the public page about this work and links the two. */
+  async function writeCaseStudy() {
+    if (!engagement) return;
+    setWriting(true);
+    setMessage(null);
+    try {
+      onChanged?.(await admin.createCaseStudy(engagement.id));
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Could not start it.");
+    } finally {
+      setWriting(false);
     }
   }
 
@@ -293,9 +354,68 @@ function EngagementEditor({
           </select>
         </Field>
 
+        <div className="sm:col-span-2">
+          <span className="mb-1.5 block font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+            Kind of work
+          </span>
+          {offered.length === 0 ? (
+            <p className="text-xs text-[var(--fg-faint)]">
+              None set up yet —{" "}
+              <Link
+                href="/admin/settings/work-types"
+                className="text-[var(--link)] hover:underline"
+              >
+                add them in Settings
+              </Link>
+              .
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {offered.map((t) => {
+                const on = input.work_type_ids.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleType(t.id)}
+                    className={`border px-3 py-1.5 text-sm transition-colors ${
+                      on
+                        ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--ground)]"
+                        : "border-[var(--hairline)] text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                    }`}
+                  >
+                    {t.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <span className="mt-1.5 block text-[0.7rem] text-[var(--fg-faint)]">
+            One job can be more than one — social media and platforms together,
+            for instance.
+          </span>
+        </div>
+
+        {/* How it is charged decides what the money and the dates mean, so
+            it sits above both. */}
+        <Field label="How it is charged" error={err("billing")}>
+          <select
+            className="admin-input"
+            value={input.billing}
+            onChange={(e) => setInput((i) => ({ ...i, billing: e.target.value as Billing }))}
+          >
+            {BILLINGS.map((b) => (
+              <option key={b} value={b}>
+                {BILLING_LABEL[b]}
+              </option>
+            ))}
+          </select>
+        </Field>
+
         <Field
-          label={`Budget (${client.currency})`}
-          hint="Agreed total, before tax"
+          label={monthly ? `Each month (${client.currency})` : `Budget (${client.currency})`}
+          hint={monthly ? "What they pay every month, before tax" : "Agreed total, before tax"}
           error={err("budget")}
         >
           <input
@@ -308,7 +428,7 @@ function EngagementEditor({
         </Field>
 
         <div className="grid grid-cols-2 gap-5">
-          <Field label="Starts" error={err("starts_on")}>
+          <Field label={monthly ? "Running since" : "Starts"} error={err("starts_on")}>
             <input
               type="date"
               className="admin-input"
@@ -316,7 +436,11 @@ function EngagementEditor({
               onChange={(e) => set("starts_on", e.target.value)}
             />
           </Field>
-          <Field label="Ends" error={err("ends_on")}>
+          <Field
+            label={monthly ? "Stopped" : "Ends"}
+            hint={monthly ? "Leave empty while it runs" : undefined}
+            error={err("ends_on")}
+          >
             <input
               type="date"
               className="admin-input"
@@ -324,36 +448,6 @@ function EngagementEditor({
               aria-invalid={!!err("ends_on")}
               onChange={(e) => set("ends_on", e.target.value)}
             />
-          </Field>
-        </div>
-
-        <div className="sm:col-span-2">
-          <Field
-            label="Case study"
-            hint="Link this to the page about it on the site, once there is one"
-            error={err("case_study_id")}
-          >
-            <select
-              className="admin-input"
-              value={input.case_study_id ?? ""}
-              onChange={(e) =>
-                setInput((i) => ({
-                  ...i,
-                  case_study_id: e.target.value === "" ? null : Number(e.target.value),
-                }))
-              }
-            >
-              <option value="">Not linked</option>
-              {current && !options.some((o) => o.id === current.id) && (
-                <option value={current.id}>{current.title}</option>
-              )}
-              {options.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title}
-                  {o.is_published ? "" : " (draft)"}
-                </option>
-              ))}
-            </select>
           </Field>
         </div>
 
@@ -370,12 +464,52 @@ function EngagementEditor({
         </div>
       </div>
 
+      {engagement && (
+        <>
+          <Attachments engagement={engagement} onChanged={(next) => onChanged?.(next)} />
+
+          {/* The case study is written about work that happened, so it is
+              started from here rather than picked from a list. */}
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--hairline)] pt-5 text-sm">
+            {engagement.case_study ? (
+              <>
+                <span className="text-[var(--fg-faint)]">Case study:</span>
+                <Link
+                  href={`/admin/settings/case-studies/${engagement.case_study.slug}`}
+                  className="text-[var(--link)] underline-offset-4 hover:underline"
+                >
+                  {engagement.case_study.title} ↗
+                </Link>
+                <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                  {engagement.case_study.is_published ? "Published" : "Draft"}
+                </span>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={writeCaseStudy}
+                  disabled={writing}
+                  className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
+                >
+                  {writing ? "Starting…" : "Write a case study"}
+                </button>
+                <span className="text-xs text-[var(--fg-faint)]">
+                  Starts a hidden page on the site, with the client and the
+                  name already filled in.
+                </span>
+              </>
+            )}
+          </div>
+        </>
+      )}
+
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p role="status" className="text-xs text-[var(--color-signal)]">
           {message}
         </p>
         <div className="flex items-center gap-4">
-          {onDelete && (
+          {onDeleted && (
             <button
               type="button"
               onClick={remove}

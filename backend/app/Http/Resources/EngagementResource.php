@@ -20,12 +20,27 @@ class EngagementResource extends JsonResource
             'client_id' => $this->client_id,
             'title' => (string) $this->title,
             'status' => (string) $this->status,
+            'billing' => (string) $this->billing,
             // A string, not a float: money read back as a float is money one
             // rounding away from disagreeing with the invoice.
             'budget' => $this->budget !== null ? (string) $this->budget : null,
             'starts_on' => $this->starts_on?->toDateString(),
             'ends_on' => $this->ends_on?->toDateString(),
             'description' => $this->description,
+            'work_types' => $this->whenLoaded('workTypes', fn () => $this->workTypes
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'name' => (string) $t->name,
+                    'needs_logins' => (bool) $t->needs_logins,
+                ])->values()),
+            'attachments' => $this->whenLoaded('attachments', fn () => $this->attachments
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'kind' => (string) $a->kind,
+                    'name' => (string) $a->name,
+                    'size' => (int) $a->size,
+                    'created_at' => $a->created_at?->toIso8601String(),
+                ])->values()),
             'case_study_id' => $this->case_study_id,
             'case_study' => $this->whenLoaded('caseStudy', fn () => $this->caseStudy ? [
                 'slug' => (string) $this->caseStudy->slug,

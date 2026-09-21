@@ -70,8 +70,14 @@ class ClientController extends Controller
     public function show(Client $client): ClientResource
     {
         return new ClientResource(
-            $client->loadCount('engagements')
-                ->load('engagements.caseStudy', 'documents.items', 'documents.payments')
+            $client->loadCount('engagements')->load(
+                'engagements.caseStudy',
+                'engagements.workTypes',
+                'engagements.attachments',
+                'documents.items',
+                'documents.payments',
+                'credentials',
+            )
         );
     }
 

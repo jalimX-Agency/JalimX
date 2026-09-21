@@ -24,12 +24,13 @@ export const useAdminUser = () => useContext(UserContext);
  * Grouped, because the items answer different questions.
  *
  * "Agency" is the work: who is asking, who is a client, what is owed. It is
- * what gets opened every day. "The site" is jalimx.com's own content — one
- * asset the agency happens to own, edited when something changes, not daily.
- * "Setup" is the handful of details the agency itself is made of.
+ * what gets opened every day.
  *
- * Sections fill out as the agency side is built (clients, projects, invoices);
- * an empty nav item that leads nowhere is worse than no item at all.
+ * Everything else — the site's words, the services, the case studies, the
+ * work types, the invoice header — sits behind one Settings item with its
+ * own sub-navigation. None of it is touched in a working day, and listing
+ * it here made the daily work share a list with things that change twice a
+ * year.
  */
 const NAV: { group: string; items: { href: string; label: string }[] }[] = [
   {
@@ -40,20 +41,8 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
     ],
   },
   {
-    /*
-     * The agency's own details, kept apart from the site's: this is what
-     * goes at the top of an invoice, not anything a visitor ever sees.
-     */
-    group: "Setup",
-    items: [{ href: "/admin/settings/billing", label: "Invoicing" }],
-  },
-  {
-    group: "The site",
-    items: [
-      { href: "/admin/settings/site", label: "Site" },
-      { href: "/admin/settings/services", label: "Services" },
-      { href: "/admin/settings/case-studies", label: "Case studies" },
-    ],
+    group: "Set up once",
+    items: [{ href: "/admin/settings", label: "Settings" }],
   },
 ];
 

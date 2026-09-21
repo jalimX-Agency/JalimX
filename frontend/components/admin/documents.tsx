@@ -42,6 +42,32 @@ const day = (iso: string | null) =>
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** The first day of a month, as the API wants it. */
+const monthKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+
+const monthName = (key: string) =>
+  new Date(`${key}T00:00:00`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+/**
+ * The months a retainer could be billed for: this one and the five before
+ * it, stopping at the month the work started. Far enough back to catch up
+ * on one you forgot, short enough to stay a row of buttons.
+ */
+function billableMonths(startsOn: string | null): string[] {
+  const out: string[] = [];
+  const now = new Date();
+  const from = startsOn ? new Date(`${startsOn}T00:00:00`) : null;
+
+  for (let back = 0; back < 6; back++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    if (from && d < new Date(from.getFullYear(), from.getMonth(), 1)) break;
+    out.push(monthKey(d));
+  }
+
+  return out;
+}
+
 /** What the row says about where the document stands, and in what colour. */
 function state(doc: BillingDocument): { label: string; tone: string } {
   if (doc.status === "draft") return { label: "Draft", tone: "text-[var(--fg-faint)]" };
@@ -73,7 +99,8 @@ export function Documents({ client }: { client: Client }) {
   async function create(
     type: DocumentType,
     engagementId: number | null,
-    preset?: "deposit" | "balance" | "full",
+    preset?: "deposit" | "balance" | "full" | "month",
+    period?: string,
   ) {
     setBusy(true);
     setError(null);
@@ -82,6 +109,7 @@ export function Documents({ client }: { client: Client }) {
         type,
         engagement_id: engagementId,
         preset,
+        period,
       });
       setRows((r) => [doc, ...r]);
       setStarting(null);
@@ -156,6 +184,7 @@ export function Documents({ client }: { client: Client }) {
         <Starter
           type={starting}
           engagements={engagements}
+          documents={rows}
           currency={client.currency}
           busy={busy}
           onStart={create}
@@ -240,6 +269,7 @@ export function Documents({ client }: { client: Client }) {
 function Starter({
   type,
   engagements,
+  documents,
   currency,
   busy,
   onStart,
@@ -247,17 +277,27 @@ function Starter({
 }: {
   type: DocumentType;
   engagements: Engagement[];
+  documents: BillingDocument[];
   currency: string;
   busy: boolean;
   onStart: (
     type: DocumentType,
     engagementId: number | null,
-    preset?: "deposit" | "balance" | "full",
+    preset?: "deposit" | "balance" | "full" | "month",
+    period?: string,
   ) => void;
   onCancel: () => void;
 }) {
   const [engagementId, setEngagementId] = useState<number | null>(engagements[0]?.id ?? null);
   const chosen = engagements.find((e) => e.id === engagementId) ?? null;
+  const monthly = chosen?.billing === "monthly";
+  const months = monthly ? billableMonths(chosen?.starts_on ?? null) : [];
+  /* Cancelled invoices do not count as billed: that month is owed again. */
+  const billed = new Set(
+    documents
+      .filter((d) => d.engagement_id === engagementId && d.period && d.status !== "cancelled")
+      .map((d) => d.period as string),
+  );
   const budget = chosen?.budget ? Number(chosen.budget) : 0;
   /*
    * Halved the way the server halves it — in centimes, rounding down, with
@@ -292,8 +332,43 @@ function Starter({
         </div>
       )}
 
+      {/* A retainer is billed by the month, so the choice is which month,
+          not which half. Months already invoiced say so rather than
+          disappearing — the answer to "did I bill March?" is the point. */}
+      {monthly && budget > 0 && (
+        <div className="mt-5">
+          <span className="mb-2 block font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+            Which month
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {months.map((key) => {
+              const done = billed.has(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={busy || done}
+                  onClick={() => onStart(type, engagementId, "month", key)}
+                  className={`border px-3 py-2 text-sm ${
+                    done
+                      ? "border-[var(--hairline)] text-[var(--fg-faint)]"
+                      : "border-[var(--fg)] hover:bg-[var(--fg)] hover:text-[var(--ground)]"
+                  } disabled:cursor-not-allowed`}
+                >
+                  {monthName(key)}
+                  {done && <span className="ml-2 text-xs">billed</span>}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-[var(--fg-faint)]">
+            {money(String(budget), currency)} a month.
+          </p>
+        </div>
+      )}
+
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        {budget > 0 && (
+        {!monthly && budget > 0 && (
           <>
             <button
               type="button"
@@ -360,6 +435,7 @@ function DraftEditor({
     engagement_id: doc.engagement_id,
     issue_date: doc.issue_date,
     due_date: doc.due_date,
+    period: doc.period,
     tva_rate: doc.tva_rate,
     subject: doc.subject,
     notes: doc.notes,
@@ -378,6 +454,11 @@ function DraftEditor({
   const err = (key: string) => errors[key]?.[0];
   const set = <K extends keyof DocumentInput>(key: K, value: DocumentInput[K]) =>
     setInput((i) => ({ ...i, [key]: value }));
+
+  const work = engagements.find((e) => e.id === input.engagement_id) ?? null;
+
+  const addLine = (line: LineItemInput) =>
+    setInput((i) => ({ ...i, items: [...i.items, line] }));
 
   const setItem = (index: number, patch: Partial<LineItemInput>) =>
     setInput((i) => ({
@@ -572,18 +653,52 @@ function DraftEditor({
         })}
 
         <div className="flex flex-wrap items-start justify-between gap-4 px-4 py-3">
-          <button
-            type="button"
-            onClick={() =>
-              setInput((i) => ({
-                ...i,
-                items: [...i.items, { description: "", quantity: "1", unit_price: "0" }],
-              }))
-            }
-            className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--link)]"
-          >
-            + Add line
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => addLine({ description: "", quantity: "1", unit_price: "0" })}
+              className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--link)]"
+            >
+              + Add line
+            </button>
+
+            {/* Straight off the work rather than typed again: the price and
+                the wording are already agreed, and retyping them is how the
+                invoice ends up saying something the client never saw. */}
+            {work && (
+              <>
+                <span className="text-[var(--fg-faint)]">|</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    addLine({
+                      description:
+                        work.billing === "monthly"
+                          ? `${work.title} — ${monthName(input.period ?? monthKey(new Date()))}`
+                          : work.title,
+                      quantity: "1",
+                      unit_price: work.budget ?? "0",
+                    })
+                  }
+                  className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                >
+                  + {work.billing === "monthly" ? "The month" : "The whole job"}
+                </button>
+                {work.work_types.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() =>
+                      addLine({ description: `${t.name} — ${work.title}`, quantity: "1", unit_price: "0" })
+                    }
+                    className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                  >
+                    + {t.name}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
 
           <dl className="min-w-[14rem] text-sm">
             <div className="flex justify-between gap-6">

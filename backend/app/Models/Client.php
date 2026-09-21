@@ -27,6 +27,12 @@ class Client extends Model
         return $this->hasMany(Document::class)->latest('id');
     }
 
+    /** Their logins, whichever piece of work they belong to. */
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(Credential::class)->orderBy('label');
+    }
+
     /** The enquiry this client came from, when they came from one. */
     public function lead(): BelongsTo
     {

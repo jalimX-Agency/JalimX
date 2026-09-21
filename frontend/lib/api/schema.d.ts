@@ -92,6 +92,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/engagements/{engagement}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["attachment.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/attachments/{attachment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["attachment.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/billing-profile": {
         parameters: {
             query?: never;
@@ -156,6 +188,55 @@ export interface paths {
          *     client already made from it rather than creating a duplicate.
          */
         post: operations["client.convertLead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/clients/{client}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["credential.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/{credential}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["credential.update"];
+        post?: never;
+        delete: operations["credential.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/{credential}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The one route that hands the secret over, asked for one at a time */
+        get: operations["credential.reveal"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -272,20 +353,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/case-study-options": {
+    "/v1/admin/engagements/{engagement}/case-study": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * The case studies an engagement can be linked to. Slim on purpose: the
-         *     picker needs a name and an id, not five translated paragraphs
-         */
-        get: operations["engagement.caseStudyOptions"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Start the public page about this work
+         * @description The link runs this way round on purpose: a case study is written
+         *     about work that happened, so it is created from the work and arrives
+         *     already knowing the client, the name and the year. The other
+         *     direction — picking a case study from a dropdown while setting up a
+         *     job — described something that does not exist yet.
+         */
+        post: operations["engagement.createCaseStudy"];
         delete?: never;
         options?: never;
         head?: never;
@@ -597,6 +682,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/work-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["workType.index"];
+        put?: never;
+        post: operations["workType.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/work-types/{workType}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["workType.update"];
+        post?: never;
+        /**
+         * Retiring a type keeps the history: work already tagged with it still
+         *     says what it was. Deleting is only for one added by mistake
+         */
+        delete: operations["workType.destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -625,6 +746,22 @@ export interface components {
             engagements?: components["schemas"]["EngagementResource"][];
             engagements_count?: number;
             documents?: components["schemas"]["DocumentResource"][];
+            /**
+             * @description Logins, listed without their secrets: the list only needs to
+             *     say what exists and where it goes. Revealing one is a request
+             *     of its own.
+             */
+            credentials?: {
+                id: number;
+                client_id: number;
+                engagement_id: number | null;
+                label: string;
+                url: string | null;
+                username: string | null;
+                has_secret: boolean;
+                has_notes: boolean;
+                updated_at: string | null;
+            }[];
             created_at: string | null;
         };
         /** DocumentItemResource */
@@ -646,6 +783,11 @@ export interface components {
             number: string | null;
             issue_date: string | null;
             due_date: string | null;
+            /**
+             * @description The month a retainer's invoice covers, as its first day. It
+             *     is what lets the dashboard say which months are still owed.
+             */
+            period: string | null;
             currency: string;
             tva_rate: string;
             subject: string | null;
@@ -675,6 +817,7 @@ export interface components {
             client_id: number;
             title: string;
             status: string;
+            billing: string;
             /**
              * @description A string, not a float: money read back as a float is money one
              *     rounding away from disagreeing with the invoice.
@@ -683,6 +826,18 @@ export interface components {
             starts_on: string | null;
             ends_on: string | null;
             description: string | null;
+            work_types?: {
+                id: number;
+                name: string;
+                needs_logins: boolean;
+            }[];
+            attachments?: {
+                id: number;
+                kind: string;
+                name: string;
+                size: number;
+                created_at: string | null;
+            }[];
             case_study_id: number | null;
             case_study?: {
                 slug: string;
@@ -877,6 +1032,78 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "attachment.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The engagement ID */
+                engagement: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @enum {string} */
+                    kind: "contract" | "quote" | "brief" | "image" | "invoice" | "other";
+                    /**
+                     * Format: binary
+                     * @description A deliberately short list of types, checked by content. No
+                     *     archives and nothing executable: this is a drawer for
+                     *     paperwork, not a file host.
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            engagement_id: number;
+                            kind: string;
+                            name: string;
+                            mime: string | null;
+                            size: number;
+                            created_at: string | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "attachment.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The attachment ID */
+                attachment: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "billingProfile.show": {
         parameters: {
             query?: never;
@@ -1189,6 +1416,146 @@ export interface operations {
             404: components["responses"]["ModelNotFoundException"];
         };
     };
+    "credential.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The client ID */
+                client: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    label: string;
+                    engagement_id?: number | null;
+                    url?: string | null;
+                    username?: string | null;
+                    secret?: string | null;
+                    notes?: string | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            client_id: number;
+                            engagement_id: number | null;
+                            label: string;
+                            url: string | null;
+                            username: string | null;
+                            /** @description Whether there is one, never what it is. */
+                            has_secret: boolean;
+                            has_notes: boolean;
+                            updated_at: string | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "credential.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The credential ID */
+                credential: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            client_id: number;
+                            engagement_id: number | null;
+                            label: string;
+                            url: string | null;
+                            username: string | null;
+                            /** @description Whether there is one, never what it is. */
+                            has_secret: boolean;
+                            has_notes: boolean;
+                            updated_at: string | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "credential.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The credential ID */
+                credential: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "credential.reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The credential ID */
+                credential: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            secret: string;
+                            notes: string;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
     "document.store": {
         parameters: {
             query?: never;
@@ -1207,10 +1574,16 @@ export interface operations {
                     engagement_id?: number | null;
                     /**
                      * @description A 50/50 build is the usual arrangement, so the two halves are
-                     *     one click rather than arithmetic done twice.
+                     *     one click rather than arithmetic done twice. "month" bills one
+                     *     month of a retainer.
                      * @enum {string|null}
                      */
-                    preset?: "deposit" | "balance" | "full" | null;
+                    preset?: "deposit" | "balance" | "full" | "month" | null;
+                    /**
+                     * Format: date-time
+                     * @description Which month a retainer invoice covers, as any date inside it.
+                     */
+                    period?: string | null;
                 };
             };
         };
@@ -1248,6 +1621,8 @@ export interface operations {
                     issue_date?: string | null;
                     /** Format: date-time */
                     due_date?: string | null;
+                    /** Format: date-time */
+                    period?: string | null;
                     tva_rate: number;
                     subject?: string | null;
                     notes?: string | null;
@@ -1378,9 +1753,12 @@ export interface operations {
                     title: string;
                     /** @enum {string} */
                     status: "planned" | "active" | "paused" | "done" | "cancelled";
+                    /** @enum {string} */
+                    billing: "one_off" | "monthly";
                     /**
-                     * @description Kept as a string through validation so 12000.50 is checked as
-                     *     written rather than after a float has had its say.
+                     * @description For a one-off this is the whole price; for a retainer it is
+                     *     what is charged each month. One column, because it answers
+                     *     the same question in both cases: what does this cost.
                      */
                     budget?: number | null;
                     /** Format: date-time */
@@ -1388,7 +1766,7 @@ export interface operations {
                     /** Format: date-time */
                     ends_on?: string | null;
                     description?: string | null;
-                    case_study_id?: number | null;
+                    work_type_ids: number[];
                 };
             };
         };
@@ -1424,9 +1802,12 @@ export interface operations {
                     title: string;
                     /** @enum {string} */
                     status: "planned" | "active" | "paused" | "done" | "cancelled";
+                    /** @enum {string} */
+                    billing: "one_off" | "monthly";
                     /**
-                     * @description Kept as a string through validation so 12000.50 is checked as
-                     *     written rather than after a float has had its say.
+                     * @description For a one-off this is the whole price; for a retainer it is
+                     *     what is charged each month. One column, because it answers
+                     *     the same question in both cases: what does this cost.
                      */
                     budget?: number | null;
                     /** Format: date-time */
@@ -1434,7 +1815,7 @@ export interface operations {
                     /** Format: date-time */
                     ends_on?: string | null;
                     description?: string | null;
-                    case_study_id?: number | null;
+                    work_type_ids: number[];
                 };
             };
         };
@@ -1476,13 +1857,27 @@ export interface operations {
             };
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        message: "This work has been quoted or invoiced. Mark it cancelled instead — the paperwork has to stay.";
+                    };
+                };
+            };
         };
     };
-    "engagement.caseStudyOptions": {
+    "engagement.createCaseStudy": {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description The engagement ID */
+                engagement: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1493,16 +1888,22 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: {
-                            id: number;
-                            slug: string;
-                            title: string;
-                            is_published: boolean;
-                        }[];
+                        data: components["schemas"]["EngagementResource"] & Record<string, never>;
+                    };
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EngagementResource"] & Record<string, never>;
                     };
                 };
             };
             401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "lead.store": {
@@ -2363,6 +2764,151 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: (components["schemas"]["TestimonialResource"] & Record<string, never>)[];
+                    };
+                };
+            };
+        };
+    };
+    "workType.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            name: string;
+                            slug: string;
+                            position: number;
+                            needs_logins: boolean;
+                            is_active: boolean;
+                        }[];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+        };
+    };
+    "workType.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    needs_logins: boolean;
+                    is_active: boolean;
+                    position?: number;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            name: string;
+                            slug: string;
+                            position: number;
+                            needs_logins: boolean;
+                            is_active: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "workType.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The work type ID */
+                workType: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    needs_logins: boolean;
+                    is_active: boolean;
+                    position?: number;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            name: string;
+                            slug: string;
+                            position: number;
+                            needs_logins: boolean;
+                            is_active: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "workType.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The work type ID */
+                workType: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        message: "Some work is filed under this. Switch it off instead — it stays on the work that already has it, and stops being offered.";
                     };
                 };
             };

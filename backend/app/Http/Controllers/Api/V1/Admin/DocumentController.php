@@ -10,6 +10,7 @@ use App\Models\Engagement;
 use App\Support\BillingProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -35,8 +36,11 @@ class DocumentController extends Controller
                 Rule::exists('engagements', 'id')->where('client_id', $client->id),
             ],
             // A 50/50 build is the usual arrangement, so the two halves are
-            // one click rather than arithmetic done twice.
-            'preset' => ['nullable', Rule::in(['deposit', 'balance', 'full'])],
+            // one click rather than arithmetic done twice. "month" bills one
+            // month of a retainer.
+            'preset' => ['nullable', Rule::in(['deposit', 'balance', 'full', 'month'])],
+            // Which month a retainer invoice covers, as any date inside it.
+            'period' => ['nullable', 'date'],
         ]);
 
         $profile = BillingProfile::current();
@@ -44,11 +48,16 @@ class DocumentController extends Controller
             ? Engagement::find($data['engagement_id'])
             : null;
 
-        $document = DB::transaction(function () use ($client, $data, $engagement, $profile) {
+        $period = isset($data['period'])
+            ? Carbon::parse($data['period'])->startOfMonth()
+            : null;
+
+        $document = DB::transaction(function () use ($client, $data, $engagement, $profile, $period) {
             $document = $client->documents()->create([
                 'type' => $data['type'],
                 'engagement_id' => $engagement?->id,
                 'status' => 'draft',
+                'period' => $period?->toDateString(),
                 'issue_date' => now()->toDateString(),
                 'due_date' => $data['type'] === 'invoice'
                     ? now()->addDays(30)->toDateString()
@@ -59,7 +68,7 @@ class DocumentController extends Controller
                 'terms' => $profile['payment_terms'] ?: null,
             ]);
 
-            $line = $this->presetLine($data['preset'] ?? null, $engagement);
+            $line = $this->presetLine($data['preset'] ?? null, $engagement, $period);
             if ($line) {
                 $document->items()->create($line);
             }
@@ -87,6 +96,7 @@ class DocumentController extends Controller
             ],
             'issue_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
+            'period' => ['nullable', 'date'],
             'tva_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'subject' => ['nullable', 'string', 'max:190'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -106,6 +116,9 @@ class DocumentController extends Controller
                 'engagement_id' => $data['engagement_id'] ?? null,
                 'issue_date' => $data['issue_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
+                'period' => isset($data['period'])
+                    ? Carbon::parse($data['period'])->startOfMonth()->toDateString()
+                    : null,
                 'tva_rate' => $data['tva_rate'],
                 'subject' => $data['subject'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -211,7 +224,7 @@ class DocumentController extends Controller
     }
 
     /** @return array<string, mixed>|null */
-    private function presetLine(?string $preset, ?Engagement $engagement): ?array
+    private function presetLine(?string $preset, ?Engagement $engagement, ?Carbon $period = null): ?array
     {
         if ($preset === null || $engagement === null || $engagement->budget === null) {
             return null;
@@ -238,6 +251,14 @@ class DocumentController extends Controller
             'full' => [
                 'position' => 0,
                 'description' => $engagement->title,
+                'quantity' => 1,
+                'unit_price' => $budget / 100,
+            ],
+            // A retainer's month, named by the month so the client can see
+            // at a glance which one this is.
+            'month' => [
+                'position' => 0,
+                'description' => $engagement->title.' — '.($period ?? now())->translatedFormat('F Y'),
                 'quantity' => 1,
                 'unit_price' => $budget / 100,
             ],

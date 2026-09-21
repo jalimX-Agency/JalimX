@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AttachmentController;
 use App\Http\Controllers\Api\V1\Admin\BillingProfileController;
 use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
+use App\Http\Controllers\Api\V1\Admin\CredentialController;
 use App\Http\Controllers\Api\V1\Admin\DocumentController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
@@ -10,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Api\V1\Admin\WorkTypeController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ServiceController;
@@ -98,7 +101,29 @@ Route::prefix('v1')->group(function () {
             Route::post('/clients/{client}/engagements', [AdminEngagementController::class, 'store']);
             Route::put('/engagements/{engagement}', [AdminEngagementController::class, 'update']);
             Route::delete('/engagements/{engagement}', [AdminEngagementController::class, 'destroy']);
-            Route::get('/case-study-options', [AdminEngagementController::class, 'caseStudyOptions']);
+            /*
+             * A case study is started from the work it is about, so it
+             * arrives knowing the client, the name and the year.
+             */
+            Route::post('/engagements/{engagement}/case-study', [AdminEngagementController::class, 'createCaseStudy']);
+
+            Route::post('/engagements/{engagement}/attachments', [AttachmentController::class, 'store'])
+                ->middleware('throttle:60,1');
+            Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy']);
+
+            /*
+             * Logins. The secret is handed over one at a time by reveal,
+             * never in a list.
+             */
+            Route::post('/clients/{client}/credentials', [CredentialController::class, 'store']);
+            Route::put('/credentials/{credential}', [CredentialController::class, 'update']);
+            Route::get('/credentials/{credential}/reveal', [CredentialController::class, 'reveal']);
+            Route::delete('/credentials/{credential}', [CredentialController::class, 'destroy']);
+
+            Route::get('/work-types', [WorkTypeController::class, 'index']);
+            Route::post('/work-types', [WorkTypeController::class, 'store']);
+            Route::put('/work-types/{workType}', [WorkTypeController::class, 'update']);
+            Route::delete('/work-types/{workType}', [WorkTypeController::class, 'destroy']);
 
             /*
              * Quotes and invoices. Written under a client, then worked on by

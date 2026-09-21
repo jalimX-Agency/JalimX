@@ -41,6 +41,23 @@ class ClientResource extends JsonResource
             ),
             'engagements_count' => $this->whenCounted('engagements'),
             'documents' => DocumentResource::collection($this->whenLoaded('documents')),
+            /*
+             * Logins, listed without their secrets: the list only needs to
+             * say what exists and where it goes. Revealing one is a request
+             * of its own.
+             */
+            'credentials' => $this->whenLoaded('credentials', fn () => $this->credentials
+                ->map(fn ($c) => [
+                    'id' => $c->id,
+                    'client_id' => $c->client_id,
+                    'engagement_id' => $c->engagement_id,
+                    'label' => (string) $c->label,
+                    'url' => $c->url,
+                    'username' => $c->username,
+                    'has_secret' => filled($c->secret),
+                    'has_notes' => filled($c->notes),
+                    'updated_at' => $c->updated_at?->toIso8601String(),
+                ])->values()),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ClientForm } from "@/components/admin/client-form";
 import { Documents } from "@/components/admin/documents";
 import { Engagements } from "@/components/admin/engagements";
+import { Logins } from "@/components/admin/logins";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
 import { admin, isSignedOut, type Client } from "@/lib/admin/client";
 
@@ -20,7 +21,7 @@ import { admin, isSignedOut, type Client } from "@/lib/admin/client";
  * fetched again when you move between them.
  */
 
-const TABS = ["Work", "Money", "Details"] as const;
+const TABS = ["Work", "Money", "Logins", "Details"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function ClientPage() {
@@ -81,6 +82,14 @@ export default function ClientPage() {
       setRefusedDelete(e instanceof Error ? e.message : "Could not delete them.");
     }
   }
+
+  /*
+   * Logins only appear once they could exist: a client whose work never
+   * involves signing in anywhere does not need a tab about passwords.
+   */
+  const needsLogins =
+    (client.credentials?.length ?? 0) > 0 ||
+    (client.engagements ?? []).some((e) => e.work_types.some((t) => t.needs_logins));
 
   const reach = [
     client.contact_name,
@@ -162,7 +171,7 @@ export default function ClientPage() {
         aria-label="This client"
         className="mt-8 flex gap-6 border-b border-[var(--hairline)]"
       >
-        {TABS.map((t) => (
+        {TABS.filter((t) => t !== "Logins" || needsLogins).map((t) => (
           <button
             key={t}
             type="button"
@@ -195,6 +204,12 @@ export default function ClientPage() {
       <div className="mt-8" hidden={tab !== "Money"}>
         <Documents client={client} />
       </div>
+
+      {needsLogins && (
+        <div className="mt-8" hidden={tab !== "Logins"}>
+          <Logins client={client} />
+        </div>
+      )}
 
       <div hidden={tab !== "Details"}>
         <div className="mt-8">
