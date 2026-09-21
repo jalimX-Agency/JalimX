@@ -210,14 +210,17 @@ class DocumentController extends Controller
     }
 
     /**
-     * Only drafts. An issued invoice is cancelled, never deleted: the
-     * sequence has to stay whole, and a missing number is a question you
-     * cannot answer a year later.
+     * Deleting one, whatever state it is in.
+     *
+     * Cancelling is still the better answer for an issued document: the
+     * number stays in the sequence, and a sequence with a hole in it is
+     * the first thing an inspector asks about. But it is the owner's
+     * paperwork, and a mistake issued at the wrong client should be
+     * removable — so the dashboard spells out what goes and this deletes
+     * it, payments and all.
      */
     public function destroy(Document $document): JsonResponse
     {
-        $this->refuseUnlessDraft($document);
-
         $document->delete();
 
         return response()->json(null, 204);

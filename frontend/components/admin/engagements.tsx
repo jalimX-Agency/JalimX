@@ -262,6 +262,7 @@ function EngagementEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [writing, setWriting] = useState(false);
+  const [section, setSection] = useState<"details" | "files">("details");
 
   const err = (key: string) => errors[key]?.[0];
   const set = (key: keyof EngagementInput, v: string) =>
@@ -325,189 +326,22 @@ function EngagementEditor({
     }
   }
 
+  const files = engagement?.attachments.length ?? 0;
+
   return (
-    <div className="bg-[color-mix(in_oklab,var(--fg)_3%,transparent)] px-5 py-5">
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="What is it" hint="A name you would say on the phone" error={err("title")}>
-          <input
-            className="admin-input"
-            maxLength={160}
-            value={input.title}
-            aria-invalid={!!err("title")}
-            onChange={(e) => setInput((i) => ({ ...i, title: e.target.value }))}
-          />
-        </Field>
-
-        <Field label="Status" error={err("status")}>
-          <select
-            className="admin-input"
-            value={input.status}
-            onChange={(e) =>
-              setInput((i) => ({ ...i, status: e.target.value as EngagementStatus }))
-            }
-          >
-            {ENGAGEMENT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <div className="sm:col-span-2">
-          <span className="mb-1.5 block font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-            Kind of work
-          </span>
-          {offered.length === 0 ? (
-            <p className="text-xs text-[var(--fg-faint)]">
-              None set up yet —{" "}
-              <Link
-                href="/admin/settings/work-types"
-                className="text-[var(--link)] hover:underline"
-              >
-                add them in Settings
-              </Link>
-              .
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {offered.map((t) => {
-                const on = input.work_type_ids.includes(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => toggleType(t.id)}
-                    className={`border px-3 py-1.5 text-sm transition-colors ${
-                      on
-                        ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--ground)]"
-                        : "border-[var(--hairline)] text-[var(--fg-dim)] hover:text-[var(--fg)]"
-                    }`}
-                  >
-                    {t.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <span className="mt-1.5 block text-[0.7rem] text-[var(--fg-faint)]">
-            One job can be more than one — social media and platforms together,
-            for instance.
-          </span>
+    <div className="bg-[color-mix(in_oklab,var(--fg)_3%,transparent)]">
+      {/* The actions sit beside the name of the thing being edited. On a
+          form this long they were otherwise a scroll away from whatever
+          you had just changed. */}
+      <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-[var(--hairline)] px-5 py-3">
+        <div className="flex min-w-0 items-baseline gap-4">
+          <h3 className="truncate text-sm font-medium">
+            {input.title.trim() || (engagement ? "This work" : "New work")}
+          </h3>
+          <p role="status" className="truncate text-xs text-[var(--color-signal)]">
+            {message}
+          </p>
         </div>
-
-        {/* How it is charged decides what the money and the dates mean, so
-            it sits above both. */}
-        <Field label="How it is charged" error={err("billing")}>
-          <select
-            className="admin-input"
-            value={input.billing}
-            onChange={(e) => setInput((i) => ({ ...i, billing: e.target.value as Billing }))}
-          >
-            {BILLINGS.map((b) => (
-              <option key={b} value={b}>
-                {BILLING_LABEL[b]}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field
-          label={monthly ? `Each month (${client.currency})` : `Budget (${client.currency})`}
-          hint={monthly ? "What they pay every month, before tax" : "Agreed total, before tax"}
-          error={err("budget")}
-        >
-          <input
-            inputMode="decimal"
-            className="admin-input tabular-nums"
-            value={input.budget ?? ""}
-            aria-invalid={!!err("budget")}
-            onChange={(e) => set("budget", e.target.value.trim())}
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-5">
-          <Field label={monthly ? "Running since" : "Starts"} error={err("starts_on")}>
-            <input
-              type="date"
-              className="admin-input"
-              value={input.starts_on ?? ""}
-              onChange={(e) => set("starts_on", e.target.value)}
-            />
-          </Field>
-          <Field
-            label={monthly ? "Stopped" : "Ends"}
-            hint={monthly ? "Leave empty while it runs" : undefined}
-            error={err("ends_on")}
-          >
-            <input
-              type="date"
-              className="admin-input"
-              value={input.ends_on ?? ""}
-              aria-invalid={!!err("ends_on")}
-              onChange={(e) => set("ends_on", e.target.value)}
-            />
-          </Field>
-        </div>
-
-        <div className="sm:col-span-2">
-          <Field label="What it covers" hint="Only you see this" error={err("description")}>
-            <textarea
-              rows={3}
-              maxLength={5000}
-              className="admin-input resize-y leading-relaxed"
-              value={input.description ?? ""}
-              onChange={(e) => set("description", e.target.value)}
-            />
-          </Field>
-        </div>
-      </div>
-
-      {engagement && (
-        <>
-          <Attachments engagement={engagement} onChanged={(next) => onChanged?.(next)} />
-
-          {/* The case study is written about work that happened, so it is
-              started from here rather than picked from a list. */}
-          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--hairline)] pt-5 text-sm">
-            {engagement.case_study ? (
-              <>
-                <span className="text-[var(--fg-faint)]">Case study:</span>
-                <Link
-                  href={`/admin/settings/case-studies/${engagement.case_study.slug}`}
-                  className="text-[var(--link)] underline-offset-4 hover:underline"
-                >
-                  {engagement.case_study.title} ↗
-                </Link>
-                <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
-                  {engagement.case_study.is_published ? "Published" : "Draft"}
-                </span>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={writeCaseStudy}
-                  disabled={writing}
-                  className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
-                >
-                  {writing ? "Starting…" : "Write a case study"}
-                </button>
-                <span className="text-xs text-[var(--fg-faint)]">
-                  Starts a hidden page on the site, with the client and the
-                  name already filled in.
-                </span>
-              </>
-            )}
-          </div>
-        </>
-      )}
-
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-xs text-[var(--color-signal)]">
-          {message}
-        </p>
         <div className="flex items-center gap-4">
           {onDeleted && (
             <button
@@ -535,6 +369,224 @@ function EngagementEditor({
           >
             {busy ? "Saving…" : "Save"}
           </button>
+        </div>
+      </header>
+
+      <div className="md:flex">
+        {/* Files are a drawer rather than part of the form: they save
+            themselves the moment they upload, and sitting under a Save
+            button would suggest otherwise. */}
+        <nav
+          aria-label="This work"
+          className="flex shrink-0 gap-2 border-b border-[var(--hairline)] px-5 py-3 md:w-44 md:flex-col md:gap-0 md:border-r md:border-b-0 md:py-5"
+        >
+          {(
+            [
+              ["details", "Details"],
+              ["files", files ? `Files (${files})` : "Files"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-current={section === key ? "true" : undefined}
+              disabled={key === "files" && !engagement}
+              onClick={() => setSection(key)}
+              className={`px-3 py-2 text-left text-sm transition-colors disabled:opacity-35 md:-ml-px md:border-l ${
+                section === key
+                  ? "border-[var(--fg)] bg-[var(--panel)] text-[var(--fg)] md:bg-transparent"
+                  : "border-transparent text-[var(--fg-dim)] hover:text-[var(--fg)]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="min-w-0 flex-1 px-5 py-5">
+          <div className="grid gap-5 lg:grid-cols-3" hidden={section !== "details"}>
+            <Field label="What is it" hint="A name you would say on the phone" error={err("title")}>
+              <input
+                className="admin-input"
+                maxLength={160}
+                value={input.title}
+                aria-invalid={!!err("title")}
+                onChange={(e) => setInput((i) => ({ ...i, title: e.target.value }))}
+              />
+            </Field>
+
+            <Field label="Status" error={err("status")}>
+              <select
+                className="admin-input"
+                value={input.status}
+                onChange={(e) =>
+                  setInput((i) => ({ ...i, status: e.target.value as EngagementStatus }))
+                }
+              >
+                {ENGAGEMENT_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <div className="lg:col-span-3">
+              <span className="mb-1.5 block font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                Kind of work
+              </span>
+              {offered.length === 0 ? (
+                <p className="text-xs text-[var(--fg-faint)]">
+                  None set up yet —{" "}
+                  <Link
+                    href="/admin/settings/work-types"
+                    className="text-[var(--link)] hover:underline"
+                  >
+                    add them in Settings
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {offered.map((t) => {
+                    const on = input.work_type_ids.includes(t.id);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleType(t.id)}
+                        className={`border px-3 py-1.5 text-sm transition-colors ${
+                          on
+                            ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--ground)]"
+                            : "border-[var(--hairline)] text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                        }`}
+                      >
+                        {t.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <span className="mt-1.5 block text-[0.7rem] text-[var(--fg-faint)]">
+                One job can be more than one — social media and platforms together,
+                for instance.
+              </span>
+            </div>
+
+            {/* How it is charged decides what the money and the dates mean, so
+                it sits above both. */}
+            <Field label="How it is charged" error={err("billing")}>
+              <select
+                className="admin-input"
+                value={input.billing}
+                onChange={(e) => setInput((i) => ({ ...i, billing: e.target.value as Billing }))}
+              >
+                {BILLINGS.map((b) => (
+                  <option key={b} value={b}>
+                    {BILLING_LABEL[b]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              label={monthly ? `Each month (${client.currency})` : `Budget (${client.currency})`}
+              hint={monthly ? "What they pay every month, before tax" : "Agreed total, before tax"}
+              error={err("budget")}
+            >
+              <input
+                inputMode="decimal"
+                className="admin-input tabular-nums"
+                value={input.budget ?? ""}
+                aria-invalid={!!err("budget")}
+                onChange={(e) => set("budget", e.target.value.trim())}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-5">
+              <Field label={monthly ? "Running since" : "Starts"} error={err("starts_on")}>
+                <input
+                  type="date"
+                  className="admin-input"
+                  value={input.starts_on ?? ""}
+                  onChange={(e) => set("starts_on", e.target.value)}
+                />
+              </Field>
+              <Field
+                label={monthly ? "Stopped" : "Ends"}
+                hint={monthly ? "Leave empty while it runs" : undefined}
+                error={err("ends_on")}
+              >
+                <input
+                  type="date"
+                  className="admin-input"
+                  value={input.ends_on ?? ""}
+                  aria-invalid={!!err("ends_on")}
+                  onChange={(e) => set("ends_on", e.target.value)}
+                />
+              </Field>
+            </div>
+
+            <div className="lg:col-span-3">
+              <Field label="What it covers" hint="Only you see this" error={err("description")}>
+                <textarea
+                  rows={3}
+                  maxLength={5000}
+                  className="admin-input resize-y leading-relaxed"
+                  value={input.description ?? ""}
+                  onChange={(e) => set("description", e.target.value)}
+                />
+              </Field>
+            </div>
+          </div>
+
+          {engagement && (
+            <div
+              className="mt-6 border-t border-[var(--hairline)] pt-5"
+              hidden={section !== "details"}
+            >
+              {/* The case study is written about work that happened, so
+                  it is started from here rather than picked from a list. */}
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                {engagement.case_study ? (
+                  <>
+                    <span className="text-[var(--fg-faint)]">Case study:</span>
+                    <Link
+                      href={`/admin/settings/case-studies/${engagement.case_study.slug}`}
+                      className="text-[var(--link)] underline-offset-4 hover:underline"
+                    >
+                      {engagement.case_study.title} ↗
+                    </Link>
+                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                      {engagement.case_study.is_published ? "Published" : "Draft"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={writeCaseStudy}
+                      disabled={writing}
+                      className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
+                    >
+                      {writing ? "Starting…" : "Write a case study"}
+                    </button>
+                    <span className="text-xs text-[var(--fg-faint)]">
+                      Starts a hidden page on the site, with the client and the
+                      name already filled in.
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {engagement && (
+            <div hidden={section !== "files"}>
+              <Attachments engagement={engagement} onChanged={(next) => onChanged?.(next)} />
+            </div>
+          )}
         </div>
       </div>
     </div>

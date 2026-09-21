@@ -39,6 +39,10 @@ class EngagementResource extends JsonResource
                     'kind' => (string) $a->kind,
                     'name' => (string) $a->name,
                     'size' => (int) $a->size,
+                    'viewable' => in_array((string) $a->mime, [
+                        'application/pdf',
+                        'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic',
+                    ], true),
                     'created_at' => $a->created_at?->toIso8601String(),
                 ])->values()),
             'case_study_id' => $this->case_study_id,

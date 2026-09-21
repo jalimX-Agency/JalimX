@@ -238,6 +238,8 @@ export type Attachment = {
   kind: AttachmentKind;
   name: string;
   size: number;
+  /** A PDF or an image, which a browser can show without being asked to run anything. */
+  viewable: boolean;
   created_at: string;
 };
 
@@ -548,8 +550,9 @@ export const admin = {
   removeAttachment: (id: number) =>
     request(`/api/v1/admin/attachments/${id}`, { method: "DELETE" }),
 
-  /** Followed as a link, so it goes to the session-backed web route. */
+  /** Followed as links, so they go to the session-backed web routes. */
   attachmentDownload: (id: number) => `${API}/attachments/${id}/download`,
+  attachmentPreview: (id: number) => `${API}/attachments/${id}/preview`,
 
   createDocument: (
     clientId: number,

@@ -14,9 +14,12 @@ import {
  * The paperwork kept against a piece of work.
  *
  * Filed by what it is rather than by filename, because a folder of
- * "scan_002.pdf" answers no question anyone ever asks. Files live in a
- * bucket with no public address and come back out only through the
- * dashboard, so a contract is never one guessed URL away.
+ * "scan_002.pdf" answers no question anyone ever asks. A PDF or an image
+ * opens in a tab; everything else is handed over as a download, because
+ * previewing a Word file means asking the browser to guess.
+ *
+ * The files are encrypted in the bucket, so the name shown here is the
+ * only readable thing about them outside this page.
  */
 
 const KIND_LABEL: Record<AttachmentKind, string> = {
@@ -76,11 +79,12 @@ export function Attachments({
   }
 
   return (
-    <div className="mt-6 border-t border-[var(--hairline)] pt-5">
+    <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
-          Files
-        </span>
+        <p className="max-w-[52ch] text-sm text-[var(--fg-dim)]">
+          The signed contract, the brief, anything that arrived by email and
+          would otherwise only live in a mailbox.
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <label className="sr-only" htmlFor={`kind-${engagement.id}`}>
             What kind of file
@@ -112,7 +116,7 @@ export function Attachments({
             type="button"
             onClick={() => picker.current?.click()}
             disabled={progress !== null}
-            className="border border-[var(--hairline)] px-3 py-1.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-40"
+            className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40"
           >
             {progress === null ? "+ Upload" : `${Math.round(progress * 100)}%`}
           </button>
@@ -120,29 +124,34 @@ export function Attachments({
       </div>
 
       {message && (
-        <p role="alert" className="mt-2 text-xs text-[var(--color-signal)]">
+        <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">
           {message}
         </p>
       )}
 
       {files.length === 0 ? (
-        <p className="mt-3 text-xs text-[var(--fg-faint)]">
-          The signed contract, the brief, anything that arrived by email and
-          would otherwise only live in a mailbox.
+        <p className="mt-6 border border-dashed border-[var(--hairline)] px-5 py-10 text-center text-sm text-[var(--fg-faint)]">
+          No files yet.
         </p>
       ) : (
-        <ul className="mt-3 border border-[var(--hairline)] bg-[var(--panel)]">
+        <ul className="mt-5 border border-[var(--hairline)] bg-[var(--panel)]">
           {files.map((file) => (
             <li
               key={file.id}
-              className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hairline)] px-4 py-2.5 text-sm last:border-b-0"
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hairline)] px-4 py-3 text-sm last:border-b-0"
             >
               <span className="flex min-w-0 items-baseline gap-3">
                 <span className="w-16 shrink-0 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
                   {KIND_LABEL[file.kind]}
                 </span>
+                {/* The name opens it where opening it makes sense, and is
+                    a plain download where it does not. */}
                 <a
-                  href={admin.attachmentDownload(file.id)}
+                  href={
+                    file.viewable
+                      ? admin.attachmentPreview(file.id)
+                      : admin.attachmentDownload(file.id)
+                  }
                   target="_blank"
                   rel="noreferrer"
                   className="truncate text-[var(--link)] underline-offset-4 hover:underline"
@@ -150,14 +159,28 @@ export function Attachments({
                   {file.name}
                 </a>
               </span>
-              <span className="flex shrink-0 items-baseline gap-4">
-                <span className="tabular-nums text-xs text-[var(--fg-faint)]">
-                  {size(file.size)}
-                </span>
+              <span className="flex shrink-0 items-baseline gap-4 text-xs">
+                <span className="tabular-nums text-[var(--fg-faint)]">{size(file.size)}</span>
+                {file.viewable && (
+                  <a
+                    href={admin.attachmentPreview(file.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                  >
+                    Open ↗
+                  </a>
+                )}
+                <a
+                  href={admin.attachmentDownload(file.id)}
+                  className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                >
+                  Download
+                </a>
                 <button
                   type="button"
                   onClick={() => remove(file)}
-                  className="text-xs text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
+                  className="text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
                 >
                   Delete
                 </button>

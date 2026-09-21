@@ -46,6 +46,9 @@ Route::get('/documents/{document}/pdf', DocumentPdfController::class)
 Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])
     ->name('attachments.download');
 
+Route::get('/attachments/{attachment}/preview', [AttachmentController::class, 'preview'])
+    ->name('attachments.preview');
+
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum')
     ->name('logout');

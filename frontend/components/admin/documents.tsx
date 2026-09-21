@@ -250,7 +250,14 @@ export function Documents({ client }: { client: Client }) {
                       }}
                     />
                   ) : (
-                    <IssuedPanel doc={doc} onChanged={replace} />
+                    <IssuedPanel
+                      doc={doc}
+                      onChanged={replace}
+                      onDeleted={() => {
+                        setRows((r) => r.filter((d) => d.id !== doc.id));
+                        setOpen(null);
+                      }}
+                    />
                   ))}
               </li>
             );
@@ -788,9 +795,11 @@ function DraftEditor({
 function IssuedPanel({
   doc,
   onChanged,
+  onDeleted,
 }: {
   doc: BillingDocument;
   onChanged: (next: BillingDocument) => void;
+  onDeleted: () => void;
 }) {
   const [amount, setAmount] = useState(doc.totals.due);
   const [paidOn, setPaidOn] = useState(today());
@@ -993,24 +1002,59 @@ function IssuedPanel({
             </div>
           )}
 
-          {doc.status !== "cancelled" && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {doc.status !== "cancelled" ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Cancel this? It keeps its number and stays in the list, marked cancelled.",
+                    )
+                  ) {
+                    run(() => admin.setDocumentStatus(doc.id, "cancelled"));
+                  }
+                }}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)]"
+              >
+                Cancel this {doc.type}
+              </button>
+            ) : (
+              <span />
+            )}
+
+            {/* Deleting an issued document leaves a hole in the numbering,
+                so the question says exactly that, and exactly what else
+                disappears with it. */}
             <button
               type="button"
               disabled={busy}
               onClick={() => {
-                if (
-                  window.confirm(
-                    "Cancel this? It keeps its number and stays in the list, marked cancelled.",
-                  )
-                ) {
-                  run(() => admin.setDocumentStatus(doc.id, "cancelled"));
+                const parts = [
+                  `Delete ${doc.number ?? `this ${doc.type}`} for good?`,
+                  doc.payments.length > 0
+                    ? `The ${doc.payments.length === 1 ? "payment" : `${doc.payments.length} payments`} recorded against it go too.`
+                    : null,
+                  doc.number
+                    ? `${doc.number} will be missing from the numbering, which is the first thing an inspector asks about. Cancelling keeps the number and marks it cancelled.`
+                    : null,
+                  "This cannot be undone.",
+                ].filter(Boolean);
+
+                if (window.confirm(parts.join("\n\n"))) {
+                  setBusy(true);
+                  admin.removeDocument(doc.id).then(onDeleted, (e) => {
+                    setMessage(e instanceof Error ? e.message : "Could not delete it.");
+                    setBusy(false);
+                  });
                 }
               }}
-              className="text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)]"
+              className="text-xs text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
             >
-              Cancel this {doc.type}
+              Delete
             </button>
-          )}
+          </div>
 
           {message && (
             <p role="alert" className="text-xs text-[var(--color-signal)]">

@@ -98,8 +98,13 @@ export default function ClientPage() {
     client.city,
   ].filter(Boolean) as string[];
 
+  /*
+   * The page is as wide as the window and each panel decides for itself.
+   * Work is a form with three columns and a list of files beside it, and
+   * squeezing that into a reading measure wasted half the screen.
+   */
   return (
-    <div className="max-w-5xl">
+    <div className="w-full">
       <Link
         href="/admin/clients"
         className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] hover:text-[var(--fg)]"
@@ -107,7 +112,7 @@ export default function ClientPage() {
         ← Clients
       </Link>
 
-      <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
+      <div className="mt-6 flex max-w-5xl flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
           <h1 className="font-display text-3xl font-semibold tracking-tight">{client.name}</h1>
           {client.legal_name && client.legal_name !== client.name && (
@@ -139,7 +144,7 @@ export default function ClientPage() {
 
       {/* The line you read before picking up the phone. Email and number are
           live links, so the page is also the way you get in touch. */}
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--fg-dim)]">
+      <div className="mt-5 flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--fg-dim)]">
         {client.contact_name && <span>{client.contact_name}</span>}
         {client.email && (
           <a
@@ -201,17 +206,17 @@ export default function ClientPage() {
         <Engagements client={client} />
       </div>
 
-      <div className="mt-8" hidden={tab !== "Money"}>
+      <div className="mt-8 max-w-5xl" hidden={tab !== "Money"}>
         <Documents client={client} />
       </div>
 
       {needsLogins && (
-        <div className="mt-8" hidden={tab !== "Logins"}>
+        <div className="mt-8 max-w-5xl" hidden={tab !== "Logins"}>
           <Logins client={client} />
         </div>
       )}
 
-      <div hidden={tab !== "Details"}>
+      <div className="max-w-5xl" hidden={tab !== "Details"}>
         <div className="mt-8">
           <ClientForm
             key={client.id}

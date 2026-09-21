@@ -262,6 +262,9 @@ function LoginEditor({
   const [secret, setSecret] = useState("");
   const [notes, setNotes] = useState("");
   const [touchedSecret, setTouchedSecret] = useState(!credential);
+  /* Typed in the open by default: a password you cannot read is a password
+     you mistype, and nobody is reading over your shoulder here. */
+  const [showSecret, setShowSecret] = useState(true);
   const [touchedNotes, setTouchedNotes] = useState(!credential);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<string | null>(null);
@@ -372,17 +375,27 @@ function LoginEditor({
           }
           error={err("secret")}
         >
-          <input
-            type="password"
-            className="admin-input font-mono"
-            maxLength={500}
-            autoComplete="new-password"
-            value={secret}
-            onChange={(e) => {
-              setSecret(e.target.value);
-              setTouchedSecret(true);
-            }}
-          />
+          <span className="relative block">
+            <input
+              type={showSecret ? "text" : "password"}
+              className="admin-input pr-16 font-mono"
+              maxLength={500}
+              autoComplete="new-password"
+              spellCheck={false}
+              value={secret}
+              onChange={(e) => {
+                setSecret(e.target.value);
+                setTouchedSecret(true);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowSecret((v) => !v)}
+              className="absolute inset-y-0 right-0 px-3 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              {showSecret ? "Hide" : "Show"}
+            </button>
+          </span>
         </Field>
 
         <Field

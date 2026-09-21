@@ -274,9 +274,13 @@ export interface paths {
         put: operations["document.update"];
         post?: never;
         /**
-         * Only drafts. An issued invoice is cancelled, never deleted: the
-         *     sequence has to stay whole, and a missing number is a question you
-         *     cannot answer a year later
+         * Deleting one, whatever state it is in
+         * @description Cancelling is still the better answer for an issued document: the
+         *     number stays in the sequence, and a sequence with a hole in it is
+         *     the first thing an inspector asks about. But it is the owner's
+         *     paperwork, and a mistake issued at the wrong client should be
+         *     removable — so the dashboard spells out what goes and this deletes
+         *     it, payments and all.
          */
         delete: operations["document.destroy"];
         options?: never;
@@ -836,6 +840,7 @@ export interface components {
                 kind: string;
                 name: string;
                 size: number;
+                viewable: boolean;
                 created_at: string | null;
             }[];
             case_study_id: number | null;
@@ -1071,6 +1076,8 @@ export interface operations {
                             name: string;
                             mime: string | null;
                             size: number;
+                            /** @description Whether it can be opened in a tab, or only saved. */
+                            viewable: boolean;
                             created_at: string | null;
                         };
                     };

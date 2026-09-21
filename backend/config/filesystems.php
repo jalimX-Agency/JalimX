@@ -80,9 +80,9 @@ return [
          * download is streamed by the app, behind the session.
          *
          * R2_FILES_BUCKET should be a bucket with no public access. Until
-         * one exists it falls back to the media bucket under a files/
-         * prefix, which is served publicly - so keep anything sensitive out
-         * until the private bucket is set.
+         * one exists this falls back to the media bucket, which is served
+         * publicly - which is why what gets written here is encrypted
+         * first. See AttachmentController.
          */
         'files' => [
             'driver' => 's3',
