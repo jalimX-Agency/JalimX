@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
+import { FieldLabel, Modal } from "@/components/admin/modal";
 import { SaveAsTemplate, UseTemplate } from "@/components/admin/task-templates";
 import {
   admin,
@@ -331,6 +332,7 @@ export function QuickAdd({
   const [link, setLink] = useState(defaultLink);
   const [high, setHigh] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [full, setFull] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function add() {
@@ -411,13 +413,279 @@ export function QuickAdd({
         >
           {busy ? "Adding…" : "Add"}
         </button>
+        {/* For a task that needs more than a line: the whole thing at
+            once, rather than adding it and opening it again. */}
+        <button
+          type="button"
+          onClick={() => setFull(true)}
+          className="px-1 py-2 text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
+        >
+          More…
+        </button>
       </form>
+
+      <NewTask
+        open={full}
+        links={links}
+        // Whatever was typed on the line carries over.
+        start={{
+          title,
+          due_on: due || null,
+          priority: high ? "high" : "normal",
+          ...(links ? parseLink(link) : {}),
+        }}
+        onClose={() => setFull(false)}
+        onAdd={async (input) => {
+          await onAdd(input);
+          setTitle("");
+          setDue("");
+          setHigh(false);
+          setFull(false);
+        }}
+      />
       {error && (
         <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">
           {error}
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * A new task with everything filled in at once: the checklist, the
+ * notes, the status — rather than adding a line and opening it again to
+ * say what it actually involves.
+ */
+function NewTask({
+  open,
+  links,
+  start,
+  onAdd,
+  onClose,
+}: {
+  open: boolean;
+  links?: TaskLinks;
+  start: TaskInput;
+  onAdd: (input: TaskInput & { title: string }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<TaskInput>(start);
+  const [list, setList] = useState<{ text: string; done: boolean }[]>([]);
+  const [item, setItem] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Opening it picks up whatever was already typed on the line.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) {
+      setDraft(start);
+      setList([]);
+      setItem("");
+      setError(null);
+    }
+  }
+
+  const set = (change: TaskInput) => setDraft((d) => ({ ...d, ...change }));
+
+  async function submit() {
+    const title = draft.title?.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      // The half-typed checklist line counts too; losing it on save is
+      // the kind of small betrayal that stops people trusting a form.
+      const rest = item.trim() ? [...list, { text: item.trim(), done: false }] : list;
+      await onAdd({ ...draft, title, checklist: rest.length ? rest : undefined });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not add it.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} label="New task" wide>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <div className="max-h-[calc(100dvh-12rem)] overflow-y-auto px-6 pt-6 pb-5">
+          <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-[var(--fg-faint)]">
+            New task
+          </p>
+
+          <input
+            autoFocus
+            className="admin-input mt-3 font-display text-lg"
+            maxLength={190}
+            placeholder="What has to be done"
+            aria-label="Task"
+            value={draft.title ?? ""}
+            onChange={(e) => set({ title: e.target.value })}
+            onKeyDown={(e) => {
+              // Enter here saves; the checklist has its own field.
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+          />
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {links && (
+              <label className="block sm:col-span-2">
+                <FieldLabel>Linked to</FieldLabel>
+                <LinkSelect
+                  links={links}
+                  className="mt-2"
+                  value={linkValue({
+                    client_id: draft.client_id ?? null,
+                    engagement_id: draft.engagement_id ?? null,
+                  })}
+                  onChange={(l) => set(l)}
+                />
+              </label>
+            )}
+            <label className="block">
+              <FieldLabel>Due</FieldLabel>
+              <input
+                type="date"
+                className="admin-input mt-2"
+                value={draft.due_on ?? ""}
+                onChange={(e) => set({ due_on: e.target.value || null })}
+              />
+            </label>
+            <label className="block">
+              <FieldLabel>Priority</FieldLabel>
+              <select
+                className="admin-input mt-2"
+                value={draft.priority ?? "normal"}
+                onChange={(e) => set({ priority: e.target.value as TaskPriority })}
+              >
+                {TASK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {PRIORITY_LABEL[p]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <FieldLabel>Status</FieldLabel>
+              <select
+                className="admin-input mt-2"
+                value={draft.status ?? "todo"}
+                onChange={(e) => set({ status: e.target.value as TaskStatus })}
+              >
+                {TASK_STATUSES.filter((s) => s !== "done").map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <FieldLabel>Repeats</FieldLabel>
+              <select
+                className="admin-input mt-2"
+                value={draft.repeat ?? ""}
+                onChange={(e) => set({ repeat: (e.target.value || null) as TaskRepeat | null })}
+              >
+                <option value="">Does not repeat</option>
+                {TASK_REPEATS.map((r) => (
+                  <option key={r} value={r}>
+                    {REPEAT_LABEL[r]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-5">
+            <FieldLabel>Checklist</FieldLabel>
+            {list.length > 0 && (
+              <ul className="mt-2 border border-[var(--hairline)]">
+                {list.map((it, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 border-b border-[var(--hairline)] px-3 py-2 last:border-b-0"
+                  >
+                    <span className="min-w-0 flex-1 text-sm">{it.text}</span>
+                    <button
+                      type="button"
+                      aria-label={`Remove "${it.text}"`}
+                      onClick={() => setList(list.filter((_, j) => j !== i))}
+                      className="px-1 text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <input
+              className="admin-input mt-2"
+              maxLength={190}
+              placeholder="Add a step — then Enter"
+              aria-label="New checklist step"
+              value={item}
+              onChange={(e) => setItem(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  // Enter belongs to the checklist while this field has
+                  // the cursor, not to the form.
+                  e.preventDefault();
+                  const text = item.trim();
+                  if (!text) return;
+                  setList([...list, { text, done: false }]);
+                  setItem("");
+                }
+              }}
+            />
+          </div>
+
+          <label className="mt-5 block">
+            <FieldLabel>Notes</FieldLabel>
+            <textarea
+              rows={4}
+              maxLength={5000}
+              className="admin-input mt-2"
+              placeholder="Links, details, what was said…"
+              value={draft.notes ?? ""}
+              onChange={(e) => set({ notes: e.target.value || null })}
+            />
+          </label>
+
+          {error && (
+            <p role="alert" className="mt-4 text-xs text-[var(--color-signal)]">
+              {error}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[var(--hairline)] px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-[var(--fg-dim)] hover:text-[var(--fg)]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={busy || !draft.title?.trim()}
+            className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+          >
+            {busy ? "Adding…" : "Add task"}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
