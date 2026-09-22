@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
 import { UseTemplate } from "@/components/admin/task-templates";
 import {
@@ -69,6 +70,13 @@ export default function TasksPage() {
   const [q, setQ] = useState("");
   const [showDone, setShowDone] = useState(false);
   const [openId, setOpenId] = useState<number | null>(null);
+  /** Rows picked out for one change to all of them. */
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [picking, setPicking] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  /** Where the last pick was, so shift-click can take the run between. */
+  const lastPicked = useRef<number | null>(null);
+  const ask = useConfirm();
 
   useEffect(() => {
     let live = true;
@@ -164,6 +172,73 @@ export default function TasksPage() {
     }
   }
 
+  /**
+   * The rows in the order they are shown, which shift-click runs along
+   * and "select all" takes. Finished ones only while they are on screen:
+   * nothing can be picked that cannot be seen.
+   */
+  const inOrder = [
+    ...GROUPS.flatMap((g) => shown.filter((t) => !t.done_at && bucket(t) === g.key)),
+    ...(showDone ? shown.filter((t) => t.done_at) : []),
+  ];
+
+  function pick(task: Task, event: React.MouseEvent | React.ChangeEvent) {
+    const at = inOrder.findIndex((t) => t.id === task.id);
+    const from = lastPicked.current;
+    const shift = "shiftKey" in event && event.shiftKey;
+    const span =
+      shift && from !== null && from !== -1 && at !== -1
+        ? inOrder.slice(Math.min(from, at), Math.max(from, at) + 1)
+        : [task];
+    setPicked((s) => {
+      const next = new Set(s);
+      // The click decides the direction; the run follows it.
+      const turningOn = !next.has(task.id);
+      for (const t of span) {
+        if (turningOn) next.add(t.id);
+        else next.delete(t.id);
+      }
+      return next;
+    });
+    lastPicked.current = at;
+  }
+
+  /** delete, done or undone, applied to everything picked, in one request. */
+  async function apply(action: "delete" | "done" | "undone") {
+    const ids = inOrder.filter((t) => picked.has(t.id)).map((t) => t.id);
+    if (!ids.length) return;
+    if (
+      action === "delete" &&
+      !(await ask({
+        title: `Delete ${ids.length} ${ids.length === 1 ? "task" : "tasks"}?`,
+        body: "Marking them done keeps a record; deleting does not.",
+        confirmLabel: `Delete ${ids.length}`,
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
+    setNotice(null);
+    setBulkBusy(true);
+    try {
+      const r = await admin.bulkTasks(ids, action);
+      setTasks((list) => {
+        const gone = new Set(r.deleted);
+        const changed = new Map([...r.data, ...r.next].map((t) => [t.id, t]));
+        const kept = (list ?? []).filter((t) => !gone.has(t.id)).map((t) => changed.get(t.id) ?? t);
+        // A repeating task that was ticked brings its next one along.
+        const added = r.next.filter((t) => !(list ?? []).some((x) => x.id === t.id));
+        return [...kept, ...added];
+      });
+      setPicked(new Set());
+      lastPicked.current = null;
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "Could not do that.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   const open = shown.filter((t) => !t.done_at);
   const done = shown.filter((t) => t.done_at);
   const all = tasks.filter((t) => !t.done_at);
@@ -253,6 +328,24 @@ export default function TasksPage() {
             </optgroup>
           )}
         </select>
+        {view === "list" && (
+          <button
+            type="button"
+            aria-pressed={picking}
+            onClick={() => {
+              setPicking((v) => !v);
+              setPicked(new Set());
+              lastPicked.current = null;
+            }}
+            className={`border px-3 py-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] ${
+              picking
+                ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--ground)]"
+                : "border-[var(--hairline)] text-[var(--fg-dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+            }`}
+          >
+            {picking ? "Done selecting" : "Select"}
+          </button>
+        )}
         {(q || filter !== "all") && (
           <button
             type="button"
@@ -273,6 +366,67 @@ export default function TasksPage() {
         </p>
       )}
 
+      {picking && view === "list" && (
+        /* Sticky, because a selection made at the bottom of a long list
+           still needs its buttons. */
+        <div className="sticky top-0 z-10 mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border border-[var(--hairline)] bg-[var(--panel)] px-4 py-3">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em]">
+            {picked.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setPicked(new Set(inOrder.map((t) => t.id)));
+              lastPicked.current = null;
+            }}
+            className="text-xs text-[var(--link)] hover:underline"
+          >
+            Select all {inOrder.length}
+          </button>
+          {picked.size > 0 && (
+            <>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => apply("done")}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] disabled:opacity-40"
+              >
+                Mark done
+              </button>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => apply("undone")}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)] disabled:opacity-40"
+              >
+                Mark not done
+              </button>
+              <button
+                type="button"
+                disabled={bulkBusy}
+                onClick={() => apply("delete")}
+                className="text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)] disabled:opacity-40"
+              >
+                {bulkBusy ? "Working…" : "Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPicked(new Set());
+                  lastPicked.current = null;
+                }}
+                className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg)]"
+              >
+                Clear
+              </button>
+            </>
+          )}
+          <span className="ml-auto hidden text-xs text-[var(--fg-faint)] sm:block">
+            Shift-click to take a run of them
+          </span>
+        </div>
+      )}
+
       {view === "list" ? (
         <ListView
           open={open}
@@ -280,6 +434,8 @@ export default function TasksPage() {
           showDone={showDone}
           setShowDone={setShowDone}
           filtered={!!q || filter !== "all"}
+          picked={picking ? picked : null}
+          onPick={pick}
           onToggle={(t) => change(t, t.done_at ? "todo" : "done")}
           onOpen={(t) => setOpenId(t.id)}
         />
@@ -307,6 +463,8 @@ function ListView({
   showDone,
   setShowDone,
   filtered,
+  picked,
+  onPick,
   onToggle,
   onOpen,
 }: {
@@ -315,6 +473,9 @@ function ListView({
   showDone: boolean;
   setShowDone: (fn: (v: boolean) => boolean) => void;
   filtered: boolean;
+  /** The picked ids while a selection is being made, null otherwise. */
+  picked: Set<number> | null;
+  onPick: (t: Task, event: React.MouseEvent | React.ChangeEvent) => void;
   onToggle: (t: Task) => void;
   onOpen: (t: Task) => void;
 }) {
@@ -347,7 +508,15 @@ function ListView({
             </h2>
             <ul className="mt-3 border border-[var(--hairline)] bg-[var(--panel)]">
               {rows.map((t) => (
-                <TaskRow key={t.id} task={t} showLink onToggle={() => onToggle(t)} onOpen={() => onOpen(t)} />
+                <TaskRow
+                  key={t.id}
+                  task={t}
+                  showLink
+                  selected={picked?.has(t.id)}
+                  onSelect={picked ? (e) => onPick(t, e) : undefined}
+                  onToggle={() => onToggle(t)}
+                  onOpen={() => onOpen(t)}
+                />
               ))}
             </ul>
           </section>
@@ -367,7 +536,15 @@ function ListView({
           {showDone && (
             <ul className="mt-3 border border-[var(--hairline)] bg-[var(--panel)]">
               {done.map((t) => (
-                <TaskRow key={t.id} task={t} showLink onToggle={() => onToggle(t)} onOpen={() => onOpen(t)} />
+                <TaskRow
+                  key={t.id}
+                  task={t}
+                  showLink
+                  selected={picked?.has(t.id)}
+                  onSelect={picked ? (e) => onPick(t, e) : undefined}
+                  onToggle={() => onToggle(t)}
+                  onOpen={() => onOpen(t)}
+                />
               ))}
             </ul>
           )}

@@ -197,12 +197,17 @@ export function TaskRow({
   onToggle,
   onOpen,
   showLink,
+  selected,
+  onSelect,
 }: {
   task: Task;
   onToggle: () => void;
   onOpen: () => void;
   /** On the Tasks page, say what it belongs to; inside a work it is obvious. */
   showLink?: boolean;
+  /** Given while a selection is being made; absent the rest of the time. */
+  selected?: boolean;
+  onSelect?: (event: React.MouseEvent | React.ChangeEvent) => void;
 }) {
   const isDone = !!task.done_at;
   const w = task.due_on && !isDone ? when(task.due_on) : null;
@@ -210,7 +215,24 @@ export function TaskRow({
   const link = linkLabel(task);
 
   return (
-    <li className="group flex items-start gap-3 border-b border-[var(--hairline)] px-4 py-3 last:border-b-0 hover:bg-[color-mix(in_oklab,var(--fg)_3%,transparent)]">
+    <li
+      className={`group flex items-start gap-3 border-b border-[var(--hairline)] px-4 py-3 last:border-b-0 ${
+        selected
+          ? "bg-[color-mix(in_oklab,var(--link)_8%,transparent)]"
+          : "hover:bg-[color-mix(in_oklab,var(--fg)_3%,transparent)]"
+      }`}
+    >
+      {onSelect && (
+        // Picking rows out is its own box: the one beside it means done.
+        <input
+          type="checkbox"
+          className="mt-1 shrink-0 accent-[var(--link)]"
+          checked={!!selected}
+          onChange={() => {}}
+          onClick={onSelect}
+          aria-label={`Select "${task.title}"`}
+        />
+      )}
       <input
         type="checkbox"
         className="mt-1 shrink-0"

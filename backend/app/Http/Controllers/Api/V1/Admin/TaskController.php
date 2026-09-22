@@ -119,6 +119,58 @@ class TaskController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * The same change to many tasks at once — clearing out a batch, or
+     * ticking off an afternoon's worth. One request rather than one per
+     * task, which over a slow connection is the difference between
+     * instant and a minute of spinning.
+     */
+    public function bulk(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer'],
+            'action' => ['required', Rule::in(['delete', 'done', 'undone'])],
+        ]);
+
+        if ($data['action'] === 'delete') {
+            $deleted = Task::query()->whereIn('id', $data['ids'])->pluck('id');
+            Task::query()->whereIn('id', $deleted)->delete();
+
+            return response()->json(['data' => [], 'next' => [], 'deleted' => $deleted->values()]);
+        }
+
+        $done = $data['action'] === 'done';
+
+        [$changed, $next] = DB::transaction(function () use ($data, $done) {
+            $changed = [];
+            $next = [];
+
+            foreach (Task::query()->whereIn('id', $data['ids'])->get() as $task) {
+                $wasDone = $task->done_at !== null;
+                if ($wasDone === $done) {
+                    continue;
+                }
+                $task->status = $done ? 'done' : 'todo';
+                $this->settle($task);
+                $task->save();
+                $changed[] = $task->load(self::WITH);
+                // A repeating task still brings its next one with it.
+                if ($done && ($made = $this->repeatAfter($task))) {
+                    $next[] = $made;
+                }
+            }
+
+            return [$changed, $next];
+        });
+
+        return response()->json([
+            'data' => array_map(fn (Task $t) => self::shape($t), $changed),
+            'next' => array_map(fn (Task $t) => self::shape($t), $next),
+            'deleted' => [],
+        ]);
+    }
+
     public const WITH = ['engagement:id,title,client_id', 'client:id,name'];
 
     /** @param array<string, mixed> $data */

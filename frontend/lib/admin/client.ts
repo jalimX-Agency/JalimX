@@ -771,6 +771,13 @@ export const admin = {
       body: JSON.stringify({ name }),
     }).then((r) => r.data),
 
+  /** One change to many tasks: ticking a batch off, or clearing it out. */
+  bulkTasks: (ids: number[], action: "delete" | "done" | "undone") =>
+    request<{ data: Task[]; next: Task[]; deleted: number[] }>("/api/v1/admin/tasks/bulk", {
+      method: "POST",
+      body: JSON.stringify({ ids, action }),
+    }),
+
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 
   removeAttachment: (id: number) =>

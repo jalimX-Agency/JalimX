@@ -133,6 +133,8 @@ Route::prefix('v1')->group(function () {
             Route::delete('/task-templates/{taskTemplate}', [TaskTemplateController::class, 'destroy']);
             Route::post('/task-templates/{taskTemplate}/apply', [TaskTemplateController::class, 'apply']);
             Route::post('/engagements/{engagement}/task-template', [TaskTemplateController::class, 'fromEngagement']);
+            // The same change to a whole selection, in one request.
+            Route::post('/tasks/bulk', [TaskController::class, 'bulk']);
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
             Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 
