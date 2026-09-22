@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
+import { SaveAsTemplate, UseTemplate } from "@/components/admin/task-templates";
 import {
   admin,
   TASK_PRIORITIES,
@@ -879,6 +880,15 @@ export function Tasks({
           put([...engagement.tasks, task]);
         }}
       />
+      {/* A whole job's worth of steps at once, and the reverse: this
+          job's steps kept for the next one like it. */}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <UseTemplate
+          engagement={engagement}
+          onApplied={(made) => put([...engagement.tasks, ...made])}
+        />
+        {engagement.tasks.length > 0 && <SaveAsTemplate engagement={engagement} />}
+      </div>
 
       {error && (
         <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">

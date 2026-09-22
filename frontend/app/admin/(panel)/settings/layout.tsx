@@ -19,6 +19,7 @@ const SECTIONS: { group: string; items: { href: string; label: string; hint: str
     items: [
       { href: "/admin/settings/invoicing", label: "Invoicing", hint: "What goes on an invoice" },
       { href: "/admin/settings/work-types", label: "Work types", hint: "What kinds of work you do" },
+      { href: "/admin/settings/task-templates", label: "Task templates", hint: "The steps a job always takes" },
     ],
   },
   {

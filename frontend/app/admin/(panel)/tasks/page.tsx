@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
+import { UseTemplate } from "@/components/admin/task-templates";
 import {
   daysUntil,
   linkLabel,
@@ -216,6 +217,12 @@ export default function TasksPage() {
             put(task);
           }}
         />
+        <div className="mt-3">
+          <UseTemplate
+            links={links}
+            onApplied={(made) => setTasks((list) => [...(list ?? []), ...made])}
+          />
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--hairline)] pt-5">

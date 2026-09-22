@@ -119,7 +119,7 @@ class TaskController extends Controller
         return response()->json(null, 204);
     }
 
-    private const WITH = ['engagement:id,title,client_id', 'client:id,name'];
+    public const WITH = ['engagement:id,title,client_id', 'client:id,name'];
 
     /** @param array<string, mixed> $data */
     private function create(array $data): JsonResponse

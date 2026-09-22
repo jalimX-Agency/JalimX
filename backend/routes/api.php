@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\TaskController;
+use App\Http\Controllers\Api\V1\Admin\TaskTemplateController;
 use App\Http\Controllers\Api\V1\Admin\WorkTypeController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -124,6 +125,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/tasks', [TaskController::class, 'index']);
             Route::post('/tasks', [TaskController::class, 'store']);
             Route::post('/engagements/{engagement}/tasks', [TaskController::class, 'storeForEngagement']);
+
+            // The steps a kind of job always takes, written once.
+            Route::get('/task-templates', [TaskTemplateController::class, 'index']);
+            Route::post('/task-templates', [TaskTemplateController::class, 'store']);
+            Route::put('/task-templates/{taskTemplate}', [TaskTemplateController::class, 'update']);
+            Route::delete('/task-templates/{taskTemplate}', [TaskTemplateController::class, 'destroy']);
+            Route::post('/task-templates/{taskTemplate}/apply', [TaskTemplateController::class, 'apply']);
+            Route::post('/engagements/{engagement}/task-template', [TaskTemplateController::class, 'fromEngagement']);
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
             Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 

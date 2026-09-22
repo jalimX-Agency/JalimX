@@ -313,6 +313,26 @@ export type TaskInput = Partial<{
   checklist: { text: string; done: boolean }[];
 }>;
 
+/** One step of a template. `day` counts from the start date; null = no date. */
+export type TemplateStep = {
+  title: string;
+  day: number | null;
+  priority: TaskPriority;
+  checklist: string[];
+};
+
+/** The steps a kind of job always takes, dropped onto new work in one go. */
+export type TaskTemplate = {
+  id: number;
+  name: string;
+  description: string | null;
+  /** Suggested first for work of this kind. */
+  work_type_id: number | null;
+  items: TemplateStep[];
+};
+
+export type TaskTemplateInput = Omit<TaskTemplate, "id">;
+
 /** What a task can be linked to: clients, and their unfinished work. */
 export type TaskLinks = { id: number; name: string; works: { id: number; title: string }[] }[];
 
@@ -709,6 +729,47 @@ export const admin = {
       method: "PATCH",
       body: JSON.stringify(change),
     }).then((r) => ({ task: r.data, next: r.next })),
+
+  taskTemplates: () =>
+    request<{ data: TaskTemplate[] }>("/api/v1/admin/task-templates").then((r) => r.data),
+
+  createTaskTemplate: (input: TaskTemplateInput) =>
+    request<{ data: TaskTemplate }>("/api/v1/admin/task-templates", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateTaskTemplate: (id: number, input: TaskTemplateInput) =>
+    request<{ data: TaskTemplate }>(`/api/v1/admin/task-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  removeTaskTemplate: (id: number) =>
+    request(`/api/v1/admin/task-templates/${id}`, { method: "DELETE" }),
+
+  /** Makes the template's steps into tasks, dated from `start_on`. */
+  applyTaskTemplate: (
+    id: number,
+    input: {
+      engagement_id?: number | null;
+      client_id?: number | null;
+      start_on: string;
+      /** Indexes of steps to leave out. */
+      skip?: number[];
+    },
+  ) =>
+    request<{ data: Task[] }>(`/api/v1/admin/task-templates/${id}/apply`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  /** Saves a work's tasks as a new template. */
+  templateFromWork: (engagementId: number, name: string) =>
+    request<{ data: TaskTemplate }>(`/api/v1/admin/engagements/${engagementId}/task-template`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }).then((r) => r.data),
 
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 
