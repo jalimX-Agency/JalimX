@@ -226,8 +226,10 @@ class OverviewController extends Controller
             ->whereNull('done_at')
             ->whereNotNull('due_on')
             ->whereDate('due_on', '<=', $today->copy()->addDays(7)->toDateString())
-            ->with('engagement:id,title,client_id', 'engagement.client:id,name')
+            ->with('engagement:id,title', 'client:id,name')
             ->orderBy('due_on')
+            // Within a day, the urgent ones first.
+            ->orderByRaw("case priority when 'high' then 0 when 'normal' then 1 else 2 end")
             ->orderBy('id')
             ->limit(30)
             ->get()
@@ -237,10 +239,14 @@ class OverviewController extends Controller
                 'due_on' => $task->due_on->toDateString(),
                 // Negative when late, zero today, positive ahead.
                 'days' => (int) $today->diffInDays($task->due_on, false),
+                'status' => (string) $task->status,
+                'priority' => (string) $task->priority,
+                'progress' => (int) $task->progress,
+                // All three may be empty: a task can stand on its own.
                 'engagement_id' => $task->engagement_id,
-                'work' => (string) ($task->engagement?->title ?? ''),
-                'client_id' => $task->engagement?->client_id,
-                'client' => (string) ($task->engagement?->client?->name ?? ''),
+                'work' => $task->engagement?->title,
+                'client_id' => $task->client_id,
+                'client' => $task->client?->name,
             ])
             ->all();
     }

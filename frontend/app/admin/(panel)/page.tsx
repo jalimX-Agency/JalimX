@@ -280,7 +280,11 @@ function Due({ tasks }: { tasks: Overview["tasks"] }) {
           : `In ${days} days`;
 
   return (
-    <Panel title="To do" hint={late > 0 ? `${late} late` : "Due this week"}>
+    <Panel
+      title="To do"
+      hint={late > 0 ? `${late} late` : "Due this week"}
+      action={{ href: "/admin/tasks", label: "All tasks" }}
+    >
       {error && (
         <p role="alert" className="border-b border-[var(--hairline)] px-5 py-2 text-xs text-[var(--color-signal)]">
           {error}
@@ -301,16 +305,26 @@ function Due({ tasks }: { tasks: Overview["tasks"] }) {
                 onChange={() => toggle(task.id)}
                 aria-label={`Mark "${task.title}" as ${isDone ? "not done" : "done"}`}
               />
-              <Link href={`/admin/clients/${task.client_id}`} className="min-w-0 flex-1 group">
+              {/* A task about a client opens the client; one of its own
+                  opens the Tasks page. */}
+              <Link
+                href={task.client_id ? `/admin/clients/${task.client_id}` : "/admin/tasks"}
+                className="min-w-0 flex-1 group"
+              >
                 <span
                   className={`block truncate text-sm ${
                     isDone ? "text-[var(--fg-faint)] line-through" : "group-hover:text-[var(--link)]"
                   }`}
                 >
+                  {task.priority === "high" && !isDone && (
+                    <span className="mr-1.5 font-mono font-bold text-[var(--color-signal)]">!</span>
+                  )}
                   {task.title}
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-[var(--fg-faint)]">
-                  {task.client} · {task.work}
+                  {[task.client, task.work].filter(Boolean).join(" · ") || "Not linked"}
+                  {!isDone && task.status === "waiting" && " · waiting"}
+                  {!isDone && task.progress > 0 && ` · ${task.progress}%`}
                 </span>
               </Link>
               <span
@@ -337,17 +351,29 @@ function Due({ tasks }: { tasks: Overview["tasks"] }) {
 function Panel({
   title,
   hint,
+  action,
   children,
 }: {
   title: string;
   hint: string;
+  action?: { href: string; label: string };
   children: React.ReactNode;
 }) {
   return (
     <section className="border border-[var(--hairline)] bg-[var(--panel)]">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
         <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em]">{title}</h2>
-        <p className="text-xs text-[var(--fg-faint)]">{hint}</p>
+        <p className="text-xs text-[var(--fg-faint)]">
+          {hint}
+          {action && (
+            <>
+              {" · "}
+              <Link href={action.href} className="text-[var(--link)] hover:underline">
+                {action.label}
+              </Link>
+            </>
+          )}
+        </p>
       </header>
       {children}
     </section>

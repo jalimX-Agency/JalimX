@@ -117,8 +117,13 @@ Route::prefix('v1')->group(function () {
                 ->middleware('throttle:60,1');
             Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
-            // The to-do list inside a piece of work. Each change saves alone.
-            Route::post('/engagements/{engagement}/tasks', [TaskController::class, 'store']);
+            /*
+             * Tasks: inside a piece of work, under a client, or on their own.
+             * Each change saves alone.
+             */
+            Route::get('/tasks', [TaskController::class, 'index']);
+            Route::post('/tasks', [TaskController::class, 'store']);
+            Route::post('/engagements/{engagement}/tasks', [TaskController::class, 'storeForEngagement']);
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
             Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 

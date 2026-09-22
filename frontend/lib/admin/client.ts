@@ -267,16 +267,54 @@ export type CredentialInput = {
 };
 
 /** One line on a piece of work's to-do list. */
+export const TASK_STATUSES = ["todo", "doing", "waiting", "done"] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+export const TASK_PRIORITIES = ["low", "normal", "high"] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
+export const TASK_REPEATS = ["daily", "weekdays", "weekly", "monthly"] as const;
+export type TaskRepeat = (typeof TASK_REPEATS)[number];
+
+/**
+ * Something to do. It may belong to a piece of work, to a client only, or
+ * to nobody ("read today's email").
+ */
 export type Task = {
   id: number;
-  engagement_id: number;
+  engagement_id: number | null;
+  client_id: number | null;
+  /** Names, filled in when the list is read across clients. */
+  work: string | null;
+  client: string | null;
   title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  /** 0–100. Counted from the checklist when it has one. */
+  progress: number;
   notes: string | null;
+  checklist: { text: string; done: boolean }[];
   due_on: string | null;
+  repeat: TaskRepeat | null;
   /** When it was ticked off; null while it is still to do. */
   done_at: string | null;
   created_at: string;
 };
+
+export type TaskInput = Partial<{
+  title: string;
+  notes: string | null;
+  due_on: string | null;
+  done: boolean;
+  status: TaskStatus;
+  priority: TaskPriority;
+  progress: number;
+  repeat: TaskRepeat | null;
+  engagement_id: number | null;
+  client_id: number | null;
+  checklist: { text: string; done: boolean }[];
+}>;
+
+/** What a task can be linked to: clients, and their unfinished work. */
+export type TaskLinks = { id: number; name: string; works: { id: number; title: string }[] }[];
 
 export const ENGAGEMENT_STATUSES = ["planned", "active", "paused", "done", "cancelled"] as const;
 export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
@@ -427,10 +465,13 @@ export type Overview = {
     due_on: string;
     /** Negative when late, 0 today, positive ahead. */
     days: number;
-    engagement_id: number;
-    work: string;
-    client_id: number;
-    client: string;
+    status: TaskStatus;
+    priority: TaskPriority;
+    progress: number;
+    engagement_id: number | null;
+    work: string | null;
+    client_id: number | null;
+    client: string | null;
   }[];
   drafts: {
     id: number;
@@ -649,24 +690,25 @@ export const admin = {
   removeCredential: (id: number) =>
     request(`/api/v1/admin/credentials/${id}`, { method: "DELETE" }),
 
-  createTask: (
-    engagementId: number,
-    input: { title: string; due_on: string | null; notes?: string | null },
-  ) =>
-    request<{ data: Task }>(`/api/v1/admin/engagements/${engagementId}/tasks`, {
-      method: "POST",
-      body: JSON.stringify(input),
-    }).then((r) => r.data),
+  tasks: () =>
+    request<{ data: Task[]; links: TaskLinks }>("/api/v1/admin/tasks"),
 
-  /** Partial: send only what changed — a tick, a date, a corrected title. */
-  updateTask: (
-    id: number,
-    change: Partial<{ title: string; due_on: string | null; notes: string | null; done: boolean }>,
-  ) =>
-    request<{ data: Task }>(`/api/v1/admin/tasks/${id}`, {
+  /** With an engagement id it goes under that work; otherwise as sent. */
+  createTask: (engagementId: number | null, input: TaskInput & { title: string }) =>
+    request<{ data: Task }>(
+      engagementId ? `/api/v1/admin/engagements/${engagementId}/tasks` : "/api/v1/admin/tasks",
+      { method: "POST", body: JSON.stringify(input) },
+    ).then((r) => r.data),
+
+  /**
+   * Partial: send only what changed — a tick, a date, a status. `next` is
+   * the following one of a repeating task that was just finished.
+   */
+  updateTask: (id: number, change: TaskInput) =>
+    request<{ data: Task; next: Task | null }>(`/api/v1/admin/tasks/${id}`, {
       method: "PATCH",
       body: JSON.stringify(change),
-    }).then((r) => r.data),
+    }).then((r) => ({ task: r.data, next: r.next })),
 
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 
