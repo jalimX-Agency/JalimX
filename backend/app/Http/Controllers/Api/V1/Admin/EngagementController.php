@@ -152,6 +152,6 @@ class EngagementController extends Controller
 
     private function loaded(Engagement $engagement): Engagement
     {
-        return $engagement->load('caseStudy', 'workTypes', 'attachments');
+        return $engagement->load('caseStudy', 'workTypes', 'attachments', 'tasks');
     }
 }

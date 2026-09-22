@@ -74,6 +74,7 @@ class ClientController extends Controller
                 'engagements.caseStudy',
                 'engagements.workTypes',
                 'engagements.attachments',
+                'engagements.tasks',
                 'documents.items',
                 'documents.payments',
                 'credentials',

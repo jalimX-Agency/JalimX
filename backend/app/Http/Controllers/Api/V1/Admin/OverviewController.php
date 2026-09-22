@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Engagement;
 use App\Models\Lead;
 use App\Models\Payment;
+use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 
@@ -34,6 +35,7 @@ class OverviewController extends Controller
                 'unbilled' => $this->unbilledMonths($now),
                 'overdue' => $this->overdue($now),
                 'drafts' => $this->drafts(),
+                'tasks' => $this->tasksDue($now),
                 'leads' => $this->leads(),
                 'counts' => $this->counts(),
                 'as_of' => $now->toIso8601String(),
@@ -206,6 +208,40 @@ class OverviewController extends Controller
             ])
             ->sortByDesc('days_late')
             ->values()
+            ->all();
+    }
+
+    /**
+     * Open tasks that are late or due within the week, across every
+     * client. Undated tasks are left out on purpose: they are "some day",
+     * and a list that includes some day never gets short enough to finish.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function tasksDue(Carbon $now): array
+    {
+        $today = $now->copy()->startOfDay();
+
+        return Task::query()
+            ->whereNull('done_at')
+            ->whereNotNull('due_on')
+            ->whereDate('due_on', '<=', $today->copy()->addDays(7)->toDateString())
+            ->with('engagement:id,title,client_id', 'engagement.client:id,name')
+            ->orderBy('due_on')
+            ->orderBy('id')
+            ->limit(30)
+            ->get()
+            ->map(fn (Task $task) => [
+                'id' => $task->id,
+                'title' => (string) $task->title,
+                'due_on' => $task->due_on->toDateString(),
+                // Negative when late, zero today, positive ahead.
+                'days' => (int) $today->diffInDays($task->due_on, false),
+                'engagement_id' => $task->engagement_id,
+                'work' => (string) ($task->engagement?->title ?? ''),
+                'client_id' => $task->engagement?->client_id,
+                'client' => (string) ($task->engagement?->client?->name ?? ''),
+            ])
             ->all();
     }
 

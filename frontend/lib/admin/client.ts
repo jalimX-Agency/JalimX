@@ -266,6 +266,18 @@ export type CredentialInput = {
   notes?: string | null;
 };
 
+/** One line on a piece of work's to-do list. */
+export type Task = {
+  id: number;
+  engagement_id: number;
+  title: string;
+  notes: string | null;
+  due_on: string | null;
+  /** When it was ticked off; null while it is still to do. */
+  done_at: string | null;
+  created_at: string;
+};
+
 export const ENGAGEMENT_STATUSES = ["planned", "active", "paused", "done", "cancelled"] as const;
 export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
 
@@ -292,6 +304,7 @@ export type Engagement = {
   case_study: { slug: string; title: string; is_published: boolean } | null;
   work_types: { id: number; name: string; needs_logins: boolean }[];
   attachments: Attachment[];
+  tasks: Task[];
   created_at: string;
 };
 
@@ -303,6 +316,7 @@ export type EngagementInput = Omit<
   | "case_study_id"
   | "work_types"
   | "attachments"
+  | "tasks"
   | "created_at"
 > & { work_type_ids: number[] };
 
@@ -405,6 +419,18 @@ export type Overview = {
     days_late: number;
     due: string;
     currency: string;
+  }[];
+  /** Open tasks that are late or due within the week, across every client. */
+  tasks: {
+    id: number;
+    title: string;
+    due_on: string;
+    /** Negative when late, 0 today, positive ahead. */
+    days: number;
+    engagement_id: number;
+    work: string;
+    client_id: number;
+    client: string;
   }[];
   drafts: {
     id: number;
@@ -622,6 +648,27 @@ export const admin = {
 
   removeCredential: (id: number) =>
     request(`/api/v1/admin/credentials/${id}`, { method: "DELETE" }),
+
+  createTask: (
+    engagementId: number,
+    input: { title: string; due_on: string | null; notes?: string | null },
+  ) =>
+    request<{ data: Task }>(`/api/v1/admin/engagements/${engagementId}/tasks`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  /** Partial: send only what changed — a tick, a date, a corrected title. */
+  updateTask: (
+    id: number,
+    change: Partial<{ title: string; due_on: string | null; notes: string | null; done: boolean }>,
+  ) =>
+    request<{ data: Task }>(`/api/v1/admin/tasks/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(change),
+    }).then((r) => r.data),
+
+  removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 
   removeAttachment: (id: number) =>
     request(`/api/v1/admin/attachments/${id}`, { method: "DELETE" }),

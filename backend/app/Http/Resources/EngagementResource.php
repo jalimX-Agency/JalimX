@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Controllers\Api\V1\Admin\TaskController;
 use App\Models\Engagement;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -45,6 +46,9 @@ class EngagementResource extends JsonResource
                     ], true),
                     'created_at' => $a->created_at?->toIso8601String(),
                 ])->values()),
+            'tasks' => $this->whenLoaded('tasks', fn () => $this->tasks
+                ->map(fn ($t) => TaskController::shape($t))
+                ->values()),
             'case_study_id' => $this->case_study_id,
             'case_study' => $this->whenLoaded('caseStudy', fn () => $this->caseStudy ? [
                 'slug' => (string) $this->caseStudy->slug,

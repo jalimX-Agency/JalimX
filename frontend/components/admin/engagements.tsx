@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Attachments } from "@/components/admin/attachments";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
+import { Tasks } from "@/components/admin/tasks";
 import {
   admin,
   ApiError,
@@ -65,6 +66,8 @@ const day = (iso: string | null) =>
         year: "numeric",
       })
     : null;
+
+const openTasks = (e: Engagement) => e.tasks.filter((t) => !t.done_at).length;
 
 function span(from: string | null, to: string | null): string | null {
   const a = day(from);
@@ -205,6 +208,9 @@ export function Engagements({ client }: { client: Client }) {
                             ? `Monthly since ${day(row.starts_on)}`
                             : "Monthly"
                           : span(row.starts_on, row.ends_on),
+                        openTasks(row) > 0
+                          ? `${openTasks(row)} to do`
+                          : null,
                         row.attachments.length
                           ? `${row.attachments.length} ${row.attachments.length === 1 ? "file" : "files"}`
                           : null,
@@ -263,7 +269,7 @@ function EngagementEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [writing, setWriting] = useState(false);
-  const [section, setSection] = useState<"details" | "files">("details");
+  const [section, setSection] = useState<"details" | "tasks" | "files">("details");
   const ask = useConfirm();
 
   const err = (key: string) => errors[key]?.[0];
@@ -338,6 +344,7 @@ function EngagementEditor({
   }
 
   const files = engagement?.attachments.length ?? 0;
+  const todo = engagement ? openTasks(engagement) : 0;
 
   return (
     <div className="bg-[color-mix(in_oklab,var(--fg)_3%,transparent)]">
@@ -384,9 +391,9 @@ function EngagementEditor({
       </header>
 
       <div className="md:flex">
-        {/* Files are a drawer rather than part of the form: they save
-            themselves the moment they upload, and sitting under a Save
-            button would suggest otherwise. */}
+        {/* Tasks and files are drawers rather than part of the form: they
+            save themselves the moment they change, and sitting under a
+            Save button would suggest otherwise. */}
         <nav
           aria-label="This work"
           className="flex shrink-0 gap-2 border-b border-[var(--hairline)] px-5 py-3 md:w-44 md:flex-col md:gap-0 md:border-r md:border-b-0 md:py-5"
@@ -394,6 +401,7 @@ function EngagementEditor({
           {(
             [
               ["details", "Details"],
+              ["tasks", todo ? `Tasks (${todo})` : "Tasks"],
               ["files", files ? `Files (${files})` : "Files"],
             ] as const
           ).map(([key, label]) => (
@@ -401,7 +409,8 @@ function EngagementEditor({
               key={key}
               type="button"
               aria-current={section === key ? "true" : undefined}
-              disabled={key === "files" && !engagement}
+              // Tasks and files hang off a saved piece of work.
+              disabled={key !== "details" && !engagement}
               onClick={() => setSection(key)}
               className={`px-3 py-2 text-left text-sm transition-colors disabled:opacity-35 md:-ml-px md:border-l ${
                 section === key
@@ -590,6 +599,12 @@ function EngagementEditor({
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {engagement && (
+            <div hidden={section !== "tasks"}>
+              <Tasks engagement={engagement} onChanged={(next) => onChanged?.(next)} />
             </div>
           )}
 

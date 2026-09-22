@@ -720,6 +720,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/engagements/{engagement}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["task.store"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/tasks/{task}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["task.destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * Partial on purpose: the list sends only what changed — a tick, a new
+         *     date, a corrected title — never the whole task back
+         */
+        patch: operations["task.update"];
+        trace?: never;
+    };
     "/v1/testimonials": {
         parameters: {
             query?: never;
@@ -891,6 +927,15 @@ export interface components {
                 name: string;
                 size: number;
                 viewable: boolean;
+                created_at: string | null;
+            }[];
+            tasks?: {
+                id: number;
+                engagement_id: number;
+                title: string;
+                notes: string | null;
+                due_on: string | null;
+                done_at: string | null;
                 created_at: string | null;
             }[];
             case_study_id: number | null;
@@ -1698,6 +1743,16 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
         };
     };
     "document.store": {
@@ -2268,6 +2323,17 @@ export interface operations {
                                 total: string;
                                 currency: string;
                                 created_at: string | null;
+                            }[];
+                            tasks: {
+                                id: number;
+                                title: string;
+                                due_on: string;
+                                /** @description Negative when late, zero today, positive ahead. */
+                                days: number;
+                                engagement_id: number;
+                                work: string;
+                                client_id: number;
+                                client: string;
                             }[];
                             leads: {
                                 unread: number;
@@ -2968,6 +3034,118 @@ export interface operations {
                 };
             };
             401: components["responses"]["AuthenticationException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "task.store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The engagement ID */
+                engagement: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    /** Format: date-time */
+                    due_on?: string | null;
+                    notes?: string | null;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            engagement_id: number;
+                            title: string;
+                            notes: string | null;
+                            due_on: string | null;
+                            done_at: string | null;
+                            created_at: string | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "task.destroy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task ID */
+                task: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "task.update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task ID */
+                task: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    /** Format: date-time */
+                    due_on?: string | null;
+                    notes?: string | null;
+                    done?: boolean;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            id: number;
+                            engagement_id: number;
+                            title: string;
+                            notes: string | null;
+                            due_on: string | null;
+                            done_at: string | null;
+                            created_at: string | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
         };
     };

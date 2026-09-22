@@ -39,6 +39,21 @@ class Engagement extends Model
         return $this->belongsToMany(WorkType::class)->orderBy('position');
     }
 
+    /**
+     * What is left to do, then what was done: open tasks by date (undated
+     * last), finished ones most recent first.
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class)
+            ->orderByRaw('done_at is not null')
+            ->orderByRaw('due_on is null')
+            ->orderBy('due_on')
+            ->orderBy('position')
+            ->orderByDesc('done_at')
+            ->orderBy('id');
+    }
+
     /** Contracts, briefs and whatever else was signed or sent. */
     public function attachments(): HasMany
     {

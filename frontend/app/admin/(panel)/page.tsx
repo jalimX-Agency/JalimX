@@ -12,9 +12,9 @@ import { admin, isSignedOut, type Overview } from "@/lib/admin/client";
  *
  * It answers one question — what needs me today — and it answers it with
  * work you can start from here, not with charts. Everything on it is
- * either money that has not arrived, a month nobody has billed, a draft
- * that was never sent, or someone waiting for a reply. When all four are
- * empty the page says so and stops talking.
+ * either a task due this week, money that has not arrived, a month nobody
+ * has billed, a draft that was never sent, or someone waiting for a reply.
+ * When all of them are empty the page says so and stops talking.
  */
 
 const money = (amount: string, currency: string) =>
@@ -61,6 +61,7 @@ export default function OverviewPage() {
   }
 
   const quiet =
+    data.tasks.length === 0 &&
     data.overdue.length === 0 &&
     data.unbilled.length === 0 &&
     data.drafts.length === 0 &&
@@ -117,13 +118,15 @@ export default function OverviewPage() {
 
       {quiet && (
         <p className="mt-10 max-w-[60ch] text-sm text-[var(--fg-dim)]">
-          Nothing is waiting: no invoice is late, every month is billed,
-          there are no drafts sitting unsent, and every enquiry has been
-          read.
+          Nothing is waiting: no task is due this week, no invoice is late,
+          every month is billed, there are no drafts sitting unsent, and
+          every enquiry has been read.
         </p>
       )}
 
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
+        {data.tasks.length > 0 && <Due tasks={data.tasks} />}
+
         {data.unbilled.length > 0 && (
           <Panel
             title="Months not billed"
@@ -229,6 +232,105 @@ function Figure({
         </dd>
       )}
     </div>
+  );
+}
+
+/**
+ * Tasks due this week or late, across every client, ticked off in place.
+ *
+ * A ticked row stays where it is, struck through, until the page is next
+ * opened: a list that reshuffles under the cursor makes you tick the
+ * wrong line.
+ */
+function Due({ tasks }: { tasks: Overview["tasks"] }) {
+  const [done, setDone] = useState<Set<number>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  const late = tasks.filter((t) => t.days < 0 && !done.has(t.id)).length;
+
+  async function toggle(id: number) {
+    const now = !done.has(id);
+    setDone((s) => {
+      const next = new Set(s);
+      if (now) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+    try {
+      await admin.updateTask(id, { done: now });
+    } catch (e) {
+      // Put the box back the way the server still has it.
+      setDone((s) => {
+        const next = new Set(s);
+        if (now) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      setError(e instanceof Error ? e.message : "Could not save that.");
+    }
+  }
+
+  const label = (days: number) =>
+    days < 0
+      ? `${-days} ${days === -1 ? "day" : "days"} late`
+      : days === 0
+        ? "Today"
+        : days === 1
+          ? "Tomorrow"
+          : `In ${days} days`;
+
+  return (
+    <Panel title="To do" hint={late > 0 ? `${late} late` : "Due this week"}>
+      {error && (
+        <p role="alert" className="border-b border-[var(--hairline)] px-5 py-2 text-xs text-[var(--color-signal)]">
+          {error}
+        </p>
+      )}
+      <ul>
+        {tasks.map((task) => {
+          const isDone = done.has(task.id);
+          return (
+            <li
+              key={task.id}
+              className="flex items-start gap-3 border-b border-[var(--hairline)] px-5 py-3.5 last:border-b-0"
+            >
+              <input
+                type="checkbox"
+                className="mt-1 shrink-0"
+                checked={isDone}
+                onChange={() => toggle(task.id)}
+                aria-label={`Mark "${task.title}" as ${isDone ? "not done" : "done"}`}
+              />
+              <Link href={`/admin/clients/${task.client_id}`} className="min-w-0 flex-1 group">
+                <span
+                  className={`block truncate text-sm ${
+                    isDone ? "text-[var(--fg-faint)] line-through" : "group-hover:text-[var(--link)]"
+                  }`}
+                >
+                  {task.title}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-[var(--fg-faint)]">
+                  {task.client} · {task.work}
+                </span>
+              </Link>
+              <span
+                className={`shrink-0 font-mono text-[0.6rem] uppercase tracking-[0.12em] ${
+                  isDone
+                    ? "text-[var(--fg-faint)]"
+                    : task.days < 0
+                      ? "text-[var(--color-signal)]"
+                      : task.days <= 1
+                        ? "text-[var(--link)]"
+                        : "text-[var(--fg-faint)]"
+                }`}
+              >
+                {isDone ? "Done" : label(task.days)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
   );
 }
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Api\V1\Admin\TaskController;
 use App\Http\Controllers\Api\V1\Admin\WorkTypeController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -115,6 +116,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/engagements/{engagement}/attachments', [AttachmentController::class, 'store'])
                 ->middleware('throttle:60,1');
             Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy']);
+
+            // The to-do list inside a piece of work. Each change saves alone.
+            Route::post('/engagements/{engagement}/tasks', [TaskController::class, 'store']);
+            Route::patch('/tasks/{task}', [TaskController::class, 'update']);
+            Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 
             /*
              * Logins. The secret is handed over one at a time by reveal,
