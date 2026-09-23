@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 class Task extends Model
@@ -15,9 +16,12 @@ class Task extends Model
 
     public const REPEATS = ['daily', 'weekdays', 'weekly', 'monthly'];
 
+    /** A task with no time set is treated as due at this hour. */
+    public const DEFAULT_DUE_TIME = '09:00:00';
+
     protected $fillable = [
         'engagement_id', 'client_id', 'title', 'status', 'priority', 'progress',
-        'notes', 'checklist', 'due_on', 'repeat', 'done_at', 'position',
+        'notes', 'checklist', 'due_on', 'due_time', 'repeat', 'done_at', 'position',
     ];
 
     protected function casts(): array
@@ -39,6 +43,27 @@ class Task extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(TaskReminder::class);
+    }
+
+    /**
+     * The moment this task is actually due, for reminders: its date at
+     * its time, or a fixed default hour when no time was set. Null when
+     * there is no due date at all — nothing to count a reminder against.
+     */
+    public function dueAt(): ?Carbon
+    {
+        if (! $this->due_on) {
+            return null;
+        }
+
+        $time = $this->due_time ? substr((string) $this->due_time, 0, 8) : self::DEFAULT_DUE_TIME;
+
+        return Carbon::parse($this->due_on->toDateString().' '.$time);
     }
 
     /**

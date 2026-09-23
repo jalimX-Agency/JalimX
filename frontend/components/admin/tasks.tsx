@@ -7,6 +7,7 @@ import { FieldLabel, Modal } from "@/components/admin/modal";
 import { SaveAsTemplate, UseTemplate } from "@/components/admin/task-templates";
 import {
   admin,
+  REMINDER_PRESETS,
   TASK_PRIORITIES,
   TASK_REPEATS,
   TASK_STATUSES,
@@ -271,6 +272,7 @@ export function TaskRow({
             showLink ? link || "Not linked" : null,
             task.checklist.length ? `${checked}/${task.checklist.length}` : null,
             task.repeat ? `↻ ${REPEAT_LABEL[task.repeat]}` : null,
+            task.reminders.length && !isDone ? "📱 Reminder" : null,
             task.notes ? "Notes" : null,
           ].filter(Boolean);
           const status = !isDone && task.status !== "todo";
@@ -453,6 +455,40 @@ export function QuickAdd({
 }
 
 /**
+ * Which WhatsApp reminders are armed for a task. Needs a due date to
+ * count against, so it stays out of the way until one is set.
+ */
+function ReminderPicker({ value, onChange }: { value: number[]; onChange: (next: number[]) => void }) {
+  return (
+    <div>
+      <FieldLabel>WhatsApp reminder</FieldLabel>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {REMINDER_PRESETS.map((p) => {
+          const on = value.includes(p.minutes);
+          return (
+            <button
+              key={p.minutes}
+              type="button"
+              aria-pressed={on}
+              onClick={() =>
+                onChange(on ? value.filter((m) => m !== p.minutes) : [...value, p.minutes])
+              }
+              className={`border px-2.5 py-1.5 text-xs ${
+                on
+                  ? "border-[var(--link)] bg-[color-mix(in_oklab,var(--link)_12%,transparent)] text-[var(--link)]"
+                  : "border-[var(--hairline)] text-[var(--fg-dim)] hover:border-[var(--fg)] hover:text-[var(--fg)]"
+              }`}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
  * A new task with everything filled in at once: the checklist, the
  * notes, the status — rather than adding a line and opening it again to
  * say what it actually involves.
@@ -554,12 +590,22 @@ function NewTask({
             )}
             <label className="block">
               <FieldLabel>Due</FieldLabel>
-              <input
-                type="date"
-                className="admin-input mt-2"
-                value={draft.due_on ?? ""}
-                onChange={(e) => set({ due_on: e.target.value || null })}
-              />
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="date"
+                  className="admin-input min-w-0 flex-1"
+                  value={draft.due_on ?? ""}
+                  onChange={(e) => set({ due_on: e.target.value || null })}
+                />
+                <input
+                  type="time"
+                  className="admin-input w-28"
+                  aria-label="Due time (optional)"
+                  value={draft.due_time ?? ""}
+                  disabled={!draft.due_on}
+                  onChange={(e) => set({ due_time: e.target.value || null })}
+                />
+              </div>
             </label>
             <label className="block">
               <FieldLabel>Priority</FieldLabel>
@@ -660,6 +706,14 @@ function NewTask({
               onChange={(e) => set({ notes: e.target.value || null })}
             />
           </label>
+
+          {draft.due_on ? (
+            <div className="mt-5">
+              <ReminderPicker value={draft.reminders ?? []} onChange={(reminders) => set({ reminders })} />
+            </div>
+          ) : (
+            <p className="mt-5 text-xs text-[var(--fg-faint)]">Add a due date to arm a WhatsApp reminder.</p>
+          )}
 
           {error && (
             <p role="alert" className="mt-4 text-xs text-[var(--color-signal)]">
@@ -925,16 +979,30 @@ export function TaskDrawer({
                 <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
                   Due
                 </span>
-                <input
-                  type="date"
-                  className="admin-input mt-2"
-                  value={draft.due_on ?? ""}
-                  onChange={(e) => {
-                    const due_on = e.target.value || null;
-                    set({ due_on });
-                    save({ due_on });
-                  }}
-                />
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="date"
+                    className="admin-input min-w-0 flex-1"
+                    value={draft.due_on ?? ""}
+                    onChange={(e) => {
+                      const due_on = e.target.value || null;
+                      set({ due_on });
+                      save({ due_on });
+                    }}
+                  />
+                  <input
+                    type="time"
+                    className="admin-input w-28"
+                    aria-label="Due time (optional)"
+                    disabled={!draft.due_on}
+                    value={draft.due_time ?? ""}
+                    onChange={(e) => {
+                      const due_time = e.target.value || null;
+                      set({ due_time });
+                      save({ due_time });
+                    }}
+                  />
+                </div>
               </label>
               <label className="block">
                 <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
@@ -1060,6 +1128,18 @@ export function TaskDrawer({
                 }}
               />
             </div>
+
+            {draft.due_on ? (
+              <ReminderPicker
+                value={draft.reminders}
+                onChange={(reminders) => {
+                  set({ reminders });
+                  save({ reminders });
+                }}
+              />
+            ) : (
+              <p className="text-xs text-[var(--fg-faint)]">Add a due date to arm a WhatsApp reminder.</p>
+            )}
 
             <label className="block">
               <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">

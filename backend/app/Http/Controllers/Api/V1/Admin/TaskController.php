@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Engagement;
 use App\Models\Task;
+use App\Models\TaskReminder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -33,7 +34,7 @@ class TaskController extends Controller
             ->where(fn ($q) => $q
                 ->whereNull('done_at')
                 ->orWhere('done_at', '>=', now()->subDays(30)))
-            ->with('engagement:id,title,client_id', 'client:id,name')
+            ->with('engagement:id,title,client_id', 'client:id,name', 'reminders')
             ->orderByRaw('done_at is not null')
             ->orderByRaw('due_on is null')
             ->orderBy('due_on')
@@ -96,11 +97,14 @@ class TaskController extends Controller
             unset($data['done']);
         }
 
+        $reminders = array_key_exists('reminders', $data) ? $data['reminders'] : null;
+        unset($data['reminders']);
         $task->fill($data);
         $this->settle($task);
 
-        $next = DB::transaction(function () use ($task, $wasDone) {
+        $next = DB::transaction(function () use ($task, $wasDone, $reminders) {
             $task->save();
+            $this->syncReminders($task, $reminders);
 
             return ! $wasDone && $task->done_at ? $this->repeatAfter($task) : null;
         });
@@ -171,7 +175,7 @@ class TaskController extends Controller
         ]);
     }
 
-    public const WITH = ['engagement:id,title,client_id', 'client:id,name'];
+    public const WITH = ['engagement:id,title,client_id', 'client:id,name', 'reminders'];
 
     /** @param array<string, mixed> $data */
     private function create(array $data): JsonResponse
@@ -180,6 +184,8 @@ class TaskController extends Controller
             $data['status'] = $data['done'] ? 'done' : 'todo';
             unset($data['done']);
         }
+        $reminders = $data['reminders'] ?? null;
+        unset($data['reminders']);
 
         $task = new Task(['status' => 'todo', 'priority' => 'normal', ...$data]);
         $this->settle($task);
@@ -187,6 +193,7 @@ class TaskController extends Controller
         // date anyway.
         $task->position = (int) Task::query()->max('position') + 1;
         $task->save();
+        $this->syncReminders($task, $reminders);
 
         return response()->json(['data' => self::shape($task->refresh()->load(self::WITH))], 201);
     }
@@ -198,6 +205,7 @@ class TaskController extends Controller
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:190'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'due_on' => ['sometimes', 'nullable', 'date'],
+            'due_time' => ['sometimes', 'nullable', 'date_format:H:i'],
             'done' => ['sometimes', 'boolean'],
             'status' => ['sometimes', Rule::in(Task::STATUSES)],
             'priority' => ['sometimes', Rule::in(Task::PRIORITIES)],
@@ -208,7 +216,49 @@ class TaskController extends Controller
             'checklist' => ['sometimes', 'nullable', 'array', 'max:50'],
             'checklist.*.text' => ['required', 'string', 'max:190'],
             'checklist.*.done' => ['required', 'boolean'],
+            // Minutes before due_on/due_time a WhatsApp reminder goes out.
+            'reminders' => ['sometimes', 'array', 'max:6'],
+            'reminders.*' => ['integer', Rule::in(array_keys(TaskReminder::PRESETS))],
         ];
+    }
+
+    /**
+     * Keeps the task's reminders in step with what was asked for. A
+     * reminder already sent stays sent — unless the due date or time just
+     * moved, in which case it is re-armed: it was a promise about the old
+     * moment, and that moment no longer exists.
+     */
+    private function syncReminders(Task $task, ?array $offsets): void
+    {
+        $rescheduled = $task->wasChanged(['due_on', 'due_time']);
+
+        if ($offsets === null) {
+            // The reminder list itself was not touched by this request —
+            // an edit from the Due field alone still has to re-arm them,
+            // or a reminder already sent for the old date stays silent
+            // forever against the new one.
+            if ($rescheduled) {
+                $task->reminders()->whereNotNull('sent_at')
+                    ->update(['sent_at' => null, 'attempts' => 0, 'last_error' => null]);
+            }
+
+            return;
+        }
+
+        $wanted = collect($offsets)->unique()->values();
+        $existing = $task->reminders()->get()->keyBy('offset_minutes');
+
+        foreach ($existing as $minutes => $reminder) {
+            if (! $wanted->contains($minutes)) {
+                $reminder->delete();
+            } elseif ($rescheduled) {
+                $reminder->update(['sent_at' => null, 'attempts' => 0, 'last_error' => null]);
+            }
+        }
+
+        foreach ($wanted->diff($existing->keys()) as $minutes) {
+            $task->reminders()->create(['offset_minutes' => $minutes]);
+        }
     }
 
     /**
@@ -275,6 +325,11 @@ class TaskController extends Controller
         ]);
         $next->save();
 
+        // A recurring task keeps reminding, unsent against its new date.
+        foreach ($task->reminders as $reminder) {
+            $next->reminders()->create(['offset_minutes' => $reminder->offset_minutes]);
+        }
+
         $task->forceFill(['repeat' => null])->save();
 
         return $next->load(self::WITH);
@@ -296,7 +351,12 @@ class TaskController extends Controller
             'notes' => $task->notes,
             'checklist' => $task->checklist ?? [],
             'due_on' => $task->due_on?->toDateString(),
+            'due_time' => $task->due_time ? substr((string) $task->due_time, 0, 5) : null,
             'repeat' => $task->repeat,
+            // The offsets currently armed for this task, in minutes.
+            'reminders' => $task->relationLoaded('reminders')
+                ? $task->reminders->pluck('offset_minutes')->sort()->values()->all()
+                : [],
             'done_at' => $task->done_at?->toIso8601String(),
             'created_at' => $task->created_at?->toIso8601String(),
         ];

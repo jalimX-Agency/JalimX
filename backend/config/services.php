@@ -52,4 +52,16 @@ return [
         ],
     ],
 
+    /*
+     * Task reminders, sent to the agency's own phone. Not the client's —
+     * this is Mohamed's WhatsApp, not a client-facing channel.
+     */
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+        // International format, no "+" or leading zeros: 2126XXXXXXXX.
+        'recipient' => env('WHATSAPP_RECIPIENT'),
+    ],
+
 ];

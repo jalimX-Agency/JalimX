@@ -293,16 +293,31 @@ export type Task = {
   notes: string | null;
   checklist: { text: string; done: boolean }[];
   due_on: string | null;
+  /** "HH:MM"; null means the default hour used for reminder timing. */
+  due_time: string | null;
   repeat: TaskRepeat | null;
+  /** Minutes before due (0 = at the due time) a WhatsApp reminder is sent. */
+  reminders: number[];
   /** When it was ticked off; null while it is still to do. */
   done_at: string | null;
   created_at: string;
 };
 
+/** The reminder offsets offered in the UI, in minutes before due. */
+export const REMINDER_PRESETS: { minutes: number; label: string }[] = [
+  { minutes: 2880, label: "2 days before" },
+  { minutes: 1440, label: "1 day before" },
+  { minutes: 180, label: "3 hours before" },
+  { minutes: 60, label: "1 hour before" },
+  { minutes: 15, label: "15 minutes before" },
+  { minutes: 0, label: "At the due time" },
+];
+
 export type TaskInput = Partial<{
   title: string;
   notes: string | null;
   due_on: string | null;
+  due_time: string | null;
   done: boolean;
   status: TaskStatus;
   priority: TaskPriority;
@@ -311,6 +326,7 @@ export type TaskInput = Partial<{
   engagement_id: number | null;
   client_id: number | null;
   checklist: { text: string; done: boolean }[];
+  reminders: number[];
 }>;
 
 /** One step of a template. `day` counts from the start date; null = no date. */
