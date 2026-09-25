@@ -20,6 +20,7 @@ const SECTIONS: { group: string; items: { href: string; label: string; hint: str
       { href: "/admin/settings/invoicing", label: "Invoicing", hint: "What goes on an invoice" },
       { href: "/admin/settings/work-types", label: "Work types", hint: "What kinds of work you do" },
       { href: "/admin/settings/task-templates", label: "Task templates", hint: "The steps a job always takes" },
+      { href: "/admin/settings/whatsapp", label: "WhatsApp", hint: "Where reminders go, and what they say" },
     ],
   },
   {

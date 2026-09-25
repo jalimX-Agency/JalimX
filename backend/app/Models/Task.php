@@ -63,7 +63,8 @@ class Task extends Model
 
         $time = $this->due_time ? substr((string) $this->due_time, 0, 8) : self::DEFAULT_DUE_TIME;
 
-        return Carbon::parse($this->due_on->toDateString().' '.$time);
+        // 15:00 typed in the dashboard is 15:00 in Marrakech, not in UTC.
+        return Carbon::parse($this->due_on->toDateString().' '.$time, config('app.business_timezone'));
     }
 
     /**

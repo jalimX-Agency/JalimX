@@ -68,6 +68,14 @@ return [
     'timezone' => 'UTC',
 
     /*
+     * Where the agency works. Times typed into the dashboard — a task due
+     * "at 15:00" — mean 15:00 here, not 15:00 UTC. The app stores and
+     * compares instants in UTC; this is only how a wall-clock time the
+     * user typed is read, and how one is written back to them.
+     */
+    'business_timezone' => env('BUSINESS_TIMEZONE', 'Africa/Casablanca'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

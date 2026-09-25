@@ -303,6 +303,37 @@ export type Task = {
   created_at: string;
 };
 
+/** One of the WhatsApp templates a task reminder can be sent with. */
+export type ReminderTemplate = {
+  key: "basic" | "notes" | "steps" | "full";
+  /** Its name on Meta's side. */
+  name: string;
+  label: string;
+  hint: string;
+  /** What {{1}}, {{2}}… stand for, in order. */
+  params: string[];
+  /** Sample values for the preview, in the same order. */
+  example: string[];
+  default_body: string;
+  body: string;
+  /** Meta's status; null when it has not been created there yet. */
+  status: string | null;
+  rejected_reason: string | null;
+};
+
+export type WhatsAppSettings = {
+  /** Whether the server has the credentials at all. */
+  configured: boolean;
+  connection: { name: string; number: string; quality: string } | null;
+  error: string | null;
+  /** The number reminders go to, digits only with its country code. */
+  recipient: string | null;
+  templates: ReminderTemplate[];
+  legacy: { name: string; status: string | null };
+  footer: string;
+  button: string;
+};
+
 /** The reminder offsets offered in the UI, in minutes before due. */
 export const REMINDER_PRESETS: { minutes: number; label: string }[] = [
   { minutes: 2880, label: "2 days before" },
@@ -793,6 +824,33 @@ export const admin = {
       method: "POST",
       body: JSON.stringify({ ids, action }),
     }),
+
+  whatsapp: () =>
+    request<{ data: WhatsAppSettings }>("/api/v1/admin/whatsapp").then((r) => r.data),
+
+  updateWhatsAppRecipient: (recipient: string) =>
+    request<{ data: { recipient: string } }>("/api/v1/admin/whatsapp/recipient", {
+      method: "PUT",
+      body: JSON.stringify({ recipient }),
+    }).then((r) => r.data.recipient),
+
+  /** Saves the wording and sends it to Meta, which reviews it again. */
+  updateReminderTemplate: (key: ReminderTemplate["key"], body: string) =>
+    request<{ data: WhatsAppSettings }>(`/api/v1/admin/whatsapp/templates/${key}`, {
+      method: "PUT",
+      body: JSON.stringify({ body }),
+    }).then((r) => r.data),
+
+  createMissingReminderTemplates: () =>
+    request<{ data: WhatsAppSettings }>("/api/v1/admin/whatsapp/templates/create-missing", {
+      method: "POST",
+    }).then((r) => r.data),
+
+  /** Sends a sample reminder to the reminder number. */
+  testWhatsApp: () =>
+    request<{ data: { template: string; to: string } }>("/api/v1/admin/whatsapp/test", {
+      method: "POST",
+    }).then((r) => r.data),
 
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 

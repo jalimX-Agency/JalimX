@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceControlle
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\TaskController;
 use App\Http\Controllers\Api\V1\Admin\TaskTemplateController;
+use App\Http\Controllers\Api\V1\Admin\WhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\WorkTypeController;
 use App\Http\Controllers\Api\V1\LeadController;
 use App\Http\Controllers\Api\V1\ProjectController;
@@ -135,6 +136,17 @@ Route::prefix('v1')->group(function () {
             Route::post('/engagements/{engagement}/task-template', [TaskTemplateController::class, 'fromEngagement']);
             // The same change to a whole selection, in one request.
             Route::post('/tasks/bulk', [TaskController::class, 'bulk']);
+
+            /*
+             * WhatsApp reminders: the number they go to and the wording of
+             * the templates. The test send is throttled — it costs a message.
+             */
+            Route::get('/whatsapp', [WhatsAppController::class, 'show']);
+            Route::put('/whatsapp/recipient', [WhatsAppController::class, 'updateRecipient']);
+            Route::put('/whatsapp/templates/{key}', [WhatsAppController::class, 'updateTemplate'])
+                ->whereIn('key', ['basic', 'notes', 'steps', 'full']);
+            Route::post('/whatsapp/templates/create-missing', [WhatsAppController::class, 'createMissing']);
+            Route::post('/whatsapp/test', [WhatsAppController::class, 'test'])->middleware('throttle:5,1');
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
             Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 
