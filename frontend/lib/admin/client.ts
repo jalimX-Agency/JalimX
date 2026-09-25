@@ -303,9 +303,20 @@ export type Task = {
   created_at: string;
 };
 
-/** One of the WhatsApp templates a task reminder can be sent with. */
+/**
+ * One of the WhatsApp templates the app sends: a task reminder to the
+ * agency, or an invoice or logins message to a client.
+ */
 export type ReminderTemplate = {
-  key: "basic" | "notes" | "steps" | "full";
+  key: "basic" | "notes" | "steps" | "full" | "invoice" | "logins";
+  group: "reminders" | "clients";
+  /** "ar" for reminders, "fr" for clients. */
+  language: string;
+  footer: string;
+  /** The button under the message, if it has one. */
+  button: string | null;
+  /** A sample file name when the message carries a PDF. */
+  document: string | null;
   /** Its name on Meta's side. */
   name: string;
   label: string;
@@ -330,8 +341,6 @@ export type WhatsAppSettings = {
   recipient: string | null;
   templates: ReminderTemplate[];
   legacy: { name: string; status: string | null };
-  footer: string;
-  button: string;
 };
 
 /** The reminder offsets offered in the UI, in minutes before due. */
@@ -851,6 +860,20 @@ export const admin = {
     request<{ data: { template: string; to: string } }>("/api/v1/admin/whatsapp/test", {
       method: "POST",
     }).then((r) => r.data),
+
+  /** An issued invoice, sent to the client on WhatsApp with its PDF. */
+  sendInvoiceWhatsApp: (documentId: number, to?: string) =>
+    request<{ data: { sent_to: string } }>(`/api/v1/admin/documents/${documentId}/whatsapp`, {
+      method: "POST",
+      body: JSON.stringify({ to: to || null }),
+    }).then((r) => r.data),
+
+  /** Logins as a protected PDF on WhatsApp; the password comes back here. */
+  sendCredentialsWhatsApp: (clientId: number, ids: number[], to?: string) =>
+    request<{ data: { sent_to: string; count: number; password: string } }>(
+      `/api/v1/admin/clients/${clientId}/credentials/whatsapp`,
+      { method: "POST", body: JSON.stringify({ ids, to: to || null }) },
+    ).then((r) => r.data),
 
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 

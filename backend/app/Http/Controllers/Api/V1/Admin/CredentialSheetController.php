@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\ClientLoginsMail;
 use App\Models\Client;
 use App\Models\Credential;
+use App\Services\ClientMessenger;
 use App\Support\BillingProfile;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,54 @@ class CredentialSheetController extends Controller
             'data' => [
                 'sent_to' => $to,
                 'count' => $credentials->count(),
+                'password' => $password,
+            ],
+        ]);
+    }
+
+    /**
+     * Sent to the client on WhatsApp, always protected. The password comes
+     * back here, as with email, to be given another way — never in the
+     * same chat as the file.
+     */
+    public function whatsapp(Request $request, Client $client): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer'],
+            'to' => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $to = ClientMessenger::number($data['to'] ?? null, $client->phone);
+        $credentials = $this->pick($client, $data['ids']);
+        $password = $this->password();
+
+        // "vos 3 accès (Hébergement, WordPress, Google)" — enough to know
+        // what the file is without opening it.
+        $labels = Str::limit($credentials->pluck('label')->implode(', '), 120);
+        $count = $credentials->count();
+        $what = ($count === 1 ? 'votre accès' : "vos {$count} accès")." ({$labels})";
+
+        try {
+            ClientMessenger::make()->send(
+                'logins',
+                $to,
+                [$client->contact_name ?: $client->name, $what],
+                $this->render($client, $credentials, $password),
+                $this->filename($client),
+            );
+        } catch (\RuntimeException $e) {
+            report($e);
+
+            return response()->json([
+                'message' => Str::limit($e->getMessage(), 300).' Nothing was sent.',
+            ], 502);
+        }
+
+        return response()->json([
+            'data' => [
+                'sent_to' => $to,
+                'count' => $count,
                 'password' => $password,
             ],
         ]);

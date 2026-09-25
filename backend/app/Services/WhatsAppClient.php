@@ -118,16 +118,37 @@ class WhatsAppClient
 
     /**
      * Sends an approved template. $params fill {{1}}, {{2}}... in order.
-     * The recipient is the agency's own number unless one is given.
+     * The recipient is the agency's own number unless one is given. A
+     * template with a document header is sent with the id of a file put
+     * there by uploadMedia().
      *
      * @param  list<string>  $params
+     * @param  array{id: string, filename: string}|null  $document
      * @return string The message id.
      */
-    public function sendTemplate(string $templateName, string $language, array $params, ?string $to = null): string
-    {
+    public function sendTemplate(
+        string $templateName,
+        string $language,
+        array $params,
+        ?string $to = null,
+        ?array $document = null,
+    ): string {
         $to ??= WhatsAppSettings::recipient();
         if (! $to) {
             throw new RuntimeException('No WhatsApp number is set to receive reminders.');
+        }
+
+        $components = [];
+        if ($document) {
+            $components[] = ['type' => 'header', 'parameters' => [
+                ['type' => 'document', 'document' => $document],
+            ]];
+        }
+        if ($params) {
+            $components[] = ['type' => 'body', 'parameters' => array_map(
+                fn ($p) => ['type' => 'text', 'text' => self::clean($p)],
+                $params,
+            )];
         }
 
         $response = $this->request()->post(self::BASE."/{$this->phoneNumberId}/messages", [
@@ -137,16 +158,51 @@ class WhatsAppClient
             'template' => [
                 'name' => $templateName,
                 'language' => ['code' => $language],
-                'components' => $params
-                    ? [['type' => 'body', 'parameters' => array_map(
-                        fn ($p) => ['type' => 'text', 'text' => self::clean($p)],
-                        $params,
-                    )]]
-                    : [],
+                'components' => $components,
             ],
         ]);
 
         return (string) $this->ok($response)->json('messages.0.id', '');
+    }
+
+    /**
+     * Puts a file on Meta's side for sending. The id it returns is good
+     * for a message sent soon after; it is not kept here.
+     */
+    public function uploadMedia(string $bytes, string $filename, string $mime = 'application/pdf'): string
+    {
+        $response = Http::withToken($this->token)->acceptJson()->timeout(60)
+            ->attach('file', $bytes, $filename, ['Content-Type' => $mime])
+            ->post(self::BASE."/{$this->phoneNumberId}/media", [
+                'messaging_product' => 'whatsapp',
+                'type' => $mime,
+            ]);
+
+        return (string) $this->ok($response)->json('id');
+    }
+
+    /**
+     * A sample file for a template that carries one. Meta's reviewers want
+     * to see an example document, and it has to go through the app's
+     * resumable upload rather than the ordinary media endpoint.
+     */
+    public function uploadExample(string $bytes, string $filename, string $mime = 'application/pdf'): string
+    {
+        $appId = $this->ok($this->request()->get(self::BASE.'/app'))->json('id');
+
+        $session = $this->ok($this->request()->post(self::BASE."/{$appId}/uploads?".http_build_query([
+            'file_name' => $filename,
+            'file_length' => strlen($bytes),
+            'file_type' => $mime,
+        ])))->json('id');
+
+        $response = Http::withHeaders([
+            // This endpoint wants "OAuth", not "Bearer".
+            'Authorization' => 'OAuth '.$this->token,
+            'file_offset' => '0',
+        ])->timeout(60)->withBody($bytes, $mime)->post(self::BASE."/{$session}");
+
+        return (string) $this->ok($response)->json('h');
     }
 
     /**

@@ -253,6 +253,7 @@ export function Documents({ client }: { client: Client }) {
                   ) : (
                     <IssuedPanel
                       doc={doc}
+                      clientPhone={client.phone}
                       onChanged={replace}
                       onDeleted={() => {
                         setRows((r) => r.filter((d) => d.id !== doc.id));
@@ -805,12 +806,123 @@ function DraftEditor({
 }
 
 /** An issued document: what was sent, and what has come back against it. */
+/**
+ * The issued invoice, sent to the client on WhatsApp with the same PDF as
+ * "Open the PDF". The number defaults to the client's and can be changed
+ * for this one send — to the person who actually pays, say.
+ */
+function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; clientPhone: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [to, setTo] = useState(clientPhone ?? "");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const ask = useConfirm();
+
+  async function send() {
+    const number = to.trim();
+    if (!number || busy) return;
+    if (
+      !(await ask({
+        title: `Send ${doc.number} on WhatsApp?`,
+        body: [
+          `To ${number}, with the invoice PDF attached.`,
+          "The client must have agreed to receive WhatsApp messages from you.",
+        ],
+        confirmLabel: "Send",
+      }))
+    ) {
+      return;
+    }
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await admin.sendInvoiceWhatsApp(doc.id, number);
+      setResult({ ok: true, text: `Sent to +${r.sent_to}.` });
+      setOpen(false);
+    } catch (e) {
+      setResult({
+        ok: false,
+        text:
+          e instanceof ApiError && e.status === 422
+            ? (Object.values(e.errors)[0]?.[0] ?? e.message)
+            : e instanceof Error
+              ? e.message
+              : "It was not sent.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(true);
+            setResult(null);
+          }}
+          className="w-full border border-[var(--hairline)] bg-[var(--panel)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] hover:border-[var(--fg)]"
+        >
+          Send on WhatsApp
+        </button>
+      ) : (
+        <div className="border border-[var(--hairline)] bg-[var(--panel)] p-4">
+          <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+            Send on WhatsApp
+          </p>
+          <div className="mt-3">
+            <Field label="To" hint={clientPhone ? "The client's number; change it for this send only." : "This client has no number on file."}>
+              <input
+                className="admin-input tabular-nums"
+                inputMode="tel"
+                maxLength={30}
+                placeholder="0612345678"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="px-2 py-2 text-sm text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={send}
+              disabled={busy || !to.trim()}
+              className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            >
+              {busy ? "Sending…" : "Send"}
+            </button>
+          </div>
+        </div>
+      )}
+      {result && (
+        <p
+          role={result.ok ? "status" : "alert"}
+          className={`mt-2 text-xs ${result.ok ? "text-[var(--link)]" : "text-[var(--color-signal)]"}`}
+        >
+          {result.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function IssuedPanel({
   doc,
+  clientPhone,
   onChanged,
   onDeleted,
 }: {
   doc: BillingDocument;
+  clientPhone: string | null;
   onChanged: (next: BillingDocument) => void;
   onDeleted: () => void;
 }) {
@@ -927,6 +1039,10 @@ function IssuedPanel({
           >
             Open the PDF ↗
           </a>
+
+          {doc.type === "invoice" && doc.status === "sent" && doc.number && (
+            <SendInvoiceOnWhatsApp doc={doc} clientPhone={clientPhone} />
+          )}
 
           {canBePaid && (
             <div className="border border-[var(--hairline)] bg-[var(--panel)] p-4">

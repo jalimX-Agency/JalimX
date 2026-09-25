@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Api\V1\Admin\CredentialController;
 use App\Http\Controllers\Api\V1\Admin\CredentialSheetController;
 use App\Http\Controllers\Api\V1\Admin\DocumentController;
+use App\Http\Controllers\Api\V1\Admin\DocumentWhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\OverviewController;
@@ -144,7 +145,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/whatsapp', [WhatsAppController::class, 'show']);
             Route::put('/whatsapp/recipient', [WhatsAppController::class, 'updateRecipient']);
             Route::put('/whatsapp/templates/{key}', [WhatsAppController::class, 'updateTemplate'])
-                ->whereIn('key', ['basic', 'notes', 'steps', 'full']);
+                ->whereIn('key', ['basic', 'notes', 'steps', 'full', 'invoice', 'logins']);
             Route::post('/whatsapp/templates/create-missing', [WhatsAppController::class, 'createMissing']);
             Route::post('/whatsapp/test', [WhatsAppController::class, 'test'])->middleware('throttle:5,1');
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
@@ -159,11 +160,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/credentials/{credential}/reveal', [CredentialController::class, 'reveal']);
             Route::delete('/credentials/{credential}', [CredentialController::class, 'destroy']);
 
-            // Handing logins over: as a PDF here, or by email to the client.
-            // Throttled because each one decrypts every password selected.
+            // Handing logins over: as a PDF here, or by email or WhatsApp to
+            // the client. Throttled because each one decrypts every password
+            // selected.
             Route::post('/clients/{client}/credentials/sheet', [CredentialSheetController::class, 'download'])
                 ->middleware('throttle:20,1');
             Route::post('/clients/{client}/credentials/send', [CredentialSheetController::class, 'send'])
+                ->middleware('throttle:10,1');
+            Route::post('/clients/{client}/credentials/whatsapp', [CredentialSheetController::class, 'whatsapp'])
                 ->middleware('throttle:10,1');
 
             Route::get('/work-types', [WorkTypeController::class, 'index']);
@@ -181,6 +185,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/documents/{document}/issue', [DocumentController::class, 'issue']);
             Route::post('/documents/{document}/status', [DocumentController::class, 'status']);
             Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+            // An issued invoice, sent to the client on WhatsApp with its PDF.
+            Route::post('/documents/{document}/whatsapp', DocumentWhatsAppController::class)
+                ->middleware('throttle:10,1');
 
             Route::post('/documents/{document}/payments', [PaymentController::class, 'store']);
             Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);

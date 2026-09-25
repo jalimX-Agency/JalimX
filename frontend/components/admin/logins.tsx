@@ -32,10 +32,16 @@ export function Logins({ client }: { client: Client }) {
   const [protect, setProtect] = useState(true);
   const [emailing, setEmailing] = useState(false);
   const [to, setTo] = useState(client.email ?? "");
+  const [whatsapping, setWhatsapping] = useState(false);
+  const [phone, setPhone] = useState(client.phone ?? "");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [handed, setHanded] = useState<{ password: string | null; sentTo?: string } | null>(null);
+  const [handed, setHanded] = useState<{
+    password: string | null;
+    sentTo?: string;
+    via?: "email" | "whatsapp";
+  } | null>(null);
   const ask = useConfirm();
 
   const works = client.engagements ?? [];
@@ -97,9 +103,43 @@ export function Logins({ client }: { client: Client }) {
         to.trim() || null,
         note.trim() || null,
       );
-      setHanded({ password: sent.password, sentTo: sent.sent_to });
+      setHanded({ password: sent.password, sentTo: sent.sent_to, via: "email" });
       setEmailing(false);
       setNote("");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 422) {
+        setError(Object.values(e.errors)[0]?.[0] ?? e.message);
+      } else {
+        setError(e instanceof Error ? e.message : "Could not send it.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function whatsappSheet() {
+    const number = phone.trim();
+    const count = `${ids.length} ${ids.length === 1 ? "login" : "logins"}`;
+    if (
+      !number ||
+      !(await ask({
+        title: `Send ${count} on WhatsApp to ${number}?`,
+        body: [
+          "They go as a password-protected PDF.",
+          "The password is not in the message. You will see it here — give it by phone or SMS, not in the same WhatsApp chat.",
+        ],
+        confirmLabel: "Send",
+      }))
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setHanded(null);
+    try {
+      const sent = await admin.sendCredentialsWhatsApp(client.id, ids, number);
+      setHanded({ password: sent.password, sentTo: `+${sent.sent_to}`, via: "whatsapp" });
+      setWhatsapping(false);
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) {
         setError(Object.values(e.errors)[0]?.[0] ?? e.message);
@@ -151,7 +191,7 @@ export function Logins({ client }: { client: Client }) {
               disabled={busy}
               className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
             >
-              {busy && !emailing ? "Making it…" : "Download PDF"}
+              {busy && !emailing && !whatsapping ? "Making it…" : "Download PDF"}
             </button>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--fg-dim)]">
               <input
@@ -163,7 +203,10 @@ export function Logins({ client }: { client: Client }) {
             </label>
             <button
               type="button"
-              onClick={() => setEmailing((v) => !v)}
+              onClick={() => {
+                setEmailing((v) => !v);
+                setWhatsapping(false);
+              }}
               disabled={busy}
               className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
             >
@@ -172,8 +215,20 @@ export function Logins({ client }: { client: Client }) {
             <button
               type="button"
               onClick={() => {
+                setWhatsapping((v) => !v);
+                setEmailing(false);
+              }}
+              disabled={busy}
+              className="border border-[var(--hairline)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
+            >
+              {whatsapping ? "Close" : "WhatsApp to client"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setSelected(new Set());
                 setEmailing(false);
+                setWhatsapping(false);
               }}
               className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg)]"
             >
@@ -212,6 +267,37 @@ export function Logins({ client }: { client: Client }) {
                 <p className="text-xs text-[var(--fg-faint)]">
                   Always sent protected. The password stays here, never in the
                   email.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {whatsapping && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Send to"
+                hint={client.phone ? "Their number, or whoever you deal with" : "This client has no number on file."}
+              >
+                <input
+                  className="admin-input tabular-nums"
+                  inputMode="tel"
+                  maxLength={30}
+                  value={phone}
+                  placeholder="0612345678"
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </Field>
+              <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={whatsappSheet}
+                  disabled={busy || !phone.trim()}
+                  className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+                >
+                  {busy ? "Sending…" : "Send"}
+                </button>
+                <p className="text-xs text-[var(--fg-faint)]">
+                  Always sent protected. Give the password another way — never in the same chat.
                 </p>
               </div>
             </div>
@@ -314,7 +400,7 @@ function Handed({
   result,
   onDone,
 }: {
-  result: { password: string | null; sentTo?: string };
+  result: { password: string | null; sentTo?: string; via?: "email" | "whatsapp" };
   onDone: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -357,9 +443,11 @@ function Handed({
       )}
       {result.password && (
         <p className="mt-2 max-w-[60ch] text-xs text-[var(--color-signal)]">
-          {result.sentTo
-            ? "Send this by phone or WhatsApp, not by email. It is shown once."
-            : "Keep it apart from the file. It is shown once."}
+          {result.via === "whatsapp"
+            ? "Give this by phone or SMS, not in the same WhatsApp chat. It is shown once."
+            : result.sentTo
+              ? "Send this by phone or WhatsApp, not by email. It is shown once."
+              : "Keep it apart from the file. It is shown once."}
         </p>
       )}
       <button

@@ -86,19 +86,31 @@ function Formatted({ text }: { text: string }) {
 }
 
 /** Roughly how it will look on the phone, with sample values filled in. */
-function Preview({ body, example, footer, button }: { body: string; example: string[]; footer: string; button: string }) {
-  const filled = body.replace(/\{\{\s*(\d+)\s*\}\}/g, (_, n) => example[Number(n) - 1] ?? `{{${n}}}`);
+function Preview({ body, template }: { body: string; template: ReminderTemplate }) {
+  const filled = body.replace(/\{\{\s*(\d+)\s*\}\}/g, (_, n) => template.example[Number(n) - 1] ?? `{{${n}}}`);
   return (
-    <div className="max-w-sm rounded-lg bg-[color-mix(in_oklab,#25d366_10%,var(--panel))] p-3" dir="rtl">
+    <div
+      className="max-w-sm rounded-lg bg-[color-mix(in_oklab,#25d366_10%,var(--panel))] p-3"
+      dir={template.language === "ar" ? "rtl" : "ltr"}
+    >
       <div className="rounded-md bg-[var(--panel)] px-3 py-2.5 text-sm leading-relaxed shadow-sm">
+        {template.document && (
+          // The PDF sits above the words, the way WhatsApp shows it.
+          <div className="mb-2.5 flex items-center gap-2 rounded bg-[color-mix(in_oklab,var(--fg)_6%,transparent)] px-2.5 py-2 text-xs" dir="ltr">
+            <span className="font-mono text-[0.6rem] font-bold text-[var(--color-signal)]">PDF</span>
+            <span className="truncate">{template.document}</span>
+          </div>
+        )}
         <p className="whitespace-pre-wrap break-words">
           <Formatted text={filled} />
         </p>
-        <p className="mt-2 text-xs text-[var(--fg-faint)]">{footer}</p>
+        <p className="mt-2 text-xs text-[var(--fg-faint)]">{template.footer}</p>
       </div>
-      <div className="mt-1 rounded-md bg-[var(--panel)] py-2 text-center text-sm text-[var(--link)] shadow-sm">
-        ↗ {button}
-      </div>
+      {template.button && (
+        <div className="mt-1 rounded-md bg-[var(--panel)] py-2 text-center text-sm text-[var(--link)] shadow-sm">
+          ↗ {template.button}
+        </div>
+      )}
     </div>
   );
 }
@@ -224,7 +236,7 @@ export default function WhatsAppSettingsPage() {
       <section>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="font-display text-xl font-semibold">Reminder messages</h2>
+            <h2 className="font-display text-xl font-semibold">Reminders to you</h2>
             <p className="mt-1 max-w-[62ch] text-sm text-[var(--fg-dim)]">
               A task gets the message that matches it: with its notes, its checklist, both, or neither. WhatsApp
               does not allow empty lines in a template, which is why there are four.
@@ -254,19 +266,47 @@ export default function WhatsAppSettingsPage() {
         </p>
 
         <div className="mt-6 space-y-4">
-          {data.templates.map((t) => (
-            <TemplateCard
-              key={t.key}
-              template={t}
-              footer={data.footer}
-              button={data.button}
-              disabled={!data.connection || busy !== null}
-              onSaved={(next) => {
-                setData(next);
-                setNotice(`“${t.label}” sent to Meta for review.`);
-              }}
-            />
-          ))}
+          {data.templates
+            .filter((t) => t.group === "reminders")
+            .map((t) => (
+              <TemplateCard
+                key={t.key}
+                template={t}
+                disabled={!data.connection || busy !== null}
+                onSaved={(next) => {
+                  setData(next);
+                  setNotice(`“${t.label}” sent to Meta for review.`);
+                }}
+              />
+            ))}
+        </div>
+      </section>
+
+      {/* ——— To clients ——— */}
+      <section>
+        <h2 className="font-display text-xl font-semibold">Messages to clients</h2>
+        <p className="mt-1 max-w-[62ch] text-sm text-[var(--fg-dim)]">
+          Sent from a client&apos;s page: an issued invoice from the Money tab, logins from the Logins tab. In
+          French, with the PDF attached. The logins password is never in the message — you give it another way.
+        </p>
+        <p className="mt-4 text-xs text-[var(--fg-faint)]">
+          Only send to clients who agreed to hear from you on WhatsApp. If people report the messages, Meta
+          lowers the number&apos;s quality and can limit it.
+        </p>
+        <div className="mt-6 space-y-4">
+          {data.templates
+            .filter((t) => t.group === "clients")
+            .map((t) => (
+              <TemplateCard
+                key={t.key}
+                template={t}
+                disabled={!data.connection || busy !== null}
+                onSaved={(next) => {
+                  setData(next);
+                  setNotice(`“${t.label}” sent to Meta for review.`);
+                }}
+              />
+            ))}
         </div>
       </section>
     </div>
@@ -370,14 +410,10 @@ function Recipient({
 
 function TemplateCard({
   template,
-  footer,
-  button,
   disabled,
   onSaved,
 }: {
   template: ReminderTemplate;
-  footer: string;
-  button: string;
   disabled: boolean;
   onSaved: (next: WhatsAppSettings) => void;
 }) {
@@ -417,7 +453,9 @@ function TemplateCard({
       !(await ask({
         title: `Send “${template.label}” back to review?`,
         body: [
-          "Meta has to approve the new wording before it can be used. Until then, tasks that need this message get a simpler one.",
+          template.group === "reminders"
+            ? "Meta has to approve the new wording before it can be used. Until then, tasks that need this message get a simpler one."
+            : "Meta has to approve the new wording before it can be used. Until then, this message cannot be sent to clients.",
           "Meta also limits how often an approved message can be changed — about once a day.",
         ],
         confirmLabel: "Send for review",
@@ -495,7 +533,7 @@ function TemplateCard({
             </div>
             <textarea
               ref={area}
-              dir="auto"
+              dir={template.language === "ar" ? "rtl" : "ltr"}
               rows={12}
               maxLength={1024}
               className="admin-input font-sans leading-relaxed"
@@ -547,7 +585,7 @@ function TemplateCard({
               Preview
             </p>
           )}
-          <Preview body={editing ? body : template.body} example={template.example} footer={footer} button={button} />
+          <Preview body={editing ? body : template.body} template={template} />
         </div>
       </div>
     </article>
