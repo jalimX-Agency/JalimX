@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useInboxPulse } from "@/components/admin/inbox-pulse";
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
 import {
   admin,
@@ -23,8 +24,6 @@ import {
  * WhatsApp's rule, not ours.
  */
 
-const LIST_EVERY = 15_000;
-const THREAD_EVERY = 6_000;
 
 const who = (c: InboxContact) =>
   c.is_self ? "You — reminders" : (c.client?.name ?? c.name ?? `+${c.wa_id}`);
@@ -124,26 +123,25 @@ export default function InboxPage() {
     [],
   );
 
+  /*
+   * Loaded once, then again only when the pulse says something happened —
+   * a message, a receipt — instead of on a timer of its own.
+   */
+  const pulse = useInboxPulse();
   useEffect(() => {
     let live = true;
-    const load = () =>
-      admin.inbox().then(
-        (r) => {
-          if (!live) return;
-          setContacts(r.data);
-          setError(null);
-        },
-        (e) => live && !isSignedOut(e) && setError(e instanceof Error ? e.message : "The inbox did not load."),
-      );
-    load();
-    const timer = window.setInterval(() => {
-      if (!document.hidden) load();
-    }, LIST_EVERY);
+    admin.inbox().then(
+      (r) => {
+        if (!live) return;
+        setContacts(r.data);
+        setError(null);
+      },
+      (e) => live && !isSignedOut(e) && setError(e instanceof Error ? e.message : "The inbox did not load."),
+    );
     return () => {
       live = false;
-      window.clearInterval(timer);
     };
-  }, []);
+  }, [pulse.version]);
 
   /** A conversation just opened is read; its badge goes at once. */
   const opened = (c: InboxContact) =>
@@ -228,6 +226,7 @@ export default function InboxPage() {
             <Thread
               key={openId}
               contactId={openId}
+              version={pulse.version}
               initial={current}
               onBack={() => choose(null)}
               onOpened={opened}
@@ -244,12 +243,15 @@ export default function InboxPage() {
 
 function Thread({
   contactId,
+  version,
   initial,
   onBack,
   onOpened,
   onChanged,
 }: {
   contactId: number;
+  /** The inbox pulse: when it moves, the conversation is read again. */
+  version: string | null;
   initial: InboxContact | null;
   onBack: () => void;
   onOpened: (c: InboxContact) => void;
@@ -259,7 +261,6 @@ function Thread({
   const [messages, setMessages] = useState<InboxMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
-  const lastId = useRef(0);
   const stick = useRef(true);
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -270,56 +271,29 @@ function Thread({
       for (const m of incoming) map.set(m.id, m);
       return [...map.values()].sort((a, b) => a.sent_at.localeCompare(b.sent_at) || a.id - b.id);
     });
-    lastId.current = Math.max(lastId.current, ...incoming.map((m) => m.id));
   }, []);
 
-  // The whole thread once, then only what is new.
+  /*
+   * The whole conversation when it opens, and again each time the pulse
+   * moves — a new message, or a receipt turning an old one's ticks blue.
+   * Nothing is fetched while nothing happens.
+   */
   useEffect(() => {
     let live = true;
     admin.inboxThread(contactId).then(
       (r) => {
         if (!live) return;
         setContact(r.contact);
-        setMessages([]);
         merge(r.messages);
         onOpened(r.contact);
       },
       (e) => live && setError(e instanceof Error ? e.message : "This conversation did not load."),
     );
-    const timer = window.setInterval(async () => {
-      if (document.hidden || !lastId.current) return;
-      try {
-        const r = await admin.inboxThread(contactId, lastId.current);
-        if (!live) return;
-        setContact(r.contact);
-        merge(r.messages);
-      } catch {
-        // The next tick tries again.
-      }
-    }, THREAD_EVERY);
     return () => {
       live = false;
-      window.clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contactId]);
-
-  /*
-   * Receipts change old messages (sent → delivered → read), which the
-   * "after" query does not return; the whole thread is re-read now and
-   * then so the ticks catch up.
-   */
-  useEffect(() => {
-    const timer = window.setInterval(async () => {
-      if (document.hidden) return;
-      try {
-        merge((await admin.inboxThread(contactId)).messages);
-      } catch {
-        // Next time.
-      }
-    }, 30_000);
-    return () => window.clearInterval(timer);
-  }, [contactId, merge]);
+  }, [contactId, version]);
 
   // Follow new messages down, unless the person has scrolled up to read.
   useEffect(() => {
@@ -665,14 +639,6 @@ function Composer({ contact, onSent }: { contact: InboxContact; onSent: (sent: I
   }, []);
 
   const open = !!contact.reply_until && new Date(contact.reply_until).getTime() > now;
-
-  if (contact.is_self) {
-    return (
-      <p className="border-t border-[var(--hairline)] px-4 py-3 text-xs text-[var(--fg-faint)]">
-        This is your own number — where task reminders arrive.
-      </p>
-    );
-  }
 
   if (!open) {
     return (

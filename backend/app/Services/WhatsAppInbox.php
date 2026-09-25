@@ -6,6 +6,7 @@ use App\Mail\WhatsAppMessageMail;
 use App\Models\Client;
 use App\Models\WhatsAppContact;
 use App\Models\WhatsAppMessage;
+use App\Support\InboxPulse;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -55,6 +56,10 @@ final class WhatsAppInbox
 
         foreach ($value['statuses'] ?? [] as $status) {
             $this->receipt($status);
+        }
+
+        if (! empty($value['messages']) || ! empty($value['statuses'])) {
+            InboxPulse::bump();
         }
     }
 
@@ -186,6 +191,7 @@ final class WhatsAppInbox
         ]);
 
         $contact->forceFill(['last_message_at' => $now])->save();
+        InboxPulse::bump();
 
         return $message;
     }

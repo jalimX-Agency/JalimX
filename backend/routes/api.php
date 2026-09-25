@@ -158,7 +158,7 @@ Route::prefix('v1')->group(function () {
              * answered here. Replies are throttled — each one is a message.
              */
             Route::get('/inbox', [InboxController::class, 'index']);
-            Route::get('/inbox/unread', [InboxController::class, 'unread']);
+            Route::get('/inbox/pulse', [InboxController::class, 'pulse']);
             Route::get('/inbox/{contact}', [InboxController::class, 'show']);
             Route::post('/inbox/{contact}/reply', [InboxController::class, 'reply'])
                 ->middleware('throttle:30,1');

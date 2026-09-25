@@ -915,8 +915,9 @@ export const admin = {
   inbox: () =>
     request<{ data: InboxContact[]; unread: number }>("/api/v1/admin/inbox"),
 
-  inboxUnread: () =>
-    request<{ data: { unread: number } }>("/api/v1/admin/inbox/unread").then((r) => r.data.unread),
+  /** Whether anything happened in the inbox; answered from cache, asked often. */
+  inboxPulse: () =>
+    request<{ data: { version: string; unread: number } }>("/api/v1/admin/inbox/pulse").then((r) => r.data),
 
   /** One conversation; with `after`, only what is newer than that message. */
   inboxThread: (contactId: number, after?: number) =>

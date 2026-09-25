@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { JxMark } from "@/components/brand/logo";
 import { ConfirmProvider } from "@/components/admin/confirm";
+import { InboxNotice, InboxPulseProvider, useInboxPulseSource } from "@/components/admin/inbox-pulse";
 import { Block } from "@/components/admin/skeleton";
 import { admin, ApiError, type User } from "@/lib/admin/client";
 
@@ -56,7 +57,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
-  const [inboxUnread, setInboxUnread] = useState(0);
+
 
   useEffect(() => {
     admin.me().then(setUser, (e) => {
@@ -74,19 +75,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     admin.leads().then((r) => setUnread(r.meta.unread), () => {});
   }, [user, leadsPath]);
 
-  /*
-   * WhatsApp is where people write without warning, so its count is kept
-   * fresh everywhere — a small request once a minute — and again whenever
-   * the inbox itself is open or left.
-   */
-  const inboxPath = pathname.startsWith("/admin/inbox") ? pathname : "";
-  useEffect(() => {
-    if (!user) return;
-    const check = () => admin.inboxUnread().then(setInboxUnread, () => {});
-    check();
-    const timer = window.setInterval(check, 60_000);
-    return () => window.clearInterval(timer);
-  }, [user, inboxPath]);
+  // WhatsApp is where people write without warning: every page keeps
+  // asking, cheaply. See components/admin/inbox-pulse.
+  const pulse = useInboxPulseSource(!!user);
+  const inboxUnread = pulse.unread;
 
   async function signOut() {
     await admin.logout().catch(() => {});
@@ -190,7 +182,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </aside>
 
         <main className="min-w-0 flex-1 px-4 py-8 md:px-8 md:py-10 lg:px-12">
-          <ConfirmProvider>{children}</ConfirmProvider>
+          <ConfirmProvider>
+            <InboxPulseProvider value={pulse}>{children}</InboxPulseProvider>
+          </ConfirmProvider>
+          <InboxNotice pulse={pulse} onInbox={pathname.startsWith("/admin/inbox")} />
         </main>
       </div>
     </UserContext.Provider>

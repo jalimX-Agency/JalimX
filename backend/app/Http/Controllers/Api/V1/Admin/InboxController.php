@@ -8,6 +8,7 @@ use App\Models\WhatsAppContact;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsAppClient;
 use App\Services\WhatsAppInbox;
+use App\Support\InboxPulse;
 use App\Support\WhatsAppSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,10 +44,13 @@ class InboxController extends Controller
         ]);
     }
 
-    /** Just the number, for the badge in the menu. */
-    public function unread(): JsonResponse
+    /**
+     * Whether anything happened, for every page to ask every few seconds:
+     * read from the cache, never the database. See InboxPulse.
+     */
+    public function pulse(): JsonResponse
     {
-        return response()->json(['data' => ['unread' => (int) WhatsAppContact::sum('unread')]]);
+        return response()->json(['data' => InboxPulse::current()]);
     }
 
     /**
@@ -69,6 +73,7 @@ class InboxController extends Controller
 
         if ($contact->unread > 0) {
             $contact->forceFill(['unread' => 0])->save();
+            InboxPulse::bump();
             $this->blueTicks($contact);
         }
 
@@ -145,6 +150,7 @@ class InboxController extends Controller
         $data = $request->validate(['client_id' => ['nullable', 'integer', 'exists:clients,id']]);
 
         $contact->forceFill(['client_id' => $data['client_id']])->save();
+        InboxPulse::bump();
 
         return response()->json(['data' => $this->contact($contact->load('client:id,name', 'latestMessage'))]);
     }
