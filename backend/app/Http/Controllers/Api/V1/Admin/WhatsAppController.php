@@ -128,7 +128,7 @@ class WhatsAppController extends Controller
         $params = ReminderTemplates::get('full')['example'];
         $params[1] = TaskReminderMessage::when(Carbon::now()->addHours(3));
 
-        $used = (new ReminderSender($this->client()))->send('full', $params);
+        $used = (new ReminderSender($this->client()))->send('full', $params, 'test');
 
         return response()->json(['data' => [
             'template' => $used,

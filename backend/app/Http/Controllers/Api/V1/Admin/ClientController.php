@@ -77,6 +77,7 @@ class ClientController extends Controller
                 'engagements.tasks.reminders',
                 'documents.items',
                 'documents.payments',
+                'documents.latestWhatsApp',
                 'credentials',
             )
         );

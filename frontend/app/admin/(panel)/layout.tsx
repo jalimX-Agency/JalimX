@@ -39,6 +39,7 @@ const NAV: { group: string; items: { href: string; label: string }[] }[] = [
     items: [
       { href: "/admin", label: "Today" },
       { href: "/admin/tasks", label: "Tasks" },
+      { href: "/admin/inbox", label: "Inbox" },
       { href: "/admin/leads", label: "Leads" },
       { href: "/admin/clients", label: "Clients" },
     ],
@@ -55,6 +56,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  const [inboxUnread, setInboxUnread] = useState(0);
 
   useEffect(() => {
     admin.me().then(setUser, (e) => {
@@ -71,6 +73,20 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     if (!user) return;
     admin.leads().then((r) => setUnread(r.meta.unread), () => {});
   }, [user, leadsPath]);
+
+  /*
+   * WhatsApp is where people write without warning, so its count is kept
+   * fresh everywhere — a small request once a minute — and again whenever
+   * the inbox itself is open or left.
+   */
+  const inboxPath = pathname.startsWith("/admin/inbox") ? pathname : "";
+  useEffect(() => {
+    if (!user) return;
+    const check = () => admin.inboxUnread().then(setInboxUnread, () => {});
+    check();
+    const timer = window.setInterval(check, 60_000);
+    return () => window.clearInterval(timer);
+  }, [user, inboxPath]);
 
   async function signOut() {
     await admin.logout().catch(() => {});
@@ -130,6 +146,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                         {item.href === "/admin/leads" && unread > 0 && (
                           <span className="min-w-5 bg-[var(--color-signal)] px-1.5 text-center font-mono text-[0.6rem] leading-[1.15rem] tabular-nums text-white">
                             {unread}
+                          </span>
+                        )}
+                        {item.href === "/admin/inbox" && inboxUnread > 0 && (
+                          <span className="min-w-5 bg-[var(--color-signal)] px-1.5 text-center font-mono text-[0.6rem] leading-[1.15rem] tabular-nums text-white">
+                            {inboxUnread}
                           </span>
                         )}
                       </span>

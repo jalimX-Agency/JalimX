@@ -52,6 +52,7 @@ class DocumentWhatsAppController extends Controller
                 ],
                 DocumentPdf::render($document)->output(),
                 DocumentPdf::filename($document),
+                ['document_id' => $document->id],
             );
         } catch (RuntimeException $e) {
             report($e);

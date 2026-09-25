@@ -36,7 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
          * route needs no session and grants nothing, and it keeps its
          * own defences: validation and a rate limit.
          */
-        $middleware->validateCsrfTokens(except: ['api/v1/leads']);
+        $middleware->validateCsrfTokens(except: ['api/v1/leads', 'api/v1/whatsapp/webhook']);
 
         /*
          * Railway (like Heroku, Render, Vercel) terminates TLS at its own edge

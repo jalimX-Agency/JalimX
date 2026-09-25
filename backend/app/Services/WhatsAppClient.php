@@ -206,6 +206,96 @@ class WhatsAppClient
     }
 
     /**
+     * A free-form text. Only accepted within 24 hours of the person's last
+     * message to us; outside that, Meta wants a template.
+     */
+    public function sendText(string $to, string $body): string
+    {
+        $response = $this->request()->post(self::BASE."/{$this->phoneNumberId}/messages", [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'text',
+            'text' => ['body' => $body, 'preview_url' => true],
+        ]);
+
+        return (string) $this->ok($response)->json('messages.0.id', '');
+    }
+
+    /**
+     * A file as a free-form message: an image shows as an image, anything
+     * else as a document with its name. Same 24-hour rule as text.
+     */
+    public function sendMedia(string $to, string $mediaId, string $mime, string $filename, ?string $caption = null): string
+    {
+        $type = str_starts_with($mime, 'image/') ? 'image' : 'document';
+        $payload = ['id' => $mediaId];
+        if ($type === 'document') {
+            $payload['filename'] = $filename;
+        }
+        if (filled($caption)) {
+            $payload['caption'] = $caption;
+        }
+
+        $response = $this->request()->post(self::BASE."/{$this->phoneNumberId}/messages", [
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => $type,
+            $type => $payload,
+        ]);
+
+        return (string) $this->ok($response)->json('messages.0.id', '');
+    }
+
+    /**
+     * A file someone sent us. Meta hands out a link that expires within
+     * minutes and wants the token to fetch it, so it is fetched at once.
+     *
+     * @return array{bytes: string, mime: string}
+     */
+    public function downloadMedia(string $mediaId): array
+    {
+        $info = $this->ok($this->request()->get(self::BASE."/{$mediaId}"))->json();
+
+        $file = Http::withToken($this->token)->timeout(60)->get($info['url']);
+        if ($file->failed()) {
+            throw new RuntimeException("WhatsApp: the file could not be fetched ({$file->status()}).");
+        }
+
+        return ['bytes' => $file->body(), 'mime' => (string) ($info['mime_type'] ?? 'application/octet-stream')];
+    }
+
+    /** Blue ticks: this message, and everything before it in the chat, was read. */
+    public function markRead(string $wamid): void
+    {
+        $this->ok($this->request()->post(self::BASE."/{$this->phoneNumberId}/messages", [
+            'messaging_product' => 'whatsapp',
+            'status' => 'read',
+            'message_id' => $wamid,
+        ]));
+    }
+
+    /**
+     * Points Meta's webhooks for this account at our URL: the app is
+     * subscribed to the business account, and told where to post and
+     * which token proves the URL is ours.
+     */
+    public function connectWebhook(string $callbackUrl, string $verifyToken, string $appSecret): void
+    {
+        $this->ok($this->request()->post(self::BASE."/{$this->businessAccountId}/subscribed_apps"));
+
+        $appId = $this->ok($this->request()->get(self::BASE.'/app'))->json('id');
+
+        // Configuring the app itself takes the app's own token, id|secret.
+        $this->ok(Http::acceptJson()->timeout(30)->post(self::BASE."/{$appId}/subscriptions", [
+            'object' => 'whatsapp_business_account',
+            'callback_url' => $callbackUrl,
+            'verify_token' => $verifyToken,
+            'fields' => 'messages',
+            'access_token' => "{$appId}|{$appSecret}",
+        ]));
+    }
+
+    /**
      * Meta rejects a variable with a line break, a tab, more than four
      * spaces in a row, or nothing at all.
      */

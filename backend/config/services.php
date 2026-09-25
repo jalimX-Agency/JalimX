@@ -62,6 +62,12 @@ return [
         'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
         // International format, no "+" or leading zeros: 2126XXXXXXXX.
         'recipient' => env('WHATSAPP_RECIPIENT'),
+        // Signs every webhook Meta posts, so a forged one is refused.
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        // Chosen here and given to Meta; proves the webhook URL is ours.
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        // Who is emailed when a message arrives; defaults to the leads address.
+        'notify' => env('WHATSAPP_NOTIFY_EMAIL', env('LEADS_NOTIFY_EMAIL')),
     ],
 
 ];

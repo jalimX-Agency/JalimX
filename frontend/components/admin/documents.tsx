@@ -911,6 +911,25 @@ function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; cli
           {result.text}
         </p>
       )}
+      {/* How far the last one got, from WhatsApp's own receipts. */}
+      {!result && doc.whatsapp && (
+        <p
+          className={`mt-2 text-xs ${doc.whatsapp.status === "failed" ? "text-[var(--color-signal)]" : "text-[var(--fg-faint)]"}`}
+        >
+          Sent on WhatsApp
+          {doc.whatsapp.sent_at
+            ? ` ${new Date(doc.whatsapp.sent_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+            : ""}
+          {" · "}
+          {doc.whatsapp.status === "read"
+            ? "read ✓✓"
+            : doc.whatsapp.status === "delivered"
+              ? "delivered ✓✓"
+              : doc.whatsapp.status === "failed"
+                ? `not delivered${doc.whatsapp.error ? ` — ${doc.whatsapp.error}` : ""}`
+                : "sent ✓"}
+        </p>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\AttachmentController;
 use App\Http\Controllers\Api\V1\Admin\DocumentPdfController;
+use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,14 @@ Route::get('/attachments/{attachment}/download', [AttachmentController::class, '
 
 Route::get('/attachments/{attachment}/preview', [AttachmentController::class, 'preview'])
     ->name('attachments.preview');
+
+/*
+ * A file from a WhatsApp conversation — a photo, a voice note, a PDF.
+ * Here for the same reason as attachments: an <img> or a link carries no
+ * Origin header for Sanctum to recognise.
+ */
+Route::get('/whatsapp/media/{message}', [InboxController::class, 'media'])
+    ->name('whatsapp.media');
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum')

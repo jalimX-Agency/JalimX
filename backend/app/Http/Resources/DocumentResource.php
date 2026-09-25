@@ -63,6 +63,12 @@ class DocumentResource extends JsonResource
                 && $this->due_date->isPast(),
             'editable' => $this->isEditable(),
 
+            // Sent on WhatsApp, and whether it arrived and was opened.
+            'whatsapp' => $this->whenLoaded('latestWhatsApp', fn () => $this->latestWhatsApp ? [
+                'status' => (string) $this->latestWhatsApp->status,
+                'error' => $this->latestWhatsApp->error,
+                'sent_at' => $this->latestWhatsApp->sent_at?->toIso8601String(),
+            ] : null),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

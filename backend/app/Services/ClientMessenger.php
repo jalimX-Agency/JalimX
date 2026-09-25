@@ -45,12 +45,14 @@ final class ClientMessenger
 
     /**
      * @param  list<string>  $params
+     * @param  array<string, mixed>  $record  Extra fields for the inbox row, e.g. document_id.
      * @return string The message id.
      */
-    public function send(string $key, string $to, array $params, string $pdf, string $filename): string
+    public function send(string $key, string $to, array $params, string $pdf, string $filename, array $record = []): string
     {
         $def = ClientTemplates::get($key);
-        $status = $this->client->templates()[$def['name']]['status'] ?? null;
+        $live = $this->client->templates()[$def['name']] ?? null;
+        $status = $live['status'] ?? null;
 
         if ($status !== 'APPROVED') {
             throw new RuntimeException(match ($status) {
@@ -62,12 +64,21 @@ final class ClientMessenger
 
         $media = $this->client->uploadMedia($pdf, $filename);
 
-        return $this->client->sendTemplate(
+        $wamid = $this->client->sendTemplate(
             $def['name'],
             ClientTemplates::LANGUAGE,
             $params,
             $to,
             ['id' => $media, 'filename' => $filename],
         );
+
+        // Into the conversation, so the thread shows it and its receipts.
+        // The PDF itself is not kept: the invoice can be reopened, and a
+        // logins sheet should not sit in one more place.
+        WhatsAppInbox::recordQuietly(new WhatsAppInbox($this->client), $to, $wamid, 'template',
+            WhatsAppInbox::fill($live['body'] ?? $def['body'], $params), $key,
+            ['media_name' => $filename, 'media_mime' => 'application/pdf', ...$record]);
+
+        return $wamid;
     }
 }

@@ -174,6 +174,8 @@ export type BillingDocument = {
   settled: boolean;
   overdue: boolean;
   editable: boolean;
+  /** The last time it went out on WhatsApp, and how far it got. */
+  whatsapp?: { status: string; error: string | null; sent_at: string | null } | null;
   created_at: string;
 };
 
@@ -341,6 +343,41 @@ export type WhatsAppSettings = {
   recipient: string | null;
   templates: ReminderTemplate[];
   legacy: { name: string; status: string | null };
+};
+
+/** Someone who wrote to, or was written to from, the agency's number. */
+export type InboxContact = {
+  id: number;
+  /** Their number, digits only with the country code. */
+  wa_id: string;
+  /** The name they set on WhatsApp. */
+  name: string | null;
+  client: { id: number; name: string } | null;
+  /** The agency's own number, where reminders go. */
+  is_self: boolean;
+  unread: number;
+  last_message_at: string | null;
+  /** Until when a free reply is allowed; null when the 24 hours are over. */
+  reply_until: string | null;
+  last: { direction: "in" | "out"; type: string; body: string | null; status: string } | null;
+};
+
+export type InboxMessage = {
+  id: number;
+  wamid: string | null;
+  direction: "in" | "out";
+  type: string;
+  body: string | null;
+  media: { available: boolean; mime: string | null; name: string | null; size: number | null } | null;
+  extra: { latitude?: number; longitude?: number; name?: string; address?: string } | null;
+  /** received, or for ours: sent, delivered, read, failed. */
+  status: string;
+  error: string | null;
+  context_wamid: string | null;
+  /** What sent ours: reply, invoice, logins, reminder, test. */
+  source: string | null;
+  document_id: number | null;
+  sent_at: string;
 };
 
 /** The reminder offsets offered in the UI, in minutes before due. */
@@ -874,6 +911,38 @@ export const admin = {
       `/api/v1/admin/clients/${clientId}/credentials/whatsapp`,
       { method: "POST", body: JSON.stringify({ ids, to: to || null }) },
     ).then((r) => r.data),
+
+  inbox: () =>
+    request<{ data: InboxContact[]; unread: number }>("/api/v1/admin/inbox"),
+
+  inboxUnread: () =>
+    request<{ data: { unread: number } }>("/api/v1/admin/inbox/unread").then((r) => r.data.unread),
+
+  /** One conversation; with `after`, only what is newer than that message. */
+  inboxThread: (contactId: number, after?: number) =>
+    request<{ data: { contact: InboxContact; messages: InboxMessage[] } }>(
+      `/api/v1/admin/inbox/${contactId}${after ? `?after=${after}` : ""}`,
+    ).then((r) => r.data),
+
+  /** A free reply — text, a file, or both — inside the 24-hour window. */
+  inboxReply: (contactId: number, text: string, file?: File | null) => {
+    const form = new FormData();
+    if (text) form.append("text", text);
+    if (file) form.append("file", file);
+    return request<{ data: InboxMessage[] }>(`/api/v1/admin/inbox/${contactId}/reply`, {
+      method: "POST",
+      body: form,
+    }).then((r) => r.data);
+  },
+
+  inboxLink: (contactId: number, clientId: number | null) =>
+    request<{ data: InboxContact }>(`/api/v1/admin/inbox/${contactId}/client`, {
+      method: "PUT",
+      body: JSON.stringify({ client_id: clientId }),
+    }).then((r) => r.data),
+
+  /** Followed as a link or an <img>, so it goes to the session-backed web route. */
+  inboxMedia: (messageId: number) => `${API}/whatsapp/media/${messageId}`,
 
   removeTask: (id: number) => request(`/api/v1/admin/tasks/${id}`, { method: "DELETE" }),
 

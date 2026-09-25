@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -54,6 +55,12 @@ class Document extends Model
     public function items(): HasMany
     {
         return $this->hasMany(DocumentItem::class)->orderBy('position')->orderBy('id');
+    }
+
+    /** The last time it went out on WhatsApp, with how far it got. */
+    public function latestWhatsApp(): HasOne
+    {
+        return $this->hasOne(WhatsAppMessage::class)->latestOfMany();
     }
 
     public function payments(): HasMany

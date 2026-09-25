@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\CredentialSheetController;
 use App\Http\Controllers\Api\V1\Admin\DocumentController;
 use App\Http\Controllers\Api\V1\Admin\DocumentWhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
+use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\OverviewController;
 use App\Http\Controllers\Api\V1\Admin\PaymentController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SettingController;
 use App\Http\Controllers\Api\V1\TestimonialController;
+use App\Http\Controllers\Api\V1\WhatsAppWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +73,15 @@ Route::prefix('v1')->group(function () {
      */
     Route::post('/leads', [LeadController::class, 'store'])
         ->middleware('throttle:12,60');
+
+    /*
+     * Meta's webhook for the agency's WhatsApp number: the one-time check
+     * that the URL is ours, then every message and receipt. Public, and
+     * trusted only once the signature on the body checks out.
+     */
+    Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);
+    Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])
+        ->middleware('throttle:600,1');
 
     Route::middleware('auth:sanctum')->group(function () {
         /*
@@ -142,6 +153,17 @@ Route::prefix('v1')->group(function () {
              * WhatsApp reminders: the number they go to and the wording of
              * the templates. The test send is throttled — it costs a message.
              */
+            /*
+             * The inbox: conversations on the WhatsApp number, read and
+             * answered here. Replies are throttled — each one is a message.
+             */
+            Route::get('/inbox', [InboxController::class, 'index']);
+            Route::get('/inbox/unread', [InboxController::class, 'unread']);
+            Route::get('/inbox/{contact}', [InboxController::class, 'show']);
+            Route::post('/inbox/{contact}/reply', [InboxController::class, 'reply'])
+                ->middleware('throttle:30,1');
+            Route::put('/inbox/{contact}/client', [InboxController::class, 'link']);
+
             Route::get('/whatsapp', [WhatsAppController::class, 'show']);
             Route::put('/whatsapp/recipient', [WhatsAppController::class, 'updateRecipient']);
             Route::put('/whatsapp/templates/{key}', [WhatsAppController::class, 'updateTemplate'])
