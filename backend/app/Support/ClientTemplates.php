@@ -47,7 +47,7 @@ final class ClientTemplates
                 'label' => 'Logins (no password)',
                 'hint' => 'Sent with the logins PDF attached, when you chose not to protect it.',
                 'params' => ['Client', 'What is inside'],
-                'body' => "Bonjour {{1}},\n\nVous trouverez ci-joint le document contenant {{2}}.\n\nNous vous conseillons de changer ces mots de passe à la première connexion, de conserver ce document en lieu sûr et de ne pas le transférer.\n\nL'équipe JalimX",
+                'body' => "Bonjour {{1}},\n\nVous trouverez ci-joint le document contenant {{2}}.\n\nMerci de le conserver en lieu sûr et de ne pas le transférer.\n\nL'équipe JalimX",
                 'example' => ['Riad Dar Anika', 'vos 2 accès (Hébergement, WordPress)'],
                 'sample_file' => 'acces-riad-dar-anika.pdf',
             ],
