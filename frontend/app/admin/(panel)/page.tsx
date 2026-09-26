@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { STATUS_LABEL } from "@/components/admin/lead-status";
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import { admin, isSignedOut, type Overview } from "@/lib/admin/client";
 
 /**
@@ -244,7 +245,7 @@ function Figure({
  */
 function Due({ tasks }: { tasks: Overview["tasks"] }) {
   const [done, setDone] = useState<Set<number>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const late = tasks.filter((t) => t.days < 0 && !done.has(t.id)).length;
 
@@ -266,7 +267,7 @@ function Due({ tasks }: { tasks: Overview["tasks"] }) {
         else next.add(id);
         return next;
       });
-      setError(e instanceof Error ? e.message : "Could not save that.");
+      toast.error(e, "Could not save that.");
     }
   }
 
@@ -285,11 +286,6 @@ function Due({ tasks }: { tasks: Overview["tasks"] }) {
       hint={late > 0 ? `${late} late` : "Due this week"}
       action={{ href: "/admin/tasks", label: "All tasks" }}
     >
-      {error && (
-        <p role="alert" className="border-b border-[var(--hairline)] px-5 py-2 text-xs text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
       <ul>
         {tasks.map((task) => {
           const isDone = done.has(task.id);

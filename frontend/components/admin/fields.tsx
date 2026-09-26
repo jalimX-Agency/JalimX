@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { useToast } from "@/components/admin/toast";
+
 /**
  * The dashboard's form parts, shared by every editing page so a field, a
  * switch and the save bar behave the same wherever they appear.
@@ -98,6 +100,16 @@ export function SaveBar({
   onSave: () => void;
   onDiscard: () => void;
 }) {
+  // The outcome also goes to the top of the screen, where it is seen
+  // whatever part of a long form you are looking at.
+  const toast = useToast();
+  useEffect(() => {
+    if (saved) toast.success(savedMessage);
+  }, [saved, savedMessage, toast]);
+  useEffect(() => {
+    if (message) toast.error(message);
+  }, [message, toast]);
+
   return (
     <div
       className={`fixed inset-x-0 bottom-0 z-30 border-t border-[var(--hairline)] bg-[var(--panel)] transition-transform duration-200 md:left-60 ${

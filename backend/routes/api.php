@@ -167,7 +167,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/whatsapp', [WhatsAppController::class, 'show']);
             Route::put('/whatsapp/recipient', [WhatsAppController::class, 'updateRecipient']);
             Route::put('/whatsapp/templates/{key}', [WhatsAppController::class, 'updateTemplate'])
-                ->whereIn('key', ['basic', 'notes', 'steps', 'full', 'invoice', 'logins']);
+                ->whereIn('key', ['basic', 'notes', 'steps', 'full', 'invoice', 'logins', 'logins_open']);
             Route::post('/whatsapp/templates/create-missing', [WhatsAppController::class, 'createMissing']);
             Route::post('/whatsapp/test', [WhatsAppController::class, 'test'])->middleware('throttle:5,1');
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);

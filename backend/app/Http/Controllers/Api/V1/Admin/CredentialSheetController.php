@@ -20,10 +20,11 @@ use Throwable;
 /**
  * A client's logins, handed over on paper.
  *
- * The sheet is password-protected by default, and the password is never
- * put in the same email as the sheet: an email carrying both is simply an
- * email carrying the passwords. The dashboard shows it once, for sending
- * another way — a call, a WhatsApp message.
+ * The sheet is password-protected unless the person sending it says
+ * otherwise — by download, email or WhatsApp alike. When it is, the
+ * password is never put in the same message as the sheet: a message
+ * carrying both is simply a message carrying the passwords. The dashboard
+ * shows it once, for giving another way — a call, an SMS.
  *
  * The protection is the PDF format's own, which is RC4: a lock on the
  * door rather than a vault. It stops the attachment being read by whoever
@@ -56,7 +57,7 @@ class CredentialSheetController extends Controller
         ]);
     }
 
-    /** Emailed to the client, always protected. */
+    /** Emailed to the client, protected unless told otherwise. */
     public function send(Request $request, Client $client): JsonResponse
     {
         $data = $request->validate([
@@ -66,6 +67,8 @@ class CredentialSheetController extends Controller
             // actually deal with instead.
             'to' => ['nullable', 'email:rfc', 'max:190'],
             'note' => ['nullable', 'string', 'max:1000'],
+            // Protected when not said: the safe choice is the default one.
+            'protect' => ['sometimes', 'boolean'],
         ]);
 
         $to = $data['to'] ?? $client->email;
@@ -78,9 +81,7 @@ class CredentialSheetController extends Controller
 
         $credentials = $this->pick($client, $data['ids']);
 
-        // Always protected when it leaves by email: an attachment is
-        // forwarded, archived and backed up in places nobody here controls.
-        $password = $this->password();
+        $password = ($data['protect'] ?? true) ? $this->password() : null;
 
         /*
          * A refused send is reported, not thrown: a bare 500 told the
@@ -94,6 +95,7 @@ class CredentialSheetController extends Controller
                 filename: $this->filename($client),
                 count: $credentials->count(),
                 note: $data['note'] ?? null,
+                protected: $password !== null,
             ));
         } catch (Throwable $e) {
             report($e);
@@ -114,9 +116,10 @@ class CredentialSheetController extends Controller
     }
 
     /**
-     * Sent to the client on WhatsApp, always protected. The password comes
-     * back here, as with email, to be given another way — never in the
-     * same chat as the file.
+     * Sent to the client on WhatsApp, protected unless told otherwise. The
+     * password comes back here, as with email, to be given another way —
+     * never in the same chat as the file. An open sheet goes under its own
+     * template, whose words do not promise a password that is not there.
      */
     public function whatsapp(Request $request, Client $client): JsonResponse
     {
@@ -124,11 +127,12 @@ class CredentialSheetController extends Controller
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['integer'],
             'to' => ['nullable', 'string', 'max:30'],
+            'protect' => ['sometimes', 'boolean'],
         ]);
 
         $to = ClientMessenger::number($data['to'] ?? null, $client->phone);
         $credentials = $this->pick($client, $data['ids']);
-        $password = $this->password();
+        $password = ($data['protect'] ?? true) ? $this->password() : null;
 
         // "vos 3 accès (Hébergement, WordPress, Google)" — enough to know
         // what the file is without opening it.
@@ -138,7 +142,7 @@ class CredentialSheetController extends Controller
 
         try {
             ClientMessenger::make()->send(
-                'logins',
+                $password !== null ? 'logins' : 'logins_open',
                 $to,
                 [$client->contact_name ?: $client->name, $what],
                 $this->render($client, $credentials, $password),

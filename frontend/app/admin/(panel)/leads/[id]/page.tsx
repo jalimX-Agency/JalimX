@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { STATUS_LABEL } from "@/components/admin/lead-status";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import { admin, isSignedOut, LEAD_STATUSES, type Lead, type LeadStatus } from "@/lib/admin/client";
 
 /**
@@ -23,6 +24,7 @@ function whatsapp(phone: string): string | null {
 export default function LeadPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const toast = useToast();
   const [lead, setLead] = useState<Lead | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -64,9 +66,10 @@ export default function LeadPage() {
     setLead({ ...lead, status }); // the button should answer the click, not the network
     try {
       setLead(await admin.updateLead(lead.id, { status }));
+      toast.success(`Marked ${STATUS_LABEL[status].toLowerCase()}.`);
     } catch (e) {
       setLead(previous);
-      setError((e as Error).message);
+      toast.error(e, "Could not change the status.");
     } finally {
       setSaving(null);
     }
@@ -79,6 +82,9 @@ export default function LeadPage() {
       setLead(await admin.updateLead(lead.id, { note: note.trim() || null }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      toast.success("Note saved.");
+    } catch (e) {
+      toast.error(e, "Could not save the note.");
     } finally {
       setSaving(null);
     }
@@ -94,9 +100,10 @@ export default function LeadPage() {
     setConverting(true);
     try {
       const client = await admin.convertLead(lead.id);
+      toast.success(`${client.name} is now a client.`);
       router.push(`/admin/clients/${client.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create the client.");
+      toast.error(e, "Could not create the client.");
       setConverting(false);
     }
   }
@@ -119,8 +126,13 @@ export default function LeadPage() {
     ) {
       return;
     }
-    await admin.removeLead(lead.id);
-    router.push("/admin/leads");
+    try {
+      await admin.removeLead(lead.id);
+      toast.success("Enquiry deleted.");
+      router.push("/admin/leads");
+    } catch (e) {
+      toast.error(e, "Could not delete it.");
+    }
   }
 
   const noteDirty = note.trim() !== (lead.note ?? "");

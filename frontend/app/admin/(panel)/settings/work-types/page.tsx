@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { RowsSkeleton } from "@/components/admin/skeleton";
-import { admin, ApiError, isSignedOut, type WorkType, type WorkTypeInput } from "@/lib/admin/client";
+import { useToast } from "@/components/admin/toast";
+import { admin, isSignedOut, type WorkType, type WorkTypeInput } from "@/lib/admin/client";
 
 /**
  * The kinds of work the agency does.
@@ -149,21 +150,17 @@ function TypeEditor({
   onDeleted?: () => Promise<void>;
 }) {
   const [input, setInput] = useState<WorkTypeInput>(value);
-  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const ask = useConfirm();
+  const toast = useToast();
 
   async function submit() {
     setBusy(true);
-    setMessage(null);
     try {
       await onSave(input);
+      toast.success(`“${input.name.trim()}” saved.`);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "Check the fields above.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "Saving failed.");
-      }
+      toast.error(e, "Saving failed.");
       setBusy(false);
     }
   }
@@ -183,9 +180,10 @@ function TypeEditor({
     setBusy(true);
     try {
       await onDeleted();
+      toast.success(`“${input.name.trim()}” deleted.`);
     } catch (e) {
       // The API refuses when work is already filed under it, and says so.
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
       setBusy(false);
     }
   }
@@ -237,10 +235,7 @@ function TypeEditor({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="max-w-[48ch] text-xs text-[var(--color-signal)]">
-          {message}
-        </p>
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-4">
           {onDeleted && type && (
             <button

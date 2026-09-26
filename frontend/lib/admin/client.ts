@@ -793,11 +793,17 @@ export const admin = {
       { method: "POST", body: JSON.stringify({ ids, protect }) },
     ).then((r) => r.data),
 
-  /** Emails the protected PDF; the password comes back here, never in the email. */
-  sendCredentials: (clientId: number, ids: number[], to: string | null, note: string | null) =>
-    request<{ data: { sent_to: string; count: number; password: string } }>(
+  /** Emails the PDF; its password, when it has one, comes back here — never in the email. */
+  sendCredentials: (
+    clientId: number,
+    ids: number[],
+    to: string | null,
+    note: string | null,
+    protect: boolean,
+  ) =>
+    request<{ data: { sent_to: string; count: number; password: string | null } }>(
       `/api/v1/admin/clients/${clientId}/credentials/send`,
-      { method: "POST", body: JSON.stringify({ ids, to, note }) },
+      { method: "POST", body: JSON.stringify({ ids, to, note, protect }) },
     ).then((r) => r.data),
 
   removeCredential: (id: number) =>
@@ -905,11 +911,11 @@ export const admin = {
       body: JSON.stringify({ to: to || null }),
     }).then((r) => r.data),
 
-  /** Logins as a protected PDF on WhatsApp; the password comes back here. */
-  sendCredentialsWhatsApp: (clientId: number, ids: number[], to?: string) =>
-    request<{ data: { sent_to: string; count: number; password: string } }>(
+  /** Logins as a PDF on WhatsApp; its password, when it has one, comes back here. */
+  sendCredentialsWhatsApp: (clientId: number, ids: number[], protect: boolean, to?: string) =>
+    request<{ data: { sent_to: string; count: number; password: string | null } }>(
       `/api/v1/admin/clients/${clientId}/credentials/whatsapp`,
-      { method: "POST", body: JSON.stringify({ ids, to: to || null }) },
+      { method: "POST", body: JSON.stringify({ ids, to: to || null, protect }) },
     ).then((r) => r.data),
 
   inbox: () =>

@@ -12,11 +12,12 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * The client's access details, as a protected PDF.
+ * The client's access details, as a PDF — protected unless the sender
+ * chose otherwise.
  *
- * The password for the PDF is deliberately not in here. The message says
- * so, and says it will arrive another way, so the client does not go
- * looking for it in their inbox and reply asking.
+ * When it is protected, the password is deliberately not in here. The
+ * message says so, and says it will arrive another way, so the client does
+ * not go looking for it in their inbox and reply asking.
  *
  * In French, like the invoices: it is read by the client, not by us.
  */
@@ -31,6 +32,7 @@ class ClientLoginsMail extends Mailable
         public string $filename,
         public int $count,
         public ?string $note = null,
+        public bool $protected = true,
     ) {}
 
     public function envelope(): Envelope
@@ -50,6 +52,7 @@ class ClientLoginsMail extends Mailable
                 'name' => $this->client->contact_name ?: $this->client->name,
                 'count' => $this->count,
                 'note' => $this->note,
+                'protected' => $this->protected,
             ],
         );
     }

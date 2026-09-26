@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
 import { UseTemplate } from "@/components/admin/task-templates";
+import { useToast } from "@/components/admin/toast";
 import {
   daysUntil,
   linkLabel,
@@ -64,7 +65,6 @@ export default function TasksPage() {
   const [links, setLinks] = useState<TaskLinks>([]);
   const [error, setError] = useState<string | null>(null);
   /** A save that failed after the page loaded; the page itself stays. */
-  const [notice, setNotice] = useState<string | null>(null);
   const [view, setView] = useState<View>("list");
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
@@ -77,6 +77,7 @@ export default function TasksPage() {
   /** Where the last pick was, so shift-click can take the run between. */
   const lastPicked = useRef<number | null>(null);
   const ask = useConfirm();
+  const toast = useToast();
 
   useEffect(() => {
     let live = true;
@@ -156,7 +157,6 @@ export default function TasksPage() {
   /** Flip at once, put back if the save fails. */
   async function change(task: Task, status: TaskStatus) {
     if (task.status === status) return;
-    setNotice(null);
     put({
       ...task,
       status,
@@ -168,7 +168,7 @@ export default function TasksPage() {
       saved(t, next);
     } catch (e) {
       put(task);
-      setNotice(e instanceof Error ? e.message : "Could not save that.");
+      toast.error(e, "Could not save that.");
     }
   }
 
@@ -218,7 +218,6 @@ export default function TasksPage() {
     ) {
       return;
     }
-    setNotice(null);
     setBulkBusy(true);
     try {
       const r = await admin.bulkTasks(ids, action);
@@ -232,8 +231,12 @@ export default function TasksPage() {
       });
       setPicked(new Set());
       lastPicked.current = null;
+      const n = `${ids.length} ${ids.length === 1 ? "task" : "tasks"}`;
+      toast.success(
+        action === "delete" ? `${n} deleted.` : action === "done" ? `${n} marked done.` : `${n} reopened.`,
+      );
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Could not do that.");
+      toast.error(e, "Could not do that.");
     } finally {
       setBulkBusy(false);
     }
@@ -360,11 +363,6 @@ export default function TasksPage() {
         )}
       </div>
 
-      {notice && (
-        <p role="alert" className="mt-4 text-xs text-[var(--color-signal)]">
-          {notice}
-        </p>
-      )}
 
       {picking && view === "list" && (
         /* Sticky, because a selection made at the bottom of a long list

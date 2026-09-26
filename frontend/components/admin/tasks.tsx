@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { FieldLabel, Modal } from "@/components/admin/modal";
 import { SaveAsTemplate, UseTemplate } from "@/components/admin/task-templates";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   REMINDER_PRESETS,
@@ -335,14 +336,13 @@ export function QuickAdd({
   const [high, setHigh] = useState(false);
   const [busy, setBusy] = useState(false);
   const [full, setFull] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function add() {
     const text = title.trim();
     // A second Enter while the first is still on its way would add it twice.
     if (!text || busy) return;
     setBusy(true);
-    setError(null);
     try {
       await onAdd({
         title: text,
@@ -354,7 +354,7 @@ export function QuickAdd({
       setDue("");
       setHigh(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not add it.");
+      toast.error(e, "Could not add it.");
     } finally {
       setBusy(false);
     }
@@ -443,13 +443,9 @@ export function QuickAdd({
           setDue("");
           setHigh(false);
           setFull(false);
+          toast.success(`“${input.title}” added.`);
         }}
       />
-      {error && (
-        <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
     </div>
   );
 }
@@ -766,6 +762,7 @@ export function TaskDrawer({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const ask = useConfirm();
+  const toast = useToast();
   const [draft, setDraft] = useState<Task | null>(task);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -824,8 +821,9 @@ export function TaskDrawer({
     try {
       await admin.removeTask(task.id);
       onDeleted(task);
+      toast.success(`“${task.title}” deleted.`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
     }
   }
 
@@ -1196,7 +1194,7 @@ export function Tasks({
   engagement: Engagement;
   onChanged: (next: Engagement) => void;
 }) {
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const [showDone, setShowDone] = useState(false);
   const [openId, setOpenId] = useState<number | null>(null);
 
@@ -1238,7 +1236,7 @@ export function Tasks({
       saved(t, next);
     } catch (e) {
       put(upsert(engagement.tasks, task));
-      setError(e instanceof Error ? e.message : "Could not save that.");
+      toast.error(e, "Could not save that.");
     }
   }
 
@@ -1259,12 +1257,6 @@ export function Tasks({
         />
         {engagement.tasks.length > 0 && <SaveAsTemplate engagement={engagement} />}
       </div>
-
-      {error && (
-        <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
 
       {open.length === 0 && done.length === 0 ? (
         <p className="mt-6 border border-dashed border-[var(--hairline)] px-5 py-10 text-center text-sm text-[var(--fg-faint)]">

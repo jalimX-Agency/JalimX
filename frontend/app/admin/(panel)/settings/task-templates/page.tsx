@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { RowsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import { PRIORITY_LABEL } from "@/components/admin/tasks";
 import {
   admin,
-  ApiError,
   isSignedOut,
   TASK_PRIORITIES,
   type TaskPriority,
@@ -176,9 +176,9 @@ function TemplateEditor({
   const [input, setInput] = useState<TaskTemplateInput>(value);
   /** Which steps have their checklist box open. */
   const [lists, setLists] = useState<Set<number>>(new Set());
-  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const ask = useConfirm();
+  const toast = useToast();
 
   const steps = input.items;
   const setSteps = (items: TemplateStep[]) => setInput((i) => ({ ...i, items }));
@@ -199,19 +199,15 @@ function TemplateEditor({
       .filter((s) => s.title.trim())
       .map((s) => ({ ...s, checklist: s.checklist.map((c) => c.trim()).filter(Boolean) }));
     if (!items.length) {
-      setMessage("Add at least one step.");
+      toast.error("Add at least one step.");
       return;
     }
     setBusy(true);
-    setMessage(null);
     try {
       await onSave({ ...input, name: input.name.trim(), items });
+      toast.success(`“${input.name.trim()}” saved.`);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "Check the fields above.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "Saving failed.");
-      }
+      toast.error(e, "Saving failed.");
       setBusy(false);
     }
   }
@@ -231,8 +227,9 @@ function TemplateEditor({
     setBusy(true);
     try {
       await onDeleted();
+      toast.success(`“${input.name.trim()}” deleted.`);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
       setBusy(false);
     }
   }
@@ -401,10 +398,7 @@ function TemplateEditor({
         </button>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="max-w-[48ch] text-xs text-[var(--color-signal)]">
-          {message}
-        </p>
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-4">
           {onDeleted && existing && (
             <button

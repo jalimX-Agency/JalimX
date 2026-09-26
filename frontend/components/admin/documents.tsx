@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   ApiError,
@@ -90,7 +91,7 @@ export function Documents({ client }: { client: Client }) {
   const [open, setOpen] = useState<number | null>(null);
   const [starting, setStarting] = useState<DocumentType | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const engagements = client.engagements ?? [];
 
@@ -104,7 +105,6 @@ export function Documents({ client }: { client: Client }) {
     period?: string,
   ) {
     setBusy(true);
-    setError(null);
     try {
       const doc = await admin.createDocument(client.id, {
         type,
@@ -116,7 +116,7 @@ export function Documents({ client }: { client: Client }) {
       setStarting(null);
       setOpen(doc.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not start it.");
+      toast.error(e, "Could not start it.");
     } finally {
       setBusy(false);
     }
@@ -175,11 +175,6 @@ export function Documents({ client }: { client: Client }) {
         </div>
       </header>
 
-      {error && (
-        <p role="alert" className="border-b border-[var(--hairline)] px-5 py-3 text-sm text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
 
       {starting && (
         <Starter
@@ -456,10 +451,9 @@ function DraftEditor({
     })),
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
   const ask = useConfirm();
+  const toast = useToast();
 
   const err = (key: string) => errors[key]?.[0];
   const set = <K extends keyof DocumentInput>(key: K, value: DocumentInput[K]) =>
@@ -487,21 +481,15 @@ function DraftEditor({
 
   async function save(then?: "issue") {
     setBusy(true);
-    setMessage(null);
     setErrors({});
     try {
       let next = await admin.updateDocument(doc.id, input);
       if (then === "issue") next = await admin.issueDocument(doc.id);
       onSaved(next);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success(then === "issue" ? `${next.number ?? "It"} is issued.` : "Draft saved.");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setErrors(e.errors);
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "Check the fields above.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "Saving failed.");
-      }
+      if (e instanceof ApiError && e.status === 422) setErrors(e.errors);
+      toast.error(e, "Saving failed.");
     } finally {
       setBusy(false);
     }
@@ -535,8 +523,9 @@ function DraftEditor({
     try {
       await admin.removeDocument(doc.id);
       onDeleted();
+      toast.success("Draft deleted.");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
       setBusy(false);
     }
   }
@@ -759,13 +748,7 @@ function DraftEditor({
         </Field>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p
-          role="status"
-          className={`text-xs ${message ? "text-[var(--color-signal)]" : "text-[var(--link)]"}`}
-        >
-          {message ?? (saved ? "Saved" : "")}
-        </p>
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-4">
           <button
             type="button"
@@ -815,8 +798,9 @@ function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; cli
   const [open, setOpen] = useState(false);
   const [to, setTo] = useState(clientPhone ?? "");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const ask = useConfirm();
+  const toast = useToast();
 
   async function send() {
     const number = to.trim();
@@ -834,21 +818,13 @@ function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; cli
       return;
     }
     setBusy(true);
-    setResult(null);
     try {
       const r = await admin.sendInvoiceWhatsApp(doc.id, number);
-      setResult({ ok: true, text: `Sent to +${r.sent_to}.` });
+      setSentTo(r.sent_to);
+      toast.success(`${doc.number} sent on WhatsApp to +${r.sent_to}.`);
       setOpen(false);
     } catch (e) {
-      setResult({
-        ok: false,
-        text:
-          e instanceof ApiError && e.status === 422
-            ? (Object.values(e.errors)[0]?.[0] ?? e.message)
-            : e instanceof Error
-              ? e.message
-              : "It was not sent.",
-      });
+      toast.error(e, "It was not sent.");
     } finally {
       setBusy(false);
     }
@@ -859,10 +835,7 @@ function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; cli
       {!open ? (
         <button
           type="button"
-          onClick={() => {
-            setOpen(true);
-            setResult(null);
-          }}
+          onClick={() => setOpen(true)}
           className="w-full border border-[var(--hairline)] bg-[var(--panel)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] hover:border-[var(--fg)]"
         >
           Send on WhatsApp
@@ -903,16 +876,9 @@ function SendInvoiceOnWhatsApp({ doc, clientPhone }: { doc: BillingDocument; cli
           </div>
         </div>
       )}
-      {result && (
-        <p
-          role={result.ok ? "status" : "alert"}
-          className={`mt-2 text-xs ${result.ok ? "text-[var(--link)]" : "text-[var(--color-signal)]"}`}
-        >
-          {result.text}
-        </p>
-      )}
+      {sentTo && <p className="mt-2 text-xs text-[var(--link)]">Sent on WhatsApp to +{sentTo} just now.</p>}
       {/* How far the last one got, from WhatsApp's own receipts. */}
-      {!result && doc.whatsapp && (
+      {!sentTo && doc.whatsapp && (
         <p
           className={`mt-2 text-xs ${doc.whatsapp.status === "failed" ? "text-[var(--color-signal)]" : "text-[var(--fg-faint)]"}`}
         >
@@ -951,19 +917,16 @@ function IssuedPanel({
   const [reference, setReference] = useState("");
   const ask = useConfirm();
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
 
-  async function run(work: () => Promise<BillingDocument>) {
+  /** `done` is what the alert says once it worked. */
+  async function run(work: () => Promise<BillingDocument>, done?: string) {
     setBusy(true);
-    setMessage(null);
     try {
       onChanged(await work());
+      if (done) toast.success(done);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "That was refused.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "That did not work.");
-      }
+      toast.error(e, "That did not work.");
     } finally {
       setBusy(false);
     }
@@ -1037,7 +1000,7 @@ function IssuedPanel({
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => run(() => admin.removePayment(p.id))}
+                      onClick={() => run(() => admin.removePayment(p.id), "Payment removed.")}
                       className="text-xs text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
                     >
                       Remove
@@ -1120,7 +1083,7 @@ function IssuedPanel({
                       setReference("");
                       setAmount(next.totals.due);
                       return next;
-                    })
+                    }, "Payment recorded.")
                   }
                   className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
                 >
@@ -1135,7 +1098,7 @@ function IssuedPanel({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => run(() => admin.setDocumentStatus(doc.id, "accepted"))}
+                onClick={() => run(() => admin.setDocumentStatus(doc.id, "accepted"), "Marked accepted.")}
                 className="flex-1 border border-[var(--hairline)] px-3 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-35"
               >
                 Accepted
@@ -1143,7 +1106,7 @@ function IssuedPanel({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => run(() => admin.setDocumentStatus(doc.id, "declined"))}
+                onClick={() => run(() => admin.setDocumentStatus(doc.id, "declined"), "Marked declined.")}
                 className="flex-1 border border-[var(--hairline)] px-3 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--fg-dim)] disabled:opacity-35"
               >
                 Declined
@@ -1165,7 +1128,7 @@ function IssuedPanel({
                       cancelLabel: "Keep it",
                     })
                   ) {
-                    run(() => admin.setDocumentStatus(doc.id, "cancelled"));
+                    run(() => admin.setDocumentStatus(doc.id, "cancelled"), `${doc.number ?? "It"} is cancelled.`);
                   }
                 }}
                 className="text-xs text-[var(--fg-dim)] hover:text-[var(--color-signal)]"
@@ -1201,10 +1164,16 @@ function IssuedPanel({
                   })
                 ) {
                   setBusy(true);
-                  admin.removeDocument(doc.id).then(onDeleted, (e) => {
-                    setMessage(e instanceof Error ? e.message : "Could not delete it.");
-                    setBusy(false);
-                  });
+                  admin.removeDocument(doc.id).then(
+                    () => {
+                      onDeleted();
+                      toast.success(`${doc.number ?? `The ${doc.type}`} deleted.`);
+                    },
+                    (e) => {
+                      toast.error(e, "Could not delete it.");
+                      setBusy(false);
+                    },
+                  );
                 }
               }}
               className="text-xs text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
@@ -1213,11 +1182,6 @@ function IssuedPanel({
             </button>
           </div>
 
-          {message && (
-            <p role="alert" className="text-xs text-[var(--color-signal)]">
-              {message}
-            </p>
-          )}
         </aside>
       </div>
     </div>

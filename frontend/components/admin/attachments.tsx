@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   ATTACHMENT_KINDS,
@@ -47,22 +48,22 @@ export function Attachments({
 }) {
   const [kind, setKind] = useState<AttachmentKind>("contract");
   const [progress, setProgress] = useState<number | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const ask = useConfirm();
+  const toast = useToast();
 
   const files = engagement.attachments;
 
   const replaceFiles = (next: Attachment[]) => onChanged({ ...engagement, attachments: next });
 
   async function upload(file: File) {
-    setMessage(null);
     setProgress(0);
     try {
       const added = await admin.uploadAttachment(engagement.id, kind, file, setProgress);
       replaceFiles([added, ...files]);
+      toast.success(`${added.name} uploaded.`);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "The upload failed.");
+      toast.error(e, "The upload failed.");
     } finally {
       setProgress(null);
       // Cleared so choosing the same file twice still fires a change.
@@ -84,8 +85,9 @@ export function Attachments({
     try {
       await admin.removeAttachment(file.id);
       replaceFiles(files.filter((f) => f.id !== file.id));
+      toast.success(`${file.name} deleted.`);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
     }
   }
 
@@ -134,11 +136,6 @@ export function Attachments({
         </div>
       </div>
 
-      {message && (
-        <p role="alert" className="mt-3 text-xs text-[var(--color-signal)]">
-          {message}
-        </p>
-      )}
 
       {files.length === 0 ? (
         <p className="mt-6 border border-dashed border-[var(--hairline)] px-5 py-10 text-center text-sm text-[var(--fg-faint)]">

@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { JxMark } from "@/components/brand/logo";
 import { ConfirmProvider } from "@/components/admin/confirm";
+import { ToastProvider } from "@/components/admin/toast";
 import { InboxNotice, InboxPulseProvider, useInboxPulseSource } from "@/components/admin/inbox-pulse";
 import { Block } from "@/components/admin/skeleton";
 import { admin, ApiError, type User } from "@/lib/admin/client";
@@ -182,9 +183,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         </aside>
 
         <main className="min-w-0 flex-1 px-4 py-8 md:px-8 md:py-10 lg:px-12">
-          <ConfirmProvider>
-            <InboxPulseProvider value={pulse}>{children}</InboxPulseProvider>
-          </ConfirmProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              <InboxPulseProvider value={pulse}>{children}</InboxPulseProvider>
+            </ConfirmProvider>
+          </ToastProvider>
           <InboxNotice pulse={pulse} onInbox={pathname.startsWith("/admin/inbox")} />
         </main>
       </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { FieldLabel as Label, Modal } from "@/components/admin/modal";
 import { LinkSelect, today } from "@/components/admin/tasks";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   type Engagement,
@@ -43,6 +44,7 @@ export function UseTemplate({
   onApplied: (tasks: Task[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const toast = useToast();
   const [templates, setTemplates] = useState<TaskTemplate[] | null>(null);
   const [chosen, setChosen] = useState<number | null>(null);
   const [start, setStart] = useState(today());
@@ -92,6 +94,7 @@ export function UseTemplate({
       });
       onApplied(made);
       setOpen(false);
+      toast.success(`${made.length} ${made.length === 1 ? "task" : "tasks"} added from “${template.name}”.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add them.");
     } finally {
@@ -284,7 +287,7 @@ export function SaveAsTemplate({ engagement }: { engagement: Engagement }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState<string | null>(null);
+  const toast = useToast();
 
   async function save() {
     const n = name.trim();
@@ -293,8 +296,8 @@ export function SaveAsTemplate({ engagement }: { engagement: Engagement }) {
     setError(null);
     try {
       const t = await admin.templateFromWork(engagement.id, n);
-      setSaved(t.name);
       setOpen(false);
+      toast.success(`Saved as the template “${t.name}”.`, "Find it under Settings → Task templates.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save it.");
     } finally {
@@ -309,18 +312,12 @@ export function SaveAsTemplate({ engagement }: { engagement: Engagement }) {
         onClick={() => {
           setName(engagement.title);
           setError(null);
-          setSaved(null);
           setOpen(true);
         }}
         className="px-1 py-2 text-xs text-[var(--fg-faint)] hover:text-[var(--fg)]"
       >
         Save as template
       </button>
-      {saved && (
-        <span role="status" className="text-xs text-[var(--link)]">
-          Saved as “{saved}”
-        </span>
-      )}
 
       <Modal open={open} onClose={() => setOpen(false)} label="Save these tasks as a template">
         <form

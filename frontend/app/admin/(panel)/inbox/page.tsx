@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useInboxPulse } from "@/components/admin/inbox-pulse";
 import { PageSkeleton, RowsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
-  ApiError,
   isSignedOut,
   type Client,
   type InboxContact,
@@ -628,7 +628,7 @@ function Composer({ contact, onSent }: { contact: InboxContact; onSent: (sent: I
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const picker = useRef<HTMLInputElement>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -653,20 +653,14 @@ function Composer({ contact, onSent }: { contact: InboxContact; onSent: (sent: I
   async function send() {
     if (busy || (!text.trim() && !file)) return;
     setBusy(true);
-    setError(null);
     try {
       const sent = await admin.inboxReply(contact.id, text.trim(), file);
       setText("");
       setFile(null);
       onSent(sent);
     } catch (e) {
-      setError(
-        e instanceof ApiError && e.status === 422
-          ? (Object.values(e.errors)[0]?.[0] ?? e.message)
-          : e instanceof Error
-            ? e.message
-            : "It was not sent.",
-      );
+      // What was typed stays in the box, to send again.
+      toast.error(e, "It was not sent.");
     } finally {
       setBusy(false);
     }
@@ -730,11 +724,6 @@ function Composer({ contact, onSent }: { contact: InboxContact; onSent: (sent: I
       <p className="mt-1.5 text-[0.68rem] text-[var(--fg-faint)]">
         Free replies are open: {left(contact.reply_until!, now)} of the 24 hours since their last message.
       </p>
-      {error && (
-        <p role="alert" className="mt-1 text-xs text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
     </div>
   );
 }

@@ -40,6 +40,17 @@ final class ClientTemplates
                 'example' => ['Riad Dar Anika', 'vos 2 accès (Hébergement, WordPress)'],
                 'sample_file' => 'acces-riad-dar-anika.pdf',
             ],
+            // The same sheet sent without a password: its own wording, so
+            // the message does not announce a password that never comes.
+            'logins_open' => [
+                'name' => 'jalimx_logins_open',
+                'label' => 'Logins (no password)',
+                'hint' => 'Sent with the logins PDF attached, when you chose not to protect it.',
+                'params' => ['Client', 'What is inside'],
+                'body' => "Bonjour {{1}},\n\nVous trouverez ci-joint le document contenant {{2}}.\n\nNous vous conseillons de changer ces mots de passe à la première connexion, de conserver ce document en lieu sûr et de ne pas le transférer.\n\nL'équipe JalimX",
+                'example' => ['Riad Dar Anika', 'vos 2 accès (Hébergement, WordPress)'],
+                'sample_file' => 'acces-riad-dar-anika.pdf',
+            ],
         ];
     }
 

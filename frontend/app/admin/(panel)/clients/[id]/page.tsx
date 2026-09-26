@@ -10,6 +10,7 @@ import { Documents } from "@/components/admin/documents";
 import { Engagements } from "@/components/admin/engagements";
 import { Logins } from "@/components/admin/logins";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import { admin, isSignedOut, type Client } from "@/lib/admin/client";
 
 /**
@@ -32,8 +33,8 @@ export default function ClientPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Work");
   const [detailsDirty, setDetailsDirty] = useState(false);
-  const [refusedDelete, setRefusedDelete] = useState<string | null>(null);
   const ask = useConfirm();
+  const toast = useToast();
 
   useEffect(() => {
     let live = true;
@@ -81,13 +82,14 @@ export default function ClientPage() {
     }
     try {
       await admin.removeClient(client.id);
+      toast.success(`${client.name} deleted.`);
       router.push("/admin/clients");
     } catch (e) {
       /*
        * The API refuses to delete a client who has been billed, and says
        * why. Swallowing that would leave the button looking broken.
        */
-      setRefusedDelete(e instanceof Error ? e.message : "Could not delete them.");
+      toast.error(e, "Could not delete them.");
     }
   }
 
@@ -244,11 +246,6 @@ export default function ClientPage() {
           >
             Delete this client
           </button>
-          {refusedDelete && (
-            <p role="alert" className="max-w-[48ch] text-xs text-[var(--color-signal)]">
-              {refusedDelete}
-            </p>
-          )}
         </div>
       </div>
     </div>

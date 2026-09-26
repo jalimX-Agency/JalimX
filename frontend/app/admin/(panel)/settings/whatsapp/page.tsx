@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   ApiError,
@@ -118,9 +119,9 @@ function Preview({ body, template }: { body: string; template: ReminderTemplate 
 export default function WhatsAppSettingsPage() {
   const [data, setData] = useState<WhatsAppSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const ask = useConfirm();
+  const toast = useToast();
 
   useEffect(() => {
     let live = true;
@@ -158,11 +159,10 @@ export default function WhatsAppSettingsPage() {
 
   async function run(label: string, fn: () => Promise<void>) {
     setBusy(label);
-    setNotice(null);
     try {
       await fn();
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "That did not work.");
+      toast.error(e, "That did not work.");
     } finally {
       setBusy(null);
     }
@@ -181,7 +181,7 @@ export default function WhatsAppSettingsPage() {
     }
     await run("test", async () => {
       const r = await admin.testWhatsApp();
-      setNotice(`Sent to +${r.to} using “${r.template}”. Check WhatsApp.`);
+      toast.success(`Test sent to +${r.to}.`, `Using “${r.template}”. Check WhatsApp.`);
     });
   }
 
@@ -195,11 +195,6 @@ export default function WhatsAppSettingsPage() {
         </p>
       </div>
 
-      {notice && (
-        <p role="status" className="border border-[var(--hairline)] bg-[var(--panel)] px-4 py-3 text-sm">
-          {notice}
-        </p>
-      )}
 
       {/* ——— Connection ——— */}
       <section className="border border-[var(--hairline)] bg-[var(--panel)] px-5 py-5">
@@ -249,7 +244,7 @@ export default function WhatsAppSettingsPage() {
               onClick={() =>
                 run("missing", async () => {
                   setData(await admin.createMissingReminderTemplates());
-                  setNotice("Sent to Meta for review. It usually takes from a few minutes to a few hours.");
+                  toast.success("Sent to Meta for review.", "It usually takes from a few minutes to a few hours.");
                 })
               }
               className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
@@ -275,7 +270,7 @@ export default function WhatsAppSettingsPage() {
                 disabled={!data.connection || busy !== null}
                 onSaved={(next) => {
                   setData(next);
-                  setNotice(`“${t.label}” sent to Meta for review.`);
+                  toast.success(`“${t.label}” sent to Meta for review.`);
                 }}
               />
             ))}
@@ -287,7 +282,8 @@ export default function WhatsAppSettingsPage() {
         <h2 className="font-display text-xl font-semibold">Messages to clients</h2>
         <p className="mt-1 max-w-[62ch] text-sm text-[var(--fg-dim)]">
           Sent from a client&apos;s page: an issued invoice from the Money tab, logins from the Logins tab. In
-          French, with the PDF attached. The logins password is never in the message — you give it another way.
+          French, with the PDF attached. When the logins PDF has a password, it is never in the message — you give it
+          another way. A logins PDF sent without one goes with its own wording, which does not mention a password.
         </p>
         <p className="mt-4 text-xs text-[var(--fg-faint)]">
           Only send to clients who agreed to hear from you on WhatsApp. If people report the messages, Meta
@@ -303,7 +299,7 @@ export default function WhatsAppSettingsPage() {
                 disabled={!data.connection || busy !== null}
                 onSaved={(next) => {
                   setData(next);
-                  setNotice(`“${t.label}” sent to Meta for review.`);
+                  toast.success(`“${t.label}” sent to Meta for review.`);
                 }}
               />
             ))}
@@ -330,6 +326,7 @@ function Recipient({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   const dirty = input.trim() !== (value ?? "");
 
@@ -342,6 +339,7 @@ function Recipient({
       setInput(next);
       onSaved(next);
       setSaved(true);
+      toast.success(`Reminders will go to +${next}.`);
     } catch (e) {
       setError(
         e instanceof ApiError && e.status === 422

@@ -7,6 +7,7 @@ import { Attachments } from "@/components/admin/attachments";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { Tasks } from "@/components/admin/tasks";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   ApiError,
@@ -266,9 +267,9 @@ function EngagementEditor({
 }) {
   const [input, setInput] = useState<EngagementInput>(value);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [writing, setWriting] = useState(false);
+  const toast = useToast();
   const [section, setSection] = useState<"details" | "tasks" | "files">("details");
   const ask = useConfirm();
 
@@ -291,19 +292,15 @@ function EngagementEditor({
 
   async function submit() {
     setBusy(true);
-    setMessage(null);
     // Cleared before the request, not after: leaving the last rejection
     // under a field you have since fixed reads as a fresh complaint.
     setErrors({});
     try {
       await onSave(input);
+      toast.success(`“${input.title.trim() || "The work"}” saved.`);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setErrors(e.errors);
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "Check the fields above.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "Saving failed.");
-      }
+      if (e instanceof ApiError && e.status === 422) setErrors(e.errors);
+      toast.error(e, "Saving failed.");
       setBusy(false);
     }
   }
@@ -323,8 +320,9 @@ function EngagementEditor({
     setBusy(true);
     try {
       await onDeleted();
+      toast.success(`“${input.title.trim() || "The work"}” deleted.`);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
       setBusy(false);
     }
   }
@@ -333,11 +331,11 @@ function EngagementEditor({
   async function writeCaseStudy() {
     if (!engagement) return;
     setWriting(true);
-    setMessage(null);
     try {
       onChanged?.(await admin.createCaseStudy(engagement.id));
+      toast.success("Case study started.");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not start it.");
+      toast.error(e, "Could not start it.");
     } finally {
       setWriting(false);
     }
@@ -356,9 +354,6 @@ function EngagementEditor({
           <h3 className="truncate text-sm font-medium">
             {input.title.trim() || (engagement ? "This work" : "New work")}
           </h3>
-          <p role="status" className="truncate text-xs text-[var(--color-signal)]">
-            {message}
-          </p>
         </div>
         <div className="flex items-center gap-4">
           {onDeleted && (

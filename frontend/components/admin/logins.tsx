@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
+import { useToast } from "@/components/admin/toast";
 import {
   admin,
   ApiError,
@@ -36,7 +37,7 @@ export function Logins({ client }: { client: Client }) {
   const [phone, setPhone] = useState(client.phone ?? "");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const [handed, setHanded] = useState<{
     password: string | null;
     sentTo?: string;
@@ -59,7 +60,6 @@ export function Logins({ client }: { client: Client }) {
   /** Decoded in the browser and saved; the PDF never sits behind a URL. */
   async function downloadSheet() {
     setBusy(true);
-    setError(null);
     setHanded(null);
     try {
       const sheet = await admin.credentialSheet(client.id, ids, protect);
@@ -70,9 +70,13 @@ export function Logins({ client }: { client: Client }) {
       a.download = sheet.filename;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      setHanded({ password: sheet.password });
+      if (sheet.password) setHanded({ password: sheet.password });
+      toast.success(
+        "The PDF is downloading.",
+        sheet.password ? "Its password is shown below, once." : "It has no password.",
+      );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not make the PDF.");
+      toast.error(e, "Could not make the PDF.");
     } finally {
       setBusy(false);
     }
@@ -84,17 +88,21 @@ export function Logins({ client }: { client: Client }) {
     if (
       !(await ask({
         title: `Email ${count} to ${recipient}?`,
-        body: [
-          "They go as a password-protected PDF.",
-          "The password is not in the email. You will see it here, to send by phone or WhatsApp.",
-        ],
+        body: protect
+          ? [
+              "They go as a password-protected PDF.",
+              "The password is not in the email. You will see it here, to send by phone or WhatsApp.",
+            ]
+          : [
+              "They go as a PDF with no password: anyone who gets the email can read them.",
+              "Tick “Protect with a password” first if that is not what you want.",
+            ],
         confirmLabel: "Send",
       }))
     ) {
       return;
     }
     setBusy(true);
-    setError(null);
     setHanded(null);
     try {
       const sent = await admin.sendCredentials(
@@ -102,16 +110,17 @@ export function Logins({ client }: { client: Client }) {
         ids,
         to.trim() || null,
         note.trim() || null,
+        protect,
       );
-      setHanded({ password: sent.password, sentTo: sent.sent_to, via: "email" });
+      if (sent.password) setHanded({ password: sent.password, sentTo: sent.sent_to, via: "email" });
+      toast.success(
+        `Emailed to ${sent.sent_to}.`,
+        sent.password ? "Now give them the password shown below, by phone or WhatsApp." : "Sent without a password.",
+      );
       setEmailing(false);
       setNote("");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setError(Object.values(e.errors)[0]?.[0] ?? e.message);
-      } else {
-        setError(e instanceof Error ? e.message : "Could not send it.");
-      }
+      toast.error(e, "Could not send it.");
     } finally {
       setBusy(false);
     }
@@ -124,28 +133,32 @@ export function Logins({ client }: { client: Client }) {
       !number ||
       !(await ask({
         title: `Send ${count} on WhatsApp to ${number}?`,
-        body: [
-          "They go as a password-protected PDF.",
-          "The password is not in the message. You will see it here — give it by phone or SMS, not in the same WhatsApp chat.",
-        ],
+        body: protect
+          ? [
+              "They go as a password-protected PDF.",
+              "The password is not in the message. You will see it here — give it by phone or SMS, not in the same WhatsApp chat.",
+            ]
+          : [
+              "They go as a PDF with no password: anyone who sees the chat can read them.",
+              "Tick “Protect with a password” first if that is not what you want.",
+            ],
         confirmLabel: "Send",
       }))
     ) {
       return;
     }
     setBusy(true);
-    setError(null);
     setHanded(null);
     try {
-      const sent = await admin.sendCredentialsWhatsApp(client.id, ids, number);
-      setHanded({ password: sent.password, sentTo: `+${sent.sent_to}`, via: "whatsapp" });
+      const sent = await admin.sendCredentialsWhatsApp(client.id, ids, protect, number);
+      if (sent.password) setHanded({ password: sent.password, sentTo: `+${sent.sent_to}`, via: "whatsapp" });
+      toast.success(
+        `Sent on WhatsApp to +${sent.sent_to}.`,
+        sent.password ? "Now give them the password shown below, by phone or SMS." : "Sent without a password.",
+      );
       setWhatsapping(false);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setError(Object.values(e.errors)[0]?.[0] ?? e.message);
-      } else {
-        setError(e instanceof Error ? e.message : "Could not send it.");
-      }
+      toast.error(e, "Could not send it.");
     } finally {
       setBusy(false);
     }
@@ -200,6 +213,7 @@ export function Logins({ client }: { client: Client }) {
                 onChange={(e) => setProtect(e.target.checked)}
               />
               Protect with a password
+              <span className="text-[var(--fg-faint)]">(download, email and WhatsApp)</span>
             </label>
             <button
               type="button"
@@ -264,10 +278,7 @@ export function Logins({ client }: { client: Client }) {
                 >
                   {busy ? "Sending…" : "Send"}
                 </button>
-                <p className="text-xs text-[var(--fg-faint)]">
-                  Always sent protected. The password stays here, never in the
-                  email.
-                </p>
+                <Protection protect={protect} where="email" />
               </div>
             </div>
           )}
@@ -296,19 +307,11 @@ export function Logins({ client }: { client: Client }) {
                 >
                   {busy ? "Sending…" : "Send"}
                 </button>
-                <p className="text-xs text-[var(--fg-faint)]">
-                  Always sent protected. Give the password another way — never in the same chat.
-                </p>
+                <Protection protect={protect} where="chat" />
               </div>
             </div>
           )}
         </div>
-      )}
-
-      {error && (
-        <p role="alert" className="border-b border-[var(--hairline)] px-5 py-3 text-sm text-[var(--color-signal)]">
-          {error}
-        </p>
       )}
 
       {handed && <Handed result={handed} onDone={() => setHanded(null)} />}
@@ -322,6 +325,7 @@ export function Logins({ client }: { client: Client }) {
             const created = await admin.createCredential(client.id, input);
             setRows((r) => [...r, created].sort((a, b) => a.label.localeCompare(b.label)));
             setOpen(null);
+            toast.success(`“${created.label}” added.`);
           }}
         />
       )}
@@ -357,11 +361,18 @@ export function Logins({ client }: { client: Client }) {
                     const next = await admin.updateCredential(row.id, input);
                     setRows((r) => r.map((x) => (x.id === row.id ? next : x)));
                     setOpen(null);
+                    toast.success(`“${next.label}” saved.`);
                   }}
                   onDeleted={async () => {
                     await admin.removeCredential(row.id);
                     setRows((r) => r.filter((x) => x.id !== row.id));
+                    setSelected((s) => {
+                      const left = new Set(s);
+                      left.delete(row.id);
+                      return left;
+                    });
                     setOpen(null);
+                    toast.success(`“${row.label}” deleted.`);
                   }}
                 />
               ) : (
@@ -390,8 +401,22 @@ export function Logins({ client }: { client: Client }) {
   );
 }
 
+/** Under the Send button: what the choice above means for this way out. */
+function Protection({ protect, where }: { protect: boolean; where: "email" | "chat" }) {
+  return protect ? (
+    <p className="text-xs text-[var(--fg-faint)]">
+      🔒 Sent protected. The password stays here —{" "}
+      {where === "email" ? "never in the email." : "give it another way, never in the same chat."}
+    </p>
+  ) : (
+    <p className="text-xs text-[var(--color-signal)]">
+      Sent without a password — anyone who sees the {where} can open it.
+    </p>
+  );
+}
+
 /**
- * What just went out, and the password that did not go with it.
+ * The password that did not go with the file.
  *
  * Shown once. Closing it does not bring it back: a new PDF means a new
  * password, which is the point.
@@ -474,7 +499,7 @@ function LoginRow({
   const [notes, setNotes] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<"user" | "secret" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   async function reveal() {
     if (secret !== null) {
@@ -483,13 +508,12 @@ function LoginRow({
       return;
     }
     setBusy(true);
-    setError(null);
     try {
       const got = await admin.revealCredential(credential.id);
       setSecret(got.secret);
       setNotes(got.notes);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not fetch it.");
+      toast.error(e, "Could not fetch it.");
     } finally {
       setBusy(false);
     }
@@ -497,7 +521,6 @@ function LoginRow({
 
   /** Copies without showing: most of the time you want to paste, not read. */
   async function copy(what: "user" | "secret") {
-    setError(null);
     try {
       const value =
         what === "user"
@@ -507,7 +530,7 @@ function LoginRow({
       setCopied(what);
       setTimeout(() => setCopied(null), 1500);
     } catch {
-      setError("The browser would not let me copy. Press Show and copy by hand.");
+      toast.error("The browser would not let me copy. Press Show and copy by hand.");
     }
   }
 
@@ -582,11 +605,6 @@ function LoginRow({
         </div>
       )}
 
-      {error && (
-        <p role="alert" className="mt-2 text-xs text-[var(--color-signal)]">
-          {error}
-        </p>
-      )}
     </div>
   );
 }
@@ -616,15 +634,14 @@ function LoginEditor({
   const ask = useConfirm();
   const [touchedNotes, setTouchedNotes] = useState(!credential);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   const err = (key: string) => errors[key]?.[0];
   const works = client.engagements ?? [];
 
   async function submit() {
     setBusy(true);
-    setMessage(null);
     setErrors({});
     try {
       /*
@@ -638,12 +655,8 @@ function LoginEditor({
         ...(touchedNotes ? { notes: notes || null } : {}),
       });
     } catch (e) {
-      if (e instanceof ApiError && e.status === 422) {
-        setErrors(e.errors);
-        setMessage(Object.values(e.errors)[0]?.[0] ?? "Check the fields above.");
-      } else {
-        setMessage(e instanceof Error ? e.message : "Saving failed.");
-      }
+      if (e instanceof ApiError && e.status === 422) setErrors(e.errors);
+      toast.error(e, "Saving failed.");
       setBusy(false);
     }
   }
@@ -664,7 +677,7 @@ function LoginEditor({
     try {
       await onDeleted();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not delete it.");
+      toast.error(e, "Could not delete it.");
       setBusy(false);
     }
   }
@@ -778,10 +791,7 @@ function LoginEditor({
         </Field>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-xs text-[var(--color-signal)]">
-          {message}
-        </p>
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-4">
           {onDeleted && (
             <button
