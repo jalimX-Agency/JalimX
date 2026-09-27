@@ -11,6 +11,7 @@ import {
   PAYMENT_METHODS,
   type BillingDocument,
   type Client,
+  type DiscountType,
   type DocumentInput,
   type DocumentType,
   type Engagement,
@@ -441,6 +442,9 @@ function DraftEditor({
     due_date: doc.due_date,
     period: doc.period,
     tva_rate: doc.tva_rate,
+    discount_type: doc.discount_type,
+    discount_value: doc.discount_value,
+    discount_label: doc.discount_label,
     subject: doc.subject,
     notes: doc.notes,
     terms: doc.terms,
@@ -472,10 +476,21 @@ function DraftEditor({
 
   // Added up here as well as on the server, so the figure answers typing
   // rather than the network.
-  const subtotal = input.items.reduce(
+  const gross = input.items.reduce(
     (sum, i) => sum + Math.round(Number(i.quantity || 0) * Number(i.unit_price || 0) * 100),
     0,
   );
+  // The same rule as the server: never more than the lines come to.
+  const discountValue = Number(input.discount_value || 0);
+  const discount = !input.discount_type
+    ? 0
+    : Math.min(
+        gross,
+        input.discount_type === "percent"
+          ? Math.round((gross * Math.min(discountValue, 100)) / 100)
+          : Math.round(discountValue * 100),
+      );
+  const subtotal = gross - discount;
   const tva = Math.round((subtotal * Number(input.tva_rate || 0)) / 100);
   const c = (centimes: number) => money((centimes / 100).toFixed(2), doc.currency);
 
@@ -711,7 +726,22 @@ function DraftEditor({
           </div>
 
           <dl className="min-w-[14rem] text-sm">
-            <div className="flex justify-between gap-6">
+            {discount > 0 && (
+              <>
+                <div className="flex justify-between gap-6">
+                  <dt className="text-[var(--fg-faint)]">Lines</dt>
+                  <dd className="tabular-nums">{c(gross)}</dd>
+                </div>
+                <div className="mt-1 flex justify-between gap-6 text-[#2f9a68]">
+                  <dt>
+                    {input.discount_label?.trim() || "Discount"}
+                    {input.discount_type === "percent" ? ` ${discountValue}%` : ""}
+                  </dt>
+                  <dd className="tabular-nums">− {c(discount)}</dd>
+                </div>
+              </>
+            )}
+            <div className={`flex justify-between gap-6 ${discount > 0 ? "mt-1" : ""}`}>
               <dt className="text-[var(--fg-faint)]">Before VAT</dt>
               <dd className="tabular-nums">{c(subtotal)}</dd>
             </div>
@@ -726,6 +756,13 @@ function DraftEditor({
           </dl>
         </div>
       </div>
+
+      <DiscountFields
+        input={input}
+        currency={doc.currency}
+        error={err("discount_value") ?? err("discount_type") ?? err("discount_label")}
+        onChange={(change) => setInput((i) => ({ ...i, ...change }))}
+      />
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <Field label="Payment terms" hint="Printed on the document" error={err("terms")}>
@@ -789,6 +826,84 @@ function DraftEditor({
 }
 
 /** An issued document: what was sent, and what has come back against it. */
+/**
+ * A discount on the whole document: none, a percentage, or a fixed sum.
+ * Taken off before VAT, the way a Moroccan invoice shows a "Remise".
+ */
+function DiscountFields({
+  input,
+  currency,
+  error,
+  onChange,
+}: {
+  input: DocumentInput;
+  currency: string;
+  error?: string;
+  onChange: (change: Partial<DocumentInput>) => void;
+}) {
+  const kind = input.discount_type;
+  const choices: { value: DiscountType | null; label: string }[] = [
+    { value: null, label: "No discount" },
+    { value: "percent", label: "%" },
+    { value: "amount", label: currency },
+  ];
+
+  return (
+    <div className="mt-6 grid gap-5 sm:grid-cols-[auto_10rem_1fr] sm:items-start">
+      <Field label="Discount" hint="Taken off before VAT">
+        <div role="radiogroup" aria-label="Discount" className="flex border border-[var(--hairline)] bg-[var(--panel)]">
+          {choices.map((ch) => (
+            <button
+              key={ch.label}
+              type="button"
+              role="radio"
+              aria-checked={kind === ch.value}
+              onClick={() =>
+                onChange(
+                  ch.value
+                    ? { discount_type: ch.value }
+                    : { discount_type: null, discount_value: null, discount_label: null },
+                )
+              }
+              className={`px-3 py-2 text-xs whitespace-nowrap ${
+                kind === ch.value
+                  ? "bg-[var(--fg)] text-[var(--ground)]"
+                  : "text-[var(--fg-dim)] hover:text-[var(--fg)]"
+              }`}
+            >
+              {ch.label}
+            </button>
+          ))}
+        </div>
+      </Field>
+      {kind && (
+        <>
+          <Field label={kind === "percent" ? "Percent" : `Amount (${currency})`} error={error}>
+            <input
+              inputMode="decimal"
+              autoFocus
+              className="admin-input tabular-nums"
+              placeholder={kind === "percent" ? "10" : "500"}
+              value={input.discount_value ?? ""}
+              aria-invalid={!!error}
+              onChange={(e) => onChange({ discount_value: e.target.value.replace(",", ".").trim() || null })}
+            />
+          </Field>
+          <Field label="Shown as" hint="On the PDF. “Remise” when empty">
+            <input
+              className="admin-input"
+              maxLength={120}
+              placeholder="Remise fidélité"
+              value={input.discount_label ?? ""}
+              onChange={(e) => onChange({ discount_label: e.target.value || null })}
+            />
+          </Field>
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
  * The issued invoice, sent to the client on WhatsApp with the same PDF as
  * "Open the PDF". The number defaults to the client's and can be changed
@@ -954,7 +1069,22 @@ function IssuedPanel({
           </ul>
 
           <dl className="mt-4 max-w-xs text-sm">
-            <div className="flex justify-between gap-6">
+            {Number(doc.totals.discount) > 0 && (
+              <>
+                <div className="flex justify-between gap-6">
+                  <dt className="text-[var(--fg-faint)]">Lines</dt>
+                  <dd className="tabular-nums">{money(doc.totals.gross, doc.currency)}</dd>
+                </div>
+                <div className="mt-1 flex justify-between gap-6 text-[#2f9a68]">
+                  <dt>
+                    {doc.discount_label || "Discount"}
+                    {doc.discount_type === "percent" ? ` ${Number(doc.discount_value)}%` : ""}
+                  </dt>
+                  <dd className="tabular-nums">− {money(doc.totals.discount, doc.currency)}</dd>
+                </div>
+              </>
+            )}
+            <div className={`flex justify-between gap-6 ${Number(doc.totals.discount) > 0 ? "mt-1" : ""}`}>
               <dt className="text-[var(--fg-faint)]">Before VAT</dt>
               <dd className="tabular-nums">{money(doc.totals.subtotal, doc.currency)}</dd>
             </div>

@@ -24,9 +24,13 @@ class Document extends Model
     /** Shared by both types; the dashboard only offers the ones that fit. */
     public const STATUSES = ['draft', 'sent', 'accepted', 'declined', 'cancelled'];
 
+    /** A discount is a share of the lines, or a fixed sum off them. */
+    public const DISCOUNT_TYPES = ['percent', 'amount'];
+
     protected $fillable = [
         'client_id', 'engagement_id', 'type', 'status',
         'issue_date', 'due_date', 'period', 'currency', 'tva_rate',
+        'discount_type', 'discount_value', 'discount_label',
         'subject', 'notes', 'terms',
     ];
 
@@ -37,6 +41,7 @@ class Document extends Model
             'due_date' => 'date',
             'period' => 'date',
             'tva_rate' => 'decimal:2',
+            'discount_value' => 'decimal:2',
             'bill_to' => 'array',
             'issued_by' => 'array',
         ];
@@ -68,13 +73,38 @@ class Document extends Model
         return $this->hasMany(Payment::class)->orderBy('paid_on');
     }
 
-    /** Untaxed total, in centimes. */
-    public function subtotalCentimes(): int
+    /** The lines added up, before any discount, in centimes. */
+    public function grossCentimes(): int
     {
         return $this->items->reduce(
             fn (int $sum, DocumentItem $item) => $sum + $item->totalCentimes(),
             0,
         );
+    }
+
+    /**
+     * What the discount takes off, in centimes. Never more than the lines
+     * come to: a discount does not turn an invoice into a refund.
+     */
+    public function discountCentimes(): int
+    {
+        $value = (float) $this->discount_value;
+        if (! $this->discount_type || $value <= 0) {
+            return 0;
+        }
+
+        $gross = $this->grossCentimes();
+        $off = $this->discount_type === 'percent'
+            ? (int) round($gross * min($value, 100) / 100)
+            : (int) round($value * 100);
+
+        return min($off, $gross);
+    }
+
+    /** Untaxed total after the discount — what VAT is worked out on — in centimes. */
+    public function subtotalCentimes(): int
+    {
+        return $this->grossCentimes() - $this->discountCentimes();
     }
 
     public function tvaCentimes(): int

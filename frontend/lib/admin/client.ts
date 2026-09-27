@@ -159,12 +159,21 @@ export type BillingDocument = {
   period: string | null;
   currency: string;
   tva_rate: string;
+  /** Off the untaxed total, before VAT: a share of it, or a fixed sum. */
+  discount_type: DiscountType | null;
+  discount_value: string | null;
+  /** What the PDF calls it; "Remise" when empty. */
+  discount_label: string | null;
   subject: string | null;
   notes: string | null;
   terms: string | null;
   items: LineItem[];
   payments: Payment[];
   totals: {
+    /** The lines added up, before the discount. */
+    gross: string;
+    discount: string;
+    /** After the discount: what VAT is worked out on. */
     subtotal: string;
     tva: string;
     total: string;
@@ -180,12 +189,17 @@ export type BillingDocument = {
 };
 
 /** What the draft editor sends back. */
+export type DiscountType = "percent" | "amount";
+
 export type DocumentInput = {
   engagement_id: number | null;
   issue_date: string | null;
   due_date: string | null;
   period: string | null;
   tva_rate: string;
+  discount_type: DiscountType | null;
+  discount_value: string | null;
+  discount_label: string | null;
   subject: string | null;
   notes: string | null;
   terms: string | null;

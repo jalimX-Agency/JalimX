@@ -39,6 +39,8 @@ final class DocumentPdf
             'from' => $from,
             'to' => $to,
             'totals' => [
+                'gross' => DocumentResource::amount($document->grossCentimes()),
+                'discount' => DocumentResource::amount($document->discountCentimes()),
                 'subtotal' => DocumentResource::amount($document->subtotalCentimes()),
                 'tva' => DocumentResource::amount($document->tvaCentimes()),
                 'total' => DocumentResource::amount($document->totalCentimes()),

@@ -98,6 +98,12 @@ class DocumentController extends Controller
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'period' => ['nullable', 'date'],
             'tva_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'discount_type' => ['nullable', Rule::in(Document::DISCOUNT_TYPES)],
+            'discount_value' => [
+                'nullable', 'numeric', 'min:0', 'max:99999999.99',
+                Rule::when($request->input('discount_type') === 'percent', ['max:100']),
+            ],
+            'discount_label' => ['nullable', 'string', 'max:120'],
             'subject' => ['nullable', 'string', 'max:190'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'terms' => ['nullable', 'string', 'max:2000'],
@@ -109,9 +115,27 @@ class DocumentController extends Controller
             'issue_date' => 'issue date',
             'due_date' => 'due date',
             'tva_rate' => 'VAT rate',
+            'discount_value' => 'discount',
         ]);
 
-        DB::transaction(function () use ($document, $data) {
+        /*
+         * A fixed discount bigger than the lines would print a negative
+         * total; said here, where it can still be corrected.
+         */
+        $discount = (float) ($data['discount_value'] ?? 0);
+        if (($data['discount_type'] ?? null) === 'amount' && $discount > 0) {
+            $gross = collect($data['items'])->sum(
+                fn ($i) => (int) round((float) $i['quantity'] * (float) $i['unit_price'] * 100)
+            );
+            if ((int) round($discount * 100) > $gross) {
+                throw ValidationException::withMessages([
+                    'discount_value' => 'The discount is more than the lines add up to.',
+                ]);
+            }
+        }
+        $hasDiscount = ! empty($data['discount_type']) && $discount > 0;
+
+        DB::transaction(function () use ($document, $data, $hasDiscount, $discount) {
             $document->update([
                 'engagement_id' => $data['engagement_id'] ?? null,
                 'issue_date' => $data['issue_date'] ?? null,
@@ -120,6 +144,10 @@ class DocumentController extends Controller
                     ? Carbon::parse($data['period'])->startOfMonth()->toDateString()
                     : null,
                 'tva_rate' => $data['tva_rate'],
+                // No value, no discount: an empty "10 %" is not left behind.
+                'discount_type' => $hasDiscount ? $data['discount_type'] : null,
+                'discount_value' => $hasDiscount ? $discount : null,
+                'discount_label' => $hasDiscount ? ($data['discount_label'] ?? null) : null,
                 'subject' => $data['subject'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'terms' => $data['terms'] ?? null,

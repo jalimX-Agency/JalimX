@@ -215,10 +215,27 @@
         <td></td>
         <td style="width: 45%;">
             <table>
-                <tr>
-                    <td class="muted">Total HT</td>
-                    <td class="num">{{ $money($totals['subtotal']) }}</td>
-                </tr>
+                @if ((float) $totals['discount'] > 0)
+                    <tr>
+                        <td class="muted">Total HT</td>
+                        <td class="num">{{ $money($totals['gross']) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="muted">
+                            {{ $document->discount_label ?: 'Remise' }}@if ($document->discount_type === 'percent') ({{ rtrim(rtrim(number_format((float) $document->discount_value, 2, ',', ' '), '0'), ',') }} %)@endif
+                        </td>
+                        <td class="num">− {{ $money($totals['discount']) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="muted">Total HT après remise</td>
+                        <td class="num">{{ $money($totals['subtotal']) }}</td>
+                    </tr>
+                @else
+                    <tr>
+                        <td class="muted">Total HT</td>
+                        <td class="num">{{ $money($totals['subtotal']) }}</td>
+                    </tr>
+                @endif
                 <tr>
                     <td class="muted">
                         TVA {{ rtrim(rtrim(number_format((float) $document->tva_rate, 2, ',', ' '), '0'), ',') }} %

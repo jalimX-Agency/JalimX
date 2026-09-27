@@ -36,6 +36,9 @@ class DocumentResource extends JsonResource
             'period' => $this->period?->toDateString(),
             'currency' => (string) $this->currency,
             'tva_rate' => (string) $this->tva_rate,
+            'discount_type' => $this->discount_type,
+            'discount_value' => $this->discount_value !== null ? (string) $this->discount_value : null,
+            'discount_label' => $this->discount_label,
             'subject' => $this->subject,
             'notes' => $this->notes,
             'terms' => $this->terms,
@@ -44,6 +47,9 @@ class DocumentResource extends JsonResource
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
 
             'totals' => [
+                // gross − discount = subtotal, the untaxed total VAT is on.
+                'gross' => self::amount($this->grossCentimes()),
+                'discount' => self::amount($this->discountCentimes()),
                 'subtotal' => self::amount($subtotal),
                 'tva' => self::amount($this->tvaCentimes()),
                 'total' => self::amount($total),
