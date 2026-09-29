@@ -17,6 +17,8 @@ class PaymentResource extends JsonResource
             'paid_on' => $this->paid_on?->toDateString(),
             'method' => (string) $this->method,
             'reference' => $this->reference,
+            // When the client was told on WhatsApp that it arrived.
+            'whatsapp_sent_at' => $this->whatsapp_sent_at?->toIso8601String(),
         ];
     }
 }

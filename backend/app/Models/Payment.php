@@ -16,6 +16,7 @@ class Payment extends Model
         return [
             'amount' => 'decimal:2',
             'paid_on' => 'date',
+            'whatsapp_sent_at' => 'datetime',
         ];
     }
 

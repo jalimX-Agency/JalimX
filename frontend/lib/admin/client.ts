@@ -137,9 +137,11 @@ export type Payment = {
   paid_on: string;
   method: PaymentMethod;
   reference: string | null;
+  /** When the client was told on WhatsApp that it arrived. */
+  whatsapp_sent_at: string | null;
 };
 
-export type PaymentInput = Omit<Payment, "id">;
+export type PaymentInput = Omit<Payment, "id" | "whatsapp_sent_at">;
 
 /**
  * A quote or an invoice. Named for the paper rather than "Document", which
@@ -1021,6 +1023,13 @@ export const admin = {
       method: "POST",
       body: JSON.stringify(input),
     }).then((r) => r.data),
+
+  /** "Payment received" to the client on WhatsApp, with the updated invoice attached. */
+  sendPaymentWhatsApp: (paymentId: number, to?: string) =>
+    request<{ data: { sent_to: string; document: BillingDocument } }>(
+      `/api/v1/admin/payments/${paymentId}/whatsapp`,
+      { method: "POST", body: JSON.stringify({ to: to || null }) },
+    ).then((r) => r.data),
 
   removePayment: (id: number) =>
     request<{ data: BillingDocument }>(`/api/v1/admin/payments/${id}`, {

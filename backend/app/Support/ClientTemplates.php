@@ -40,6 +40,16 @@ final class ClientTemplates
                 'example' => ['Riad Dar Anika', 'vos 2 accès (Hébergement, WordPress)'],
                 'sample_file' => 'acces-riad-dar-anika.pdf',
             ],
+            // A payment received, with the invoice as it now stands attached.
+            'payment' => [
+                'name' => 'jalimx_payment',
+                'label' => 'Payment received',
+                'hint' => 'Sent when a payment is recorded, with the updated invoice PDF attached.',
+                'params' => ['Client', 'Amount received', 'Invoice number', 'What is left'],
+                'body' => "Bonjour {{1}},\n\nNous confirmons la bonne réception de votre paiement de *{{2}}* pour la facture *{{3}}*.\n\n{{4}}\n\nVous trouverez ci-joint la facture mise à jour.\n\nMerci pour votre confiance,\nL'équipe JalimX",
+                'example' => ['Riad Dar Anika', '3 000,00 MAD', 'FAC-2026-0001', 'Reste à payer : 3 000,00 MAD.'],
+                'sample_file' => 'FAC-2026-0001.pdf',
+            ],
             // The same sheet sent without a password: its own wording, so
             // the message does not announce a password that never comes.
             'logins_open' => [

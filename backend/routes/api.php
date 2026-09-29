@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\OverviewController;
 use App\Http\Controllers\Api\V1\Admin\PaymentController;
+use App\Http\Controllers\Api\V1\Admin\PaymentWhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\ProjectContentController;
 use App\Http\Controllers\Api\V1\Admin\ProjectMediaController;
 use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceController;
@@ -167,7 +168,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/whatsapp', [WhatsAppController::class, 'show']);
             Route::put('/whatsapp/recipient', [WhatsAppController::class, 'updateRecipient']);
             Route::put('/whatsapp/templates/{key}', [WhatsAppController::class, 'updateTemplate'])
-                ->whereIn('key', ['basic', 'notes', 'steps', 'full', 'invoice', 'logins', 'logins_open']);
+                ->whereIn('key', ['basic', 'notes', 'steps', 'full', 'invoice', 'payment', 'logins', 'logins_open']);
             Route::post('/whatsapp/templates/create-missing', [WhatsAppController::class, 'createMissing']);
             Route::post('/whatsapp/test', [WhatsAppController::class, 'test'])->middleware('throttle:5,1');
             Route::patch('/tasks/{task}', [TaskController::class, 'update']);
@@ -213,6 +214,9 @@ Route::prefix('v1')->group(function () {
 
             Route::post('/documents/{document}/payments', [PaymentController::class, 'store']);
             Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);
+            // "Payment received", told to the client on WhatsApp.
+            Route::post('/payments/{payment}/whatsapp', PaymentWhatsAppController::class)
+                ->middleware('throttle:10,1');
 
             Route::get('/billing-profile', [BillingProfileController::class, 'show']);
             Route::put('/billing-profile', [BillingProfileController::class, 'update']);

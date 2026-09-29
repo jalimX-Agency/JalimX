@@ -1030,9 +1030,27 @@ function IssuedPanel({
   const [paidOn, setPaidOn] = useState(today());
   const [method, setMethod] = useState<PaymentMethod>("transfer");
   const [reference, setReference] = useState("");
+  // On by default when there is a number to send it to.
+  const [confirmOnWhatsApp, setConfirmOnWhatsApp] = useState(!!clientPhone);
+  const [confirmTo, setConfirmTo] = useState(clientPhone ?? "");
   const ask = useConfirm();
   const [busy, setBusy] = useState(false);
   const toast = useToast();
+
+  /**
+   * Tells the client the money arrived. A failure here does not undo the
+   * payment: it is recorded either way, and can be confirmed again from
+   * its row.
+   */
+  async function confirmPayment(paymentId: number, to: string) {
+    try {
+      const r = await admin.sendPaymentWhatsApp(paymentId, to);
+      onChanged(r.document);
+      toast.success(`Payment confirmation sent on WhatsApp to +${r.sent_to}.`);
+    } catch (e) {
+      toast.error(e, "The WhatsApp confirmation was not sent.");
+    }
+  }
 
   /** `done` is what the alert says once it worked. */
   async function run(work: () => Promise<BillingDocument>, done?: string) {
@@ -1127,6 +1145,40 @@ function IssuedPanel({
                   </span>
                   <span className="flex items-baseline gap-4">
                     <span className="tabular-nums">{money(p.amount, doc.currency)}</span>
+                    {p.whatsapp_sent_at ? (
+                      <span
+                        className="text-xs text-[#2f9a68]"
+                        title={`Confirmed on WhatsApp ${new Date(p.whatsapp_sent_at).toLocaleString("en-GB")}`}
+                      >
+                        ✓ WhatsApp
+                      </span>
+                    ) : (
+                      clientPhone && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            if (
+                              !(await ask({
+                                title: "Confirm this payment on WhatsApp?",
+                                body: [
+                                  `To ${clientPhone}: “payment of ${money(p.amount, doc.currency)} received”, with the invoice as it now stands attached.`,
+                                ],
+                                confirmLabel: "Send",
+                              }))
+                            ) {
+                              return;
+                            }
+                            setBusy(true);
+                            await confirmPayment(p.id, clientPhone);
+                            setBusy(false);
+                          }}
+                          className="text-xs text-[var(--link)] hover:underline disabled:opacity-40"
+                        >
+                          Confirm on WhatsApp
+                        </button>
+                      )
+                    )}
                     <button
                       type="button"
                       disabled={busy}
@@ -1199,11 +1251,34 @@ function IssuedPanel({
                     onChange={(e) => setReference(e.target.value)}
                   />
                 </Field>
+                <label className="flex cursor-pointer items-start gap-2 text-xs text-[var(--fg-dim)]">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={confirmOnWhatsApp}
+                    onChange={(e) => setConfirmOnWhatsApp(e.target.checked)}
+                  />
+                  <span>Confirm it to the client on WhatsApp, with the updated invoice</span>
+                </label>
+                {confirmOnWhatsApp && (
+                  <Field label="To" hint={clientPhone ? undefined : "This client has no number on file."}>
+                    <input
+                      className="admin-input tabular-nums"
+                      inputMode="tel"
+                      maxLength={30}
+                      placeholder="0612345678"
+                      value={confirmTo}
+                      onChange={(e) => setConfirmTo(e.target.value)}
+                    />
+                  </Field>
+                )}
                 <button
                   type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    run(async () => {
+                  disabled={busy || (confirmOnWhatsApp && !confirmTo.trim())}
+                  onClick={async () => {
+                    const before = new Set(doc.payments.map((p) => p.id));
+                    let added: number | null = null;
+                    await run(async () => {
                       const next = await admin.addPayment(doc.id, {
                         amount,
                         paid_on: paidOn,
@@ -1212,9 +1287,15 @@ function IssuedPanel({
                       });
                       setReference("");
                       setAmount(next.totals.due);
+                      added = next.payments.find((p) => !before.has(p.id))?.id ?? null;
                       return next;
-                    }, "Payment recorded.")
-                  }
+                    }, "Payment recorded.");
+                    if (added !== null && confirmOnWhatsApp) {
+                      setBusy(true);
+                      await confirmPayment(added, confirmTo.trim());
+                      setBusy(false);
+                    }
+                  }}
                   className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
                 >
                   {busy ? "Saving…" : "Record it"}
