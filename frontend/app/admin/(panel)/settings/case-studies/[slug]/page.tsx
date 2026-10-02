@@ -128,7 +128,7 @@ function Project() {
           >
             {t === "content"
               ? "Content"
-              : `Images · ${(project.cover ? 1 : 0) + project.gallery.length + project.dashboard.length}`}
+              : `Images · ${(project.cover ? 1 : 0) + project.gallery.length + project.dashboard.length + Object.values(project.captures).filter(Boolean).length}`}
           </button>
         ))}
       </div>
@@ -161,6 +161,33 @@ function Project() {
             title="Cover"
             hint="One image · the homepage card and link previews"
             items={project.cover ? [project.cover] : []}
+            single
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="site_full"
+            title="Site capture · full page"
+            hint="The live site in one tall image · scrolls inside the browser frame on the Work page"
+            items={project.captures.full ? [project.captures.full] : []}
+            single
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="site_desktop"
+            title="Site capture · desktop"
+            hint="One desktop screen of the live site · used on the homepage cards"
+            items={project.captures.desktop ? [project.captures.desktop] : []}
+            single
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="site_mobile"
+            title="Site capture · mobile"
+            hint="One phone screen of the live site · shown beside the desktop view"
+            items={project.captures.mobile ? [project.captures.mobile] : []}
             single
             onChange={load}
           />

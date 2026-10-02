@@ -24,7 +24,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class ProjectMediaController extends Controller
 {
-    private const COLLECTIONS = ['cover', 'gallery', 'dashboard'];
+    private const COLLECTIONS = ['cover', 'gallery', 'dashboard', 'site_full', 'site_desktop', 'site_mobile'];
 
     public function index(): JsonResponse
     {
@@ -141,6 +141,11 @@ class ProjectMediaController extends Controller
             ], $project->metrics ?? []),
             'gallery' => MediaResource::collection($project->getMedia('gallery')),
             'dashboard' => MediaResource::collection($project->getMedia('dashboard')),
+            'captures' => [
+                'full' => MediaResource::make($project->getFirstMedia(Project::CAPTURES['full'])),
+                'desktop' => MediaResource::make($project->getFirstMedia(Project::CAPTURES['desktop'])),
+                'mobile' => MediaResource::make($project->getFirstMedia(Project::CAPTURES['mobile'])),
+            ],
         ];
     }
 }

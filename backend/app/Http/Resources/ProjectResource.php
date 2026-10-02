@@ -35,6 +35,12 @@ class ProjectResource extends JsonResource
             'gallery' => MediaResource::collection($this->getMedia('gallery')),
             'dashboard' => MediaResource::collection($this->getMedia('dashboard')),
 
+            'captures' => [
+                'full' => MediaResource::make($this->getFirstMedia(Project::CAPTURES['full'])),
+                'desktop' => MediaResource::make($this->getFirstMedia(Project::CAPTURES['desktop'])),
+                'mobile' => MediaResource::make($this->getFirstMedia(Project::CAPTURES['mobile'])),
+            ],
+
             'testimonials' => TestimonialResource::collection(
                 $this->whenLoaded('testimonials')
             ),

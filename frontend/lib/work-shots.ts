@@ -1,12 +1,17 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { api } from "@/lib/api/client";
+
 /**
  * Which client sites we hold screenshots for.
  *
- * Read from the manifest `pnpm capture:work` writes rather than guessing at
- * filenames: a project can be published without a live site to photograph, and
- * a card that renders a missing image is worse than a card with no image.
+ * The dashboard is the source of truth: captures uploaded to a case study
+ * (or imported with `php artisan projects:import-captures`) come from the API.
+ * The manifest `pnpm capture:work` writes is the fallback for a project that
+ * has none in the dashboard yet. Either way a missing framing is simply absent,
+ * never a guessed filename: a card that renders a missing image is worse than
+ * a card with no image.
  */
 
 export type WorkShot = {
@@ -26,10 +31,12 @@ export type WorkShot = {
 
 type Manifest = { captured_at: string; shots: WorkShot[] };
 
-let cached: Map<string, WorkShot[]> | null = null;
+const VIEWPORTS = ["full", "desktop", "mobile"] as const;
 
-export async function getWorkShots(): Promise<Map<string, WorkShot[]>> {
-  if (cached) return cached;
+let manifestCache: Map<string, WorkShot[]> | null = null;
+
+async function readManifest(): Promise<Map<string, WorkShot[]>> {
+  if (manifestCache) return manifestCache;
 
   const file = path.join(process.cwd(), "public", "work", "manifest.json");
 
@@ -43,13 +50,52 @@ export async function getWorkShots(): Promise<Map<string, WorkShot[]>> {
       bySlug.set(shot.slug, list);
     }
 
-    cached = bySlug;
-    return bySlug;
+    manifestCache = bySlug;
   } catch {
     // No captures yet — the work section falls back to text-only cards.
-    cached = new Map();
-    return cached;
+    manifestCache = new Map();
   }
+  return manifestCache;
+}
+
+export async function getWorkShots(): Promise<Map<string, WorkShot[]>> {
+  const fallback = await readManifest();
+
+  // Not cached here: the API call is already tagged and revalidated when a
+  // capture is uploaded, and a module-level copy would outlive that.
+  const projects = await api.projects.list().catch(() => []);
+  const bySlug = new Map<string, WorkShot[]>();
+
+  for (const project of projects) {
+    const shots: WorkShot[] = [];
+
+    for (const viewport of VIEWPORTS) {
+      const media = project.captures?.[viewport];
+      const own = fallback.get(project.slug)?.find((s) => s.viewport === viewport);
+
+      if (media) {
+        shots.push({
+          slug: project.slug,
+          viewport,
+          url: project.project_url ?? own?.url ?? "",
+          src: media.url,
+          width: media.width ?? undefined,
+          height: media.height ?? undefined,
+        });
+      } else if (own) {
+        shots.push(own);
+      }
+    }
+    if (shots.length) bySlug.set(project.slug, shots);
+  }
+
+  // Projects the API did not return (unpublished, or the API is down) still
+  // get whatever the manifest holds.
+  for (const [slug, shots] of fallback) {
+    if (!bySlug.has(slug)) bySlug.set(slug, shots);
+  }
+
+  return bySlug;
 }
 
 export function shotFor(

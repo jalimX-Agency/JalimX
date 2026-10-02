@@ -24,6 +24,14 @@ export type Media = {
   height: number | null;
 };
 
+export type MediaCollection =
+  | "cover"
+  | "gallery"
+  | "dashboard"
+  | "site_full"
+  | "site_desktop"
+  | "site_mobile";
+
 export type ProjectSummary = {
   slug: string;
   client_name: string;
@@ -50,6 +58,7 @@ export type ProjectDetail = ProjectSummary & {
   metrics: Metric[];
   gallery: Media[];
   dashboard: Media[];
+  captures: { full: Media | null; desktop: Media | null; mobile: Media | null };
 };
 
 export type ProjectInput = {
@@ -1172,7 +1181,7 @@ export const admin = {
    */
   upload(
     slug: string,
-    collection: "cover" | "gallery" | "dashboard",
+    collection: MediaCollection,
     file: File,
     onProgress: (fraction: number) => void,
   ): Promise<Media> {
