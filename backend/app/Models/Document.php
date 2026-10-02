@@ -125,6 +125,42 @@ class Document extends Model
         );
     }
 
+    /**
+     * Who it is billed to, from the client as they are now — what issuing
+     * freezes into bill_to.
+     *
+     * @return array<string, string|null>
+     */
+    public static function billToFor(Client $client): array
+    {
+        return [
+            'name' => $client->legal_name ?: $client->name,
+            'contact_name' => $client->contact_name,
+            'address' => $client->address,
+            'city' => $client->city,
+            'country' => $client->country,
+            'ice' => $client->ice,
+            'email' => $client->email,
+        ];
+    }
+
+    /**
+     * Issued, and the client's details have changed since — an ICE added
+     * afterwards, a new address. Empty and missing count as the same.
+     */
+    public function clientDetailsChanged(): bool
+    {
+        if (! $this->bill_to || ! $this->client) {
+            return false;
+        }
+
+        $norm = fn (array $a) => array_map(fn ($v) => filled($v) ? (string) $v : null, $a);
+        $current = $norm(self::billToFor($this->client));
+        $frozen = $norm(array_intersect_key($this->bill_to, $current) + array_fill_keys(array_keys($current), null));
+
+        return $current != $frozen;
+    }
+
     public function isEditable(): bool
     {
         return $this->status === 'draft';

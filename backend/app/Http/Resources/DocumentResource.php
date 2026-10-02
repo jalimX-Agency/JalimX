@@ -68,6 +68,9 @@ class DocumentResource extends JsonResource
                 && $this->due_date !== null
                 && $this->due_date->isPast(),
             'editable' => $this->isEditable(),
+            // Issued before the client's details were last changed: the
+            // PDF still shows the old ones until they are copied in.
+            'client_details_changed' => $this->clientDetailsChanged(),
 
             // Sent on WhatsApp, and whether it arrived and was opened.
             'whatsapp' => $this->whenLoaded('latestWhatsApp', fn () => $this->latestWhatsApp ? [

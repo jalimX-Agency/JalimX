@@ -1195,6 +1195,35 @@ function IssuedPanel({
         </div>
 
         <aside className="flex flex-col gap-5">
+          {doc.client_details_changed && (
+            <div className="border border-[var(--color-signal)] bg-[var(--panel)] p-4 text-xs">
+              <p className="text-[var(--fg)]">
+                The client&apos;s details changed after this was issued. The PDF still shows the old ones.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  if (
+                    await ask({
+                      title: `Update the client on ${doc.number ?? `this ${doc.type}`}?`,
+                      body: [
+                        "Their current name, address, ICE and email are copied into it.",
+                        "The number, the date and the lines stay as they are. If the client already has the old PDF, send them the new one.",
+                      ],
+                      confirmLabel: "Update",
+                    })
+                  ) {
+                    run(() => admin.refreshDocumentClient(doc.id), "Client details updated on the PDF.");
+                  }
+                }}
+                className="mt-3 border border-[var(--hairline)] px-3 py-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] hover:border-[var(--fg)] disabled:opacity-35"
+              >
+                Update client details
+              </button>
+            </div>
+          )}
+
           <a
             href={admin.documentPdf(doc.id)}
             target="_blank"

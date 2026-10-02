@@ -24,15 +24,7 @@ final class DocumentPdf
 
         $from = $document->issued_by ?: BillingProfile::current();
         $client = $document->client;
-        $to = $document->bill_to ?: [
-            'name' => $client->legal_name ?: $client->name,
-            'contact_name' => $client->contact_name,
-            'address' => $client->address,
-            'city' => $client->city,
-            'country' => $client->country,
-            'ice' => $client->ice,
-            'email' => $client->email,
-        ];
+        $to = $document->bill_to ?: Document::billToFor($client);
 
         return Pdf::loadView('documents.pdf', [
             'document' => $document,

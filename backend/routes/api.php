@@ -207,6 +207,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/documents/{document}', [DocumentController::class, 'update']);
             Route::post('/documents/{document}/issue', [DocumentController::class, 'issue']);
             Route::post('/documents/{document}/status', [DocumentController::class, 'status']);
+            Route::post('/documents/{document}/client-details', [DocumentController::class, 'refreshClient']);
             Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
             // An issued invoice, sent to the client on WhatsApp with its PDF.
             Route::post('/documents/{document}/whatsapp', DocumentWhatsAppController::class)

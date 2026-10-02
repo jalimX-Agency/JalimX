@@ -201,20 +201,32 @@ class DocumentController extends Controller
                 'issue_date' => $document->issue_date ?? now()->toDateString(),
             ]);
 
-            $document->bill_to = [
-                'name' => $client->legal_name ?: $client->name,
-                'contact_name' => $client->contact_name,
-                'address' => $client->address,
-                'city' => $client->city,
-                'country' => $client->country,
-                'ice' => $client->ice,
-                'email' => $client->email,
-            ];
+            $document->bill_to = Document::billToFor($client);
             $document->issued_by = BillingProfile::current();
             $document->save();
 
             $document->assignNumber();
         });
+
+        return new DocumentResource($document->fresh()->load('items', 'payments'));
+    }
+
+    /**
+     * Copies the client's current details into an issued document — for
+     * the ICE or address that was missing when it was issued. Only who it
+     * is billed to changes: the number, the date and the lines stay.
+     */
+    public function refreshClient(Document $document): DocumentResource
+    {
+        if ($document->status === 'draft') {
+            throw ValidationException::withMessages([
+                'document' => 'A draft already uses the client as they are now.',
+            ]);
+        }
+
+        $document->load('client');
+        $document->bill_to = Document::billToFor($document->client);
+        $document->save();
 
         return new DocumentResource($document->fresh()->load('items', 'payments'));
     }

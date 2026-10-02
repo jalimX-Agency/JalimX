@@ -185,6 +185,8 @@ export type BillingDocument = {
   settled: boolean;
   overdue: boolean;
   editable: boolean;
+  /** Issued before the client's details last changed; the PDF shows the old ones. */
+  client_details_changed: boolean;
   /** The last time it went out on WhatsApp, and how far it got. */
   whatsapp?: { status: string; error: string | null; sent_at: string | null } | null;
   created_at: string;
@@ -1022,6 +1024,12 @@ export const admin = {
     request<{ data: BillingDocument }>(`/api/v1/admin/documents/${documentId}/payments`, {
       method: "POST",
       body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  /** Copies the client's current details (ICE, address…) into an issued document. */
+  refreshDocumentClient: (documentId: number) =>
+    request<{ data: BillingDocument }>(`/api/v1/admin/documents/${documentId}/client-details`, {
+      method: "POST",
     }).then((r) => r.data),
 
   /** "Payment received" to the client on WhatsApp, with the updated invoice attached. */
