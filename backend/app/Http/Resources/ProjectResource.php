@@ -31,6 +31,8 @@ class ProjectResource extends JsonResource
             'metrics' => $this->metricList($this->metrics),
 
             'cover' => MediaResource::make($this->getFirstMedia('cover')),
+            // The client's logo, for the "Built for" row.
+            'logo' => MediaResource::make($this->getFirstMedia('logo')),
             'gallery' => MediaResource::collection($this->getMedia('gallery')),
             'dashboard' => MediaResource::collection($this->getMedia('dashboard')),
 

@@ -24,7 +24,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  */
 class ProjectMediaController extends Controller
 {
-    private const COLLECTIONS = ['cover', 'gallery', 'dashboard', 'site_full', 'site_desktop', 'site_mobile'];
+    private const COLLECTIONS = ['cover', 'logo', 'gallery', 'dashboard', 'site_full', 'site_desktop', 'site_mobile'];
 
     public function index(): JsonResponse
     {
@@ -142,6 +142,7 @@ class ProjectMediaController extends Controller
             'is_published' => $project->is_published,
             'is_featured' => $project->is_featured,
             'cover' => MediaResource::make($project->getFirstMedia('cover')),
+            'logo' => MediaResource::make($project->getFirstMedia('logo')),
             /*
              * What the list shows as the project's picture: the cover if there
              * is one, otherwise the capture of the live site — which is what

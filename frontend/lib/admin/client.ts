@@ -26,6 +26,7 @@ export type Media = {
 
 export type MediaCollection =
   | "cover"
+  | "logo"
   | "gallery"
   | "dashboard"
   | "site_full"
@@ -40,6 +41,8 @@ export type ProjectSummary = {
   is_published: boolean;
   is_featured: boolean;
   cover: Media | null;
+  /** The client's logo, for the "Built for" row on the homepage. */
+  logo: Media | null;
   /** What the list shows: the cover, or the capture of the live site. */
   thumb: Media | null;
   counts: { gallery: number; dashboard: number; captures: number };

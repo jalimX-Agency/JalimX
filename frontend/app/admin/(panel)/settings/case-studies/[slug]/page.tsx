@@ -159,7 +159,7 @@ function Project() {
           >
             {t === "content"
               ? "Content"
-              : `Images · ${(project.cover ? 1 : 0) + project.gallery.length + project.dashboard.length + Object.values(project.captures).filter(Boolean).length}`}
+              : `Images · ${(project.cover ? 1 : 0) + (project.logo ? 1 : 0) + project.gallery.length + project.dashboard.length + Object.values(project.captures).filter(Boolean).length}`}
           </button>
         ))}
       </div>
@@ -192,6 +192,15 @@ function Project() {
             title="Cover"
             hint="One image · the homepage card and link previews"
             items={project.cover ? [project.cover] : []}
+            single
+            onChange={load}
+          />
+          <MediaDrop
+            slug={project.slug}
+            collection="logo"
+            title="Client logo"
+            hint="Shown in the “Built for” row on the homepage, in grey until hovered · PNG or WebP with a transparent background, wide rather than square"
+            items={project.logo ? [project.logo] : []}
             single
             onChange={load}
           />

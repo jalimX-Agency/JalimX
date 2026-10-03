@@ -1030,6 +1030,7 @@ export interface components {
                 value: string;
             }[];
             cover: components["schemas"]["MediaResource"] | null;
+            logo: components["schemas"]["MediaResource"] | null;
             gallery: components["schemas"]["MediaResource"][];
             dashboard: components["schemas"]["MediaResource"][];
             captures: {

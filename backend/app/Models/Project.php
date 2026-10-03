@@ -68,6 +68,9 @@ class Project extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('cover')->singleFile();
+
+        // The client's logo, for the "Built for" row on the homepage.
+        $this->addMediaCollection('logo')->singleFile();
         $this->addMediaCollection('gallery');
 
         /*
