@@ -6,7 +6,7 @@
 import { useRef, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
-import { admin, ApiError, type Media } from "@/lib/admin/client";
+import { admin, ApiError, type Media, type MediaCollection } from "@/lib/admin/client";
 
 /**
  * One media collection: what is in it, and a place to add more.
@@ -23,7 +23,7 @@ type Upload = { id: string; name: string; preview: string; progress: number; err
 
 type Props = {
   slug: string;
-  collection: "cover" | "gallery" | "dashboard";
+  collection: MediaCollection;
   title: string;
   hint: string;
   warning?: string;

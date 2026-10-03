@@ -14,6 +14,9 @@ class Project extends Model implements HasMedia
     use HasTranslations;
     use InteractsWithMedia;
 
+    /** Capture framing => media collection. */
+    public const CAPTURES = ['full' => 'site_full', 'desktop' => 'site_desktop', 'mobile' => 'site_mobile'];
+
     public array $translatable = ['title', 'summary', 'challenge', 'solution', 'outcome'];
 
     protected $fillable = [
@@ -73,5 +76,14 @@ class Project extends Model implements HasMedia
          * name, email or booking in it belongs in this collection.
          */
         $this->addMediaCollection('dashboard');
+
+        /*
+         * Captures of the client's live site, one per framing: the whole page
+         * in one tall image, and a single desktop and mobile fold. The work
+         * section scrolls `site_full` inside a browser frame.
+         */
+        foreach (self::CAPTURES as $collection) {
+            $this->addMediaCollection($collection)->singleFile();
+        }
     }
 }

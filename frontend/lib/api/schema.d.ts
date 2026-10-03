@@ -1033,6 +1033,11 @@ export interface components {
             cover: components["schemas"]["MediaResource"] | null;
             gallery: components["schemas"]["MediaResource"][];
             dashboard: components["schemas"]["MediaResource"][];
+            captures: {
+                full: components["schemas"]["MediaResource"] | null;
+                desktop: components["schemas"]["MediaResource"] | null;
+                mobile: components["schemas"]["MediaResource"] | null;
+            };
             testimonials?: components["schemas"]["TestimonialResource"][];
             published_at: string | null;
         };
