@@ -125,8 +125,8 @@ export default async function WorkPage({
                           </div>
                         ) : (
                           <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
-                            <span className="font-mono text-xs text-[var(--fg-faint)]">
-                              {t("notLaunched")}
+                            <span className="font-display text-xl font-semibold tracking-tight text-[var(--fg-faint)]">
+                              {project.client_name}
                             </span>
                           </div>
                         )}

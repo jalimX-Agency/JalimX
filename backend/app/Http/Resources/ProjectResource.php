@@ -28,7 +28,6 @@ class ProjectResource extends JsonResource
             'outcome' => $this->tr('outcome'),
 
             'tags' => $this->strings($this->tags),
-            'stack' => $this->strings($this->stack),
             'metrics' => $this->metricList($this->metrics),
 
             'cover' => MediaResource::make($this->getFirstMedia('cover')),
@@ -46,6 +45,7 @@ class ProjectResource extends JsonResource
             ),
 
             'published_at' => $this->published_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

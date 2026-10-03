@@ -96,6 +96,41 @@ class ProjectMediaController extends Controller
         return response()->json(['data' => null]);
     }
 
+    /** The description of an image: what a screen reader and a search engine read. */
+    public function update(Request $request, Media $media): JsonResponse
+    {
+        abort_unless($media->model_type === Project::class, 404);
+
+        $data = $request->validate(['alt' => ['required', 'string', 'max:200']]);
+
+        $media->setCustomProperty('alt', trim($data['alt']))->save();
+        $media->model?->touch();
+
+        return response()->json(['data' => MediaResource::make($media->fresh())]);
+    }
+
+    /** Puts the images of one collection in the order given. */
+    public function reorder(Request $request, Project $project): JsonResponse
+    {
+        $data = $request->validate([
+            'collection' => ['required', Rule::in(['gallery', 'dashboard'])],
+            'ids' => ['required', 'array', 'max:50'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $own = $project->getMedia($data['collection'])->pluck('id')->all();
+        $ids = array_values(array_intersect($data['ids'], $own));
+
+        // Only a complete list is an order; a partial one would shuffle the
+        // rest to wherever they happened to be.
+        abort_unless(count($ids) === count($own), 422, 'The list must hold every image in the collection.');
+
+        Media::setNewOrder($ids);
+        $project->touch();
+
+        return $this->show($project->fresh());
+    }
+
     /** @return array<string, mixed> */
     private function summary(Project $project): array
     {
@@ -107,9 +142,22 @@ class ProjectMediaController extends Controller
             'is_published' => $project->is_published,
             'is_featured' => $project->is_featured,
             'cover' => MediaResource::make($project->getFirstMedia('cover')),
+            /*
+             * What the list shows as the project's picture: the cover if there
+             * is one, otherwise the capture of the live site — which is what
+             * the public site shows too, so the list matches it.
+             */
+            'thumb' => MediaResource::make(
+                $project->getFirstMedia('cover')
+                    ?? $project->getFirstMedia(Project::CAPTURES['desktop'])
+                    ?? $project->getFirstMedia(Project::CAPTURES['full'])
+            ),
             'counts' => [
                 'gallery' => $project->getMedia('gallery')->count(),
                 'dashboard' => $project->getMedia('dashboard')->count(),
+                'captures' => collect(Project::CAPTURES)
+                    ->filter(fn ($collection) => $project->getFirstMedia($collection) !== null)
+                    ->count(),
             ],
         ];
     }

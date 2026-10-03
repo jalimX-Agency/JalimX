@@ -27,9 +27,6 @@
     "heading": "Réalisations choisies",
     "allProjects": "Tous les projets",
     "readCase": "Lire l'étude de cas",
-    "notLaunched": "pas encore en ligne",
-    "capturePending": "capture à venir",
-    "metricsNote": "Les résultats chiffrés sont volontairement absents — ce sont de vrais chiffres, et ils doivent venir de vous.",
     "pageTitle": "Réalisations",
     "pageHeading": "Chacune est partie d'un fichier vide.",
     "pageDescription": "Des sites construits à partir d'un fichier vide pour des tour-opérateurs, des camps et des villas privées.",
@@ -37,8 +34,6 @@
   },
   "caseStudy": {
     "allWork": "Toutes les réalisations",
-    "builtWith": "Construit avec",
-    "scope": "Périmètre",
     "live": "En ligne",
     "problem": "Le problème",
     "solution": "Ce que nous avons construit",
@@ -46,7 +41,6 @@
     "onPhone": "Sur mobile",
     "notFound": "Introuvable",
     "captured": "Capture",
-    "device": "Appareil",
     "owner": "Côté propriétaire",
     "ownerNote": "Leur propre administration, telle qu'ils l'utilisent. Rien ici n'a besoin de nous.",
     "onLocation": "Sur place"

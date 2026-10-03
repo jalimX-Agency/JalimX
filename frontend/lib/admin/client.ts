@@ -40,8 +40,22 @@ export type ProjectSummary = {
   is_published: boolean;
   is_featured: boolean;
   cover: Media | null;
-  counts: { gallery: number; dashboard: number };
+  /** What the list shows: the cover, or the capture of the live site. */
+  thumb: Media | null;
+  counts: { gallery: number; dashboard: number; captures: number };
 };
+
+export type TestimonialInput = {
+  author_name: string;
+  author_role: string | null;
+  client_name: string | null;
+  project_slug: string | null;
+  position: number;
+  is_published: boolean;
+  quote: Translated;
+};
+
+export type TestimonialRow = TestimonialInput & { id: number };
 
 export type Metric = { value: string; label: Translated };
 
@@ -1124,6 +1138,40 @@ export const admin = {
 
   removeMedia: (id: number) =>
     request(`/api/v1/admin/media/${id}`, { method: "DELETE" }),
+
+  updateMediaAlt: (id: number, alt: string) =>
+    request<{ data: Media }>(`/api/v1/admin/media/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ alt }),
+    }).then((r) => r.data),
+
+  /** `ids` is the whole collection, first to last. */
+  reorderMedia: (slug: string, collection: "gallery" | "dashboard", ids: number[]) =>
+    request<{ data: ProjectDetail }>(`/api/v1/admin/projects/${slug}/media-order`, {
+      method: "POST",
+      body: JSON.stringify({ collection, ids }),
+    }).then((r) => r.data),
+
+  removeProject: (slug: string) =>
+    request(`/api/v1/admin/projects/${slug}`, { method: "DELETE" }),
+
+  reorderProjects: (slugs: string[]) =>
+    request("/api/v1/admin/projects-order", {
+      method: "POST",
+      body: JSON.stringify({ slugs }),
+    }),
+
+  testimonials: () =>
+    request<{ data: TestimonialRow[] }>("/api/v1/admin/testimonials").then((r) => r.data),
+
+  saveTestimonial: (row: TestimonialInput, id?: number) =>
+    request<{ data: TestimonialRow }>(
+      id ? `/api/v1/admin/testimonials/${id}` : "/api/v1/admin/testimonials",
+      { method: id ? "PUT" : "POST", body: JSON.stringify(row) },
+    ).then((r) => r.data),
+
+  removeTestimonial: (id: number) =>
+    request(`/api/v1/admin/testimonials/${id}`, { method: "DELETE" }),
 
   /** Same XHR reasoning as `upload` below: a contract on a slow line. */
   uploadAttachment(
