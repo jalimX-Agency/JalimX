@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Admin\ServiceController as AdminServiceControlle
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\V1\Admin\TaskController;
 use App\Http\Controllers\Api\V1\Admin\TaskTemplateController;
+use App\Http\Controllers\Api\V1\Admin\TestimonialController as AdminTestimonialController;
 use App\Http\Controllers\Api\V1\Admin\WhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\WorkTypeController;
 use App\Http\Controllers\Api\V1\LeadController;
@@ -99,7 +100,16 @@ Route::prefix('v1')->group(function () {
             Route::get('/projects/{project}', [ProjectMediaController::class, 'show']);
             Route::post('/projects/{project}/media', [ProjectMediaController::class, 'store'])
                 ->middleware('throttle:60,1');
+            Route::delete('/projects/{project}', [ProjectContentController::class, 'destroy']);
+            Route::post('/projects-order', [ProjectContentController::class, 'reorder']);
+            Route::post('/projects/{project}/media-order', [ProjectMediaController::class, 'reorder']);
+            Route::patch('/media/{media}', [ProjectMediaController::class, 'update']);
             Route::delete('/media/{media}', [ProjectMediaController::class, 'destroy']);
+
+            Route::get('/testimonials', [AdminTestimonialController::class, 'index']);
+            Route::post('/testimonials', [AdminTestimonialController::class, 'store']);
+            Route::put('/testimonials/{testimonial}', [AdminTestimonialController::class, 'update']);
+            Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy']);
 
             Route::get('/services', [AdminServiceController::class, 'index']);
             Route::put('/services/{service}', [AdminServiceController::class, 'update']);

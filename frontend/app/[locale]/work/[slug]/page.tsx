@@ -59,33 +59,52 @@ async function find(slug: string): Promise<Project | null> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale, slug } = await params;
   const t = await getTranslations({ locale, namespace: "caseStudy" });
-  const project = await find(slug);
+  const [project, shots] = await Promise.all([find(slug), getWorkShots()]);
 
   if (!project) return { title: t("notFound") };
 
   const active = locale as Locale;
+  const title = `${project.client_name} — ${pickLocale(project.title, active)}`;
+  const description = pickLocale(project.summary, active);
+
+  // What a shared link shows: the cover when one was uploaded, otherwise the
+  // capture of the live site — without either, the platform picks whatever
+  // image it finds first on the page, which is rarely the right one.
+  const capture =
+    shotFor(shots, project.slug, "desktop") ?? shotFor(shots, project.slug, "full");
+  const image = project.cover
+    ? {
+        url: project.cover.url,
+        width: project.cover.width,
+        height: project.cover.height,
+        alt: project.cover.alt,
+      }
+    : capture
+      ? { url: capture.src, width: capture.width, height: capture.height, alt: null }
+      : null;
 
   return {
-    title: `${project.client_name} — ${pickLocale(project.title, active)}`,
-    description: pickLocale(project.summary, active),
-    // The cover is what a shared link shows. Without one, the platform picks
-    // whatever image it finds first on the page, which is rarely the right one.
-    ...(project.cover
-      ? {
-          openGraph: {
+    title,
+    description,
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      locale: active === "fr" ? "fr_FR" : "en_US",
+      ...(image
+        ? {
             images: [
               {
-                url: project.cover.url,
-                ...(project.cover.width && project.cover.height
-                  ? { width: project.cover.width, height: project.cover.height }
-                  : {}),
-                alt: project.cover.alt || project.client_name,
+                url: image.url,
+                ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
+                alt: image.alt || project.client_name,
               },
             ],
-          },
-        }
-      : {}),
+          }
+        : {}),
+    },
     alternates: {
+      canonical: active === "fr" ? `/fr/work/${slug}` : `/work/${slug}`,
       languages: { en: `/work/${slug}`, fr: `/fr/work/${slug}` },
     },
   };
@@ -308,10 +327,6 @@ export default async function CaseStudy({ params }: Params) {
                       <dd className="tabular-nums text-[var(--fg-dim)]">
                         {phone.width ?? 1170} × {phone.height ?? 1992}
                       </dd>
-                    </div>
-                    <div className="flex gap-3 py-1">
-                      <dt className="w-24 text-[var(--fg-faint)]">{t("device")}</dt>
-                      <dd className="text-[var(--fg-dim)]">iPhone 13</dd>
                     </div>
                   </dl>
                 </div>

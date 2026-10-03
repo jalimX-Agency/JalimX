@@ -63,9 +63,9 @@ async function getServices(): Promise<Service[]> {
   }
 }
 
-async function getFeatured(): Promise<Project[]> {
+async function getProjects(): Promise<Project[]> {
   try {
-    return await api.projects.list({ featured: true });
+    return await api.projects.list();
   } catch {
     return [];
   }
@@ -90,15 +90,18 @@ export default async function Home({
   const hero = await getTranslations("hero");
   const nav = await getTranslations("nav");
 
-  const [settings, services, projects, testimonials, shots] = await Promise.all([
+  const [settings, services, published, testimonials, shots] = await Promise.all([
     getSettings(),
     getServices(),
-    getFeatured(),
+    getProjects(),
     getTestimonials(),
     getWorkShots(),
   ]);
 
   const active = locale as Locale;
+  // One request serves both: the strip lists every published case study, the
+  // work section only the ones marked for the homepage.
+  const featured = published.filter((p) => p.is_featured);
 
   return (
     <>
@@ -115,10 +118,10 @@ export default async function Home({
             }}
           />
           <div className="mx-auto max-w-6xl px-6 pb-24 pt-20 sm:px-10 md:pb-28">
-            <ClientStrip />
+            <ClientStrip projects={published} />
           </div>
           <ServicesSection services={services} locale={active} />
-          <WorkSection projects={projects} shots={shots} locale={active} />
+          <WorkSection projects={featured} shots={shots} locale={active} />
           <ProcessSection />
           <TestimonialsSection testimonials={testimonials} locale={active} />
         </main>

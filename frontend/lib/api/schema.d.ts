@@ -1022,7 +1022,6 @@ export interface components {
                 fr: string;
             };
             tags: string[];
-            stack: string[];
             metrics: {
                 label: {
                     en: string;
@@ -1040,6 +1039,7 @@ export interface components {
             };
             testimonials?: components["schemas"]["TestimonialResource"][];
             published_at: string | null;
+            updated_at: string | null;
         };
         /** ServiceResource */
         ServiceResource: {

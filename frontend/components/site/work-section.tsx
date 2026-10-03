@@ -35,55 +35,58 @@ function Card({
   shot,
   locale,
   featured,
-  pendingLabel,
+  readLabel,
 }: {
   project: Project;
   shot?: WorkShot;
   locale: Locale;
   featured?: boolean;
-  pendingLabel: string;
+  readLabel: string;
 }) {
+  const href = `/work/${project.slug}`;
+  const alt = `${project.client_name} — ${pickLocale(project.title, locale)}`;
+  const sizes = featured
+    ? "(min-width: 1024px) 1120px, 100vw"
+    : "(min-width: 1024px) 550px, 100vw";
+  const zoom =
+    "w-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]";
+
   return (
     <article className="group flex flex-col gap-6">
-      {/* The cover uploaded from the dashboard wins; the captured screenshot
-          is what shows until someone uploads one. */}
-      {project.cover ? (
-        <div className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
-          <ProjectImage
-            media={project.cover}
-            alt={`${project.client_name} — ${pickLocale(project.title, locale)}`}
-            priority={featured}
-            sizes={
-              featured
-                ? "(min-width: 1024px) 1120px, 100vw"
-                : "(min-width: 1024px) 550px, 100vw"
-            }
-            className="w-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
-          />
-        </div>
-      ) : shot ? (
-        <div className="overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]">
+      {/* The same rule as the work page and the case study: the capture of
+          the live site first, the cover from the dashboard when there is none.
+          The whole card opens the case study. */}
+      <Link
+        href={href}
+        aria-label={alt}
+        tabIndex={-1}
+        className="block overflow-hidden rounded-xl border border-[var(--hairline)] bg-[var(--panel)]"
+      >
+        {shot ? (
           <Image
             src={shot.src}
-            alt={`${project.client_name} — ${pickLocale(project.title, locale)}`}
-            width={2160}
-            height={1350}
+            alt={alt}
+            width={shot.width ?? 1920}
+            height={shot.height ?? 1080}
             priority={featured}
-            sizes={
-              featured
-                ? "(min-width: 1024px) 1120px, 100vw"
-                : "(min-width: 1024px) 550px, 100vw"
-            }
-            className="w-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.015]"
+            sizes={sizes}
+            className={zoom}
           />
-        </div>
-      ) : (
-        <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-dashed border-[var(--hairline)]">
-          <span className="font-mono text-xs text-[var(--fg-faint)]">
-            {pendingLabel}
+        ) : project.cover ? (
+          <ProjectImage
+            media={project.cover}
+            alt={alt}
+            priority={featured}
+            sizes={sizes}
+            className={zoom}
+          />
+        ) : (
+          // Nothing to show yet: the client's name, not a note to ourselves.
+          <span className="flex aspect-[16/10] items-center justify-center font-display text-xl font-semibold tracking-tight text-[var(--fg-faint)]">
+            {project.client_name}
           </span>
-        </div>
-      )}
+        )}
+      </Link>
 
       <div className="flex flex-col gap-3">
         <p className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
@@ -98,7 +101,9 @@ function Card({
               : "font-display text-xl font-semibold tracking-tight"
           }
         >
-          {pickLocale(project.title, locale)}
+          <Link href={href} className="underline-offset-4 hover:underline">
+            {pickLocale(project.title, locale)}
+          </Link>
         </h3>
 
         <p className="max-w-[52ch] text-[var(--fg-dim)]">
@@ -106,16 +111,18 @@ function Card({
         </p>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <ul className="flex flex-wrap gap-1.5">
-            {project.tags.map((tag) => (
-              <li
-                key={tag}
-                className="rounded border border-[var(--hairline)] px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-wider text-[var(--fg-faint)]"
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
+          <Link
+            href={href}
+            className="group/read inline-flex items-center gap-2 text-sm text-[var(--link)] underline-offset-4 hover:underline"
+          >
+            {readLabel}
+            <span
+              aria-hidden="true"
+              className="transition-transform duration-200 group-hover/read:translate-x-1"
+            >
+              →
+            </span>
+          </Link>
 
           {project.project_url && (
             <a
@@ -140,7 +147,7 @@ export async function WorkSection({ projects, shots, locale }: Props) {
   if (projects.length === 0) return null;
 
   const [lead, ...rest] = projects;
-  const pendingLabel = t("capturePending");
+  const readLabel = t("readCase");
 
   return (
     <section
@@ -164,10 +171,10 @@ export async function WorkSection({ projects, shots, locale }: Props) {
             three is the shape every template already has. */}
         <Card
           project={lead}
-          shot={shotFor(shots, lead.slug)}
+          shot={shotFor(shots, lead.slug, "desktop")}
           locale={locale}
           featured
-          pendingLabel={pendingLabel}
+          readLabel={readLabel}
         />
 
         {rest.length > 0 && (
@@ -176,9 +183,9 @@ export async function WorkSection({ projects, shots, locale }: Props) {
               <Card
                 key={project.slug}
                 project={project}
-                shot={shotFor(shots, project.slug)}
+                shot={shotFor(shots, project.slug, "desktop")}
                 locale={locale}
-                pendingLabel={pendingLabel}
+                readLabel={readLabel}
               />
             ))}
           </div>

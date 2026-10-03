@@ -195,8 +195,13 @@ class ProjectSeeder extends Seeder
             ],
         ];
 
+        /*
+         * Create-only. These are starting points: once a case study exists the
+         * dashboard owns it, and seeding again must not put the original words
+         * back, un-hide it or reset its publish date.
+         */
         foreach ($projects as $i => $project) {
-            Project::updateOrCreate(
+            Project::firstOrCreate(
                 ['slug' => $project['slug']],
                 [
                     ...$project,

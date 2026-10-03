@@ -143,4 +143,37 @@ class ProjectContentController extends Controller
 
         return $media->show($project->fresh());
     }
+
+    /**
+     * Removes a case study and its images (the media library deletes the files
+     * with the model). Testimonials that pointed at it keep existing, without
+     * a project.
+     */
+    public function destroy(Project $project): JsonResponse
+    {
+        $project->delete();
+
+        return response()->json(['data' => null]);
+    }
+
+    /** The order of the whole list, as the slugs from first to last. */
+    public function reorder(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'slugs' => ['required', 'array', 'max:200'],
+            'slugs.*' => ['string', 'exists:projects,slug'],
+        ]);
+
+        // One at a time on purpose: a bulk update fires no model events, and
+        // the public site only rebuilds when a project is saved.
+        foreach (array_values(array_unique($data['slugs'])) as $position => $slug) {
+            $project = Project::where('slug', $slug)->first();
+
+            if ($project && $project->position !== $position) {
+                $project->update(['position' => $position]);
+            }
+        }
+
+        return response()->json(['data' => null]);
+    }
 }

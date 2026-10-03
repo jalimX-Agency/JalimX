@@ -19,6 +19,23 @@ export default function ProjectsPage() {
     admin.projects().then(setProjects, (e) => !isSignedOut(e) && setError(e.message));
   }, []);
 
+  // The order the public pages use. Moves one place, shows it at once, and
+  // puts the list back if the server refuses.
+  async function move(index: number, by: -1 | 1) {
+    if (!projects) return;
+    const target = index + by;
+    if (target < 0 || target >= projects.length) return;
+    const next = [...projects];
+    [next[index], next[target]] = [next[target], next[index]];
+    setProjects(next);
+    try {
+      await admin.reorderProjects(next.map((p) => p.slug));
+    } catch (e) {
+      setProjects(projects);
+      setError(e instanceof Error ? e.message : "Could not save the order.");
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -28,8 +45,8 @@ export default function ProjectsPage() {
         <NewProject />
       </div>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
-        Every case study, including the ones not on the site yet. Open one to
-        edit its words and figures, or add its images.
+        Every case study, including the ones not on the site yet, in the order the
+        site shows them. Open one to edit its words and figures, or its images.
       </p>
 
       {error && (
@@ -42,18 +59,39 @@ export default function ProjectsPage() {
 
       {projects && (
         <ul className="mt-10 grid gap-px border border-[var(--hairline)] bg-[var(--hairline)]">
-          {projects.map((p) => (
-            <li key={p.slug}>
+          {projects.map((p, i) => (
+            <li key={p.slug} className="flex items-stretch bg-[var(--panel)]">
+              <div className="flex shrink-0 flex-col justify-center border-r border-[var(--hairline)] px-1.5 text-[var(--fg-faint)]">
+                <button
+                  type="button"
+                  onClick={() => move(i, -1)}
+                  disabled={i === 0}
+                  aria-label={`Move ${p.client_name} up`}
+                  className="px-1.5 py-0.5 hover:text-[var(--fg)] disabled:opacity-25"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(i, 1)}
+                  disabled={i === projects.length - 1}
+                  aria-label={`Move ${p.client_name} down`}
+                  className="px-1.5 py-0.5 hover:text-[var(--fg)] disabled:opacity-25"
+                >
+                  ↓
+                </button>
+              </div>
+
               <Link
                 href={`/admin/settings/case-studies/${p.slug}`}
-                className="group flex items-center gap-5 bg-[var(--panel)] px-5 py-4 transition-colors hover:bg-[color-mix(in_oklab,var(--link)_4%,var(--panel))]"
+                className="group flex min-w-0 flex-1 items-center gap-5 px-5 py-4 transition-colors hover:bg-[color-mix(in_oklab,var(--link)_4%,var(--panel))]"
               >
                 <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden bg-[var(--ground)]">
-                  {p.cover ? (
-                    <img src={p.cover.url} alt="" className="h-full w-full object-cover" />
+                  {p.thumb ? (
+                    <img src={p.thumb.url} alt="" className="h-full w-full object-cover object-top" />
                   ) : (
                     <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
-                      No cover
+                      No image
                     </span>
                   )}
                 </div>
@@ -66,7 +104,11 @@ export default function ProjectsPage() {
                   <p className="mt-1 truncate font-medium">{p.title.en}</p>
                 </div>
 
-                <dl className="hidden gap-6 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--fg-faint)] sm:flex">
+                <dl className="hidden gap-6 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--fg-faint)] md:flex">
+                  <div className="text-right">
+                    <dt>Captures</dt>
+                    <dd className="mt-0.5 text-sm tabular-nums text-[var(--fg)]">{p.counts.captures}/3</dd>
+                  </div>
                   <div className="text-right">
                     <dt>Gallery</dt>
                     <dd className="mt-0.5 text-sm tabular-nums text-[var(--fg)]">{p.counts.gallery}</dd>
@@ -77,12 +119,11 @@ export default function ProjectsPage() {
                   </div>
                 </dl>
 
-                <span
-                  className={`w-24 shrink-0 text-center font-mono text-[0.6rem] uppercase tracking-[0.12em] ${
-                    p.is_published ? "text-[var(--link)]" : "text-[var(--fg-faint)]"
-                  }`}
-                >
-                  {p.is_published ? "Published" : "Hidden"}
+                <span className="flex w-28 shrink-0 flex-col items-center gap-1 text-center font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+                  <span className={p.is_published ? "text-[var(--link)]" : "text-[var(--fg-faint)]"}>
+                    {p.is_published ? "Published" : "Hidden"}
+                  </span>
+                  {p.is_featured && <span className="text-[var(--fg-dim)]">On homepage</span>}
                 </span>
 
                 <span

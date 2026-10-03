@@ -55,7 +55,14 @@ const nextConfig: NextConfig = {
      * whatever it is pointed at, and an open pattern turns it into a free
      * image proxy for anyone who finds the endpoint.
      */
-    remotePatterns: [{ protocol: "https", hostname: "cdn.jalimx.com" }],
+    remotePatterns: [
+      {
+        protocol: "https",
+        // Where the media disk's public URL points. Set when it is not the
+        // default, or every image uploaded from the dashboard fails to load.
+        hostname: process.env.NEXT_PUBLIC_MEDIA_HOST || "cdn.jalimx.com",
+      },
+    ],
   },
 };
 

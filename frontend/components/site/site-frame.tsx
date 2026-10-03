@@ -127,20 +127,25 @@ export function SiteFrame({
           aria-hidden="true"
           className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--link)]"
         />
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="group inline-flex min-w-0 items-center gap-2 font-mono text-[0.7rem] text-[var(--fg-dim)] transition-colors hover:text-[var(--fg)]"
-        >
-          <span className="truncate">{url.replace(/^https?:\/\//, "")}</span>
-          <span
-            aria-hidden="true"
-            className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="group inline-flex min-w-0 items-center gap-2 font-mono text-[0.7rem] text-[var(--fg-dim)] transition-colors hover:text-[var(--fg)]"
           >
-            ↗
-          </span>
-        </a>
+            <span className="truncate">{url.replace(/^https?:\/\//, "")}</span>
+            <span
+              aria-hidden="true"
+              className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+            >
+              ↗
+            </span>
+          </a>
+        ) : (
+          // No live address to point at: say nothing rather than link to "".
+          <span className="font-mono text-[0.7rem] text-[var(--fg-faint)]">&nbsp;</span>
+        )}
       </div>
 
       <div

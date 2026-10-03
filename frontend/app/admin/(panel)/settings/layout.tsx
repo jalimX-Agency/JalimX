@@ -29,6 +29,7 @@ const SECTIONS: { group: string; items: { href: string; label: string; hint: str
       { href: "/admin/settings/site", label: "Homepage & contact", hint: "The words that open jalimx.com" },
       { href: "/admin/settings/services", label: "Services", hint: "What the site says you do" },
       { href: "/admin/settings/case-studies", label: "Case studies", hint: "The work shown publicly" },
+      { href: "/admin/settings/testimonials", label: "Testimonials", hint: "What clients say about you" },
     ],
   },
 ];

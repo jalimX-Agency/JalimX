@@ -27,9 +27,6 @@
     "heading": "Selected work",
     "allProjects": "All projects",
     "readCase": "Read the case",
-    "notLaunched": "not launched yet",
-    "capturePending": "capture pending",
-    "metricsNote": "Outcomes and metrics are intentionally empty — those are real numbers, and they have to come from you.",
     "pageTitle": "Work",
     "pageHeading": "Every one of these started from an empty file.",
     "pageDescription": "Websites built from an empty file for tour operators, camps and private villas.",
@@ -37,8 +34,6 @@
   },
   "caseStudy": {
     "allWork": "All work",
-    "builtWith": "Built with",
-    "scope": "Scope",
     "live": "Live",
     "problem": "The problem",
     "solution": "What we built",
@@ -46,7 +41,6 @@
     "onPhone": "On a phone",
     "notFound": "Not found",
     "captured": "Captured",
-    "device": "Device",
     "owner": "The owner's side",
     "ownerNote": "Their own admin, as they use it. Nothing here needs us.",
     "onLocation": "On location"

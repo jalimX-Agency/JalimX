@@ -80,6 +80,35 @@ export function MediaDrop({ slug, collection, title, hint, warning, items, singl
     if (input.current) input.current.value = "";
   }
 
+  // A description for people who cannot see the picture, and for search
+  // engines. Saved when the field is left, and only if it changed.
+  async function saveAlt(media: Media, value: string) {
+    const alt = value.trim();
+    if (!alt || alt === (media.alt ?? "")) return;
+    try {
+      await admin.updateMediaAlt(media.id, alt);
+      onChange();
+    } catch {
+      /* The field keeps what was typed; the next blur tries again. */
+    }
+  }
+
+  // The order the public page shows them in. Sends the whole list because the
+  // server only accepts a complete order.
+  async function move(index: number, by: -1 | 1) {
+    if (single || (collection !== "gallery" && collection !== "dashboard")) return;
+    const ids = items.map((m) => m.id);
+    const target = index + by;
+    if (target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    try {
+      await admin.reorderMedia(slug, collection, ids);
+      onChange();
+    } catch {
+      /* Leaves the order as it was. */
+    }
+  }
+
   async function remove(media: Media) {
     if (
       !(await ask({
@@ -122,15 +151,45 @@ export function MediaDrop({ slug, collection, title, hint, warning, items, singl
       )}
 
       <div className="grid gap-4 p-5 [grid-template-columns:repeat(auto-fill,minmax(11rem,1fr))]">
-        {items.map((m) => (
+        {items.map((m, i) => (
           <figure key={m.id} className="group relative overflow-hidden border border-[var(--hairline)] bg-[var(--ground)]">
             <a href={m.url} target="_blank" rel="noreferrer" className="block aspect-[4/3]">
               <img src={m.url} alt={m.alt ?? ""} className="h-full w-full object-cover" loading="lazy" />
             </a>
+            <input
+              defaultValue={m.alt ?? ""}
+              maxLength={200}
+              aria-label="Description of the image"
+              placeholder="Describe the image"
+              onBlur={(e) => saveAlt(m, e.target.value)}
+              className="block w-full border-t border-[var(--hairline)] bg-transparent px-2.5 py-1.5 text-[0.7rem] text-[var(--fg-dim)] outline-none placeholder:text-[var(--fg-faint)] focus:bg-[var(--panel)]"
+            />
             <figcaption className="flex items-center justify-between gap-2 px-2.5 py-2">
               <span className="font-mono text-[0.6rem] tabular-nums text-[var(--fg-faint)]">
                 {m.width && m.height ? `${m.width} × ${m.height}` : "—"}
               </span>
+              {!single && items.length > 1 && (
+                <span className="flex gap-1.5 text-[var(--fg-dim)]">
+                  <button
+                    type="button"
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    aria-label="Move earlier"
+                    className="px-1 hover:text-[var(--fg)] disabled:opacity-30"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, 1)}
+                    disabled={i === items.length - 1}
+                    aria-label="Move later"
+                    className="px-1 hover:text-[var(--fg)] disabled:opacity-30"
+                  >
+                    →
+                  </button>
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => remove(m)}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
+import { useConfirm } from "@/components/admin/confirm";
 import { MediaDrop } from "@/components/admin/media-drop";
 import { ProjectForm } from "@/components/admin/project-form";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
@@ -20,6 +21,7 @@ export default function ProjectPage() {
 function Project() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
+  const ask = useConfirm();
   // The tab lives in the URL so a reload, or a link to the images, lands there.
   const tab = useSearchParams().get("tab") === "images" ? "images" : "content";
   const [project, setProject] = useState<ProjectDetail | null>(null);
@@ -41,6 +43,28 @@ function Project() {
       live = false;
     };
   }, [slug]);
+
+  async function remove(p: ProjectDetail) {
+    if (
+      !(await ask({
+        title: `Delete ${p.client_name}?`,
+        body: [
+          "The case study and all of its images are removed, and its page on the site disappears.",
+          "This cannot be undone. To only take it off the site, switch Published off instead.",
+        ],
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
+    try {
+      await admin.removeProject(p.slug);
+      router.replace("/admin/settings/case-studies");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete the project.");
+    }
+  }
 
   if (error) {
     return (
@@ -105,6 +129,13 @@ function Project() {
               Live site ↗
             </a>
           )}
+          <button
+            type="button"
+            onClick={() => remove(project)}
+            className="text-[var(--fg-faint)] hover:text-[var(--color-signal)]"
+          >
+            Delete
+          </button>
         </div>
       </div>
 

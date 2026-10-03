@@ -53,9 +53,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...fixed,
       ...projects.map((project) =>
         entry(`/work/${project.slug}`, {
-          lastModified: project.published_at
-            ? new Date(project.published_at)
-            : undefined,
+          // When it last changed, so an edit tells search engines to look again.
+          lastModified: project.updated_at
+            ? new Date(project.updated_at)
+            : project.published_at
+              ? new Date(project.published_at)
+              : undefined,
           changeFrequency: "yearly",
           priority: 0.7,
         })
