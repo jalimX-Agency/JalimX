@@ -26,6 +26,9 @@ return new class extends Migration
             $table->string('base_url')->nullable();
             $table->text('api_key');
             $table->string('key_hint', 8);
+            // Off: e-mails, phone numbers and bank details are swapped for
+            // placeholders before a request leaves (see App\AI\PrivacyShield).
+            $table->boolean('allows_personal_data')->default(false);
 
             $table->string('status', 20)->default('active');
             $table->unsignedSmallInteger('priority')->default(0);

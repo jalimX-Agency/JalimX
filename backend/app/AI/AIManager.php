@@ -60,8 +60,12 @@ class AIManager
         foreach ($candidates as $credential) {
             $started = hrtime(true);
 
+            // Personal data stays here unless this key is trusted with it.
+            $shield = $credential->allows_personal_data ? null : new PrivacyShield;
+
             try {
-                $result = ProviderCatalog::driver($credential->provider)->generate($credential, $request);
+                $result = ProviderCatalog::driver($credential->provider)
+                    ->generate($credential, $shield ? $shield->protect($request) : $request);
             } catch (ProviderError $error) {
                 $this->log($credential, $task, $userId, $started, $error);
 
@@ -82,6 +86,10 @@ class AIManager
             $latency = $this->elapsed($started);
             $this->pool->succeeded($credential);
             $this->log($credential, $task, $userId, $started, null, $result);
+
+            if ($shield) {
+                $result = $result->withText($shield->unmask($result->text));
+            }
 
             return $result->withSource($credential, $latency);
         }

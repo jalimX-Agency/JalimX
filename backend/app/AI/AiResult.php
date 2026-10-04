@@ -18,6 +18,14 @@ final class AiResult
         public readonly ?int $latencyMs = null,
     ) {}
 
+    public function withText(string $text): self
+    {
+        return new self(
+            $text, $this->tokensIn, $this->tokensOut,
+            $this->credentialId, $this->credentialLabel, $this->provider, $this->model, $this->latencyMs,
+        );
+    }
+
     public function withSource(AiCredential $credential, int $latencyMs): self
     {
         return new self(

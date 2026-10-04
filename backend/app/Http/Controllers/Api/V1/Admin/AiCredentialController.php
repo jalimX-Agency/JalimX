@@ -13,6 +13,7 @@ use App\Models\AiCredential;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 /**
@@ -33,6 +34,12 @@ class AiCredentialController extends Controller
     public function providers(): JsonResponse
     {
         return response()->json([
+            // Settings on the server that weaken what this page promises.
+            'warnings' => array_values(array_filter([
+                config('app.debug') && app()->environment('production')
+                    ? 'APP_DEBUG is on in production: error pages can show internal details. Set APP_DEBUG=false on the server.'
+                    : null,
+            ])),
             'data' => collect(ProviderCatalog::all())->map(fn ($p, $key) => [
                 'key' => $key,
                 'name' => $p['name'],
@@ -73,6 +80,7 @@ class AiCredentialController extends Controller
             'model' => trim($data['model']),
             'base_url' => $data['base_url'] ?? null,
             'priority' => $data['priority'] ?? ((int) AiCredential::max('priority') + 1),
+            'allows_personal_data' => (bool) ($data['allows_personal_data'] ?? false),
         ]);
         $credential->setKey($data['api_key']);
 
@@ -93,6 +101,8 @@ class AiCredentialController extends Controller
             $this->applyTest($credential, $test);
         }
 
+        $this->audit($request, 'added', $credential);
+
         return response()->json(['data' => $this->shape($credential->fresh()), 'test' => $test], 201);
     }
 
@@ -111,6 +121,7 @@ class AiCredentialController extends Controller
             'model' => trim($data['model']),
             'base_url' => $data['base_url'] ?? null,
             'priority' => $data['priority'] ?? $credential->priority,
+            'allows_personal_data' => (bool) ($data['allows_personal_data'] ?? $credential->allows_personal_data),
         ]);
 
         if (filled($data['api_key'] ?? null)) {
@@ -118,6 +129,7 @@ class AiCredentialController extends Controller
         }
 
         $test = null;
+        $keyReplaced = $credential->isDirty('api_key');
 
         if ($credential->isDirty(['provider', 'model', 'base_url', 'api_key'])) {
             $test = $this->tester->test($credential);
@@ -146,11 +158,14 @@ class AiCredentialController extends Controller
             $this->applyTest($credential, $test);
         }
 
+        $this->audit($request, $keyReplaced ? 'key replaced' : 'edited', $credential);
+
         return response()->json(['data' => $this->shape($credential->fresh()), 'test' => $test]);
     }
 
-    public function destroy(AiCredential $credential): JsonResponse
+    public function destroy(Request $request, AiCredential $credential): JsonResponse
     {
+        $this->audit($request, 'deleted', $credential);
         $credential->delete();
 
         return response()->json(['data' => null]);
@@ -197,6 +212,8 @@ class AiCredentialController extends Controller
     {
         $action = $request->validate(['action' => ['required', Rule::in(['enable', 'disable', 'retry'])]])['action'];
 
+        $this->audit($request, $action === 'retry' ? 'retried' : "{$action}d", $credential);
+
         if ($action === 'disable') {
             $credential->forceFill(['status' => CredentialStatus::Disabled])->save();
 
@@ -241,6 +258,7 @@ class AiCredentialController extends Controller
             'base_url' => $this->baseUrlRules($request->input('provider')),
             'api_key' => [$credential ? 'nullable' : 'required', 'string', 'min:8', 'max:500'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'allows_personal_data' => ['nullable', 'boolean'],
         ]);
     }
 
@@ -276,6 +294,21 @@ class AiCredentialController extends Controller
         }];
     }
 
+    /**
+     * Who did what to which key, in the application log. The key itself, old
+     * or new, is never part of it.
+     */
+    private function audit(Request $request, string $action, AiCredential $credential): void
+    {
+        Log::info("AI key {$action}", [
+            'user_id' => $request->user()?->id,
+            'credential_id' => $credential->id,
+            'label' => $credential->label,
+            'provider' => $credential->provider,
+            'ip' => $request->ip(),
+        ]);
+    }
+
     /** A refused key or model: the two failures that mean "do not use this". */
     private function refused(array $test): bool
     {
@@ -305,6 +338,7 @@ class AiCredentialController extends Controller
             'model' => $c->model,
             'base_url' => $c->provider === 'custom' ? $c->base_url : null,
             'key_hint' => '••••'.$c->key_hint,
+            'allows_personal_data' => $c->allows_personal_data,
             'status' => $c->status->value,
             'priority' => $c->priority,
             'available_at' => $c->available_at?->toIso8601String(),

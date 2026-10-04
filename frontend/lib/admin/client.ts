@@ -125,6 +125,8 @@ export type AiCredential = {
   model: string;
   base_url: string | null;
   key_hint: string;
+  /** Off: e-mails, phones and bank details are masked before sending. */
+  allows_personal_data: boolean;
   status: AiStatus;
   priority: number;
   available_at: string | null;
@@ -154,6 +156,7 @@ export type AiCredentialInput = {
   /** Blank on an edit keeps the stored key. */
   api_key: string;
   priority?: number;
+  allows_personal_data: boolean;
   save_anyway?: boolean;
 };
 
@@ -1219,8 +1222,9 @@ export const admin = {
       body: JSON.stringify(input),
     }).then((r) => r.data),
 
+  /** The providers the form offers, and server settings that weaken security. */
   aiProviders: () =>
-    request<{ data: AiProviderInfo[] }>("/api/v1/admin/ai/providers").then((r) => r.data),
+    request<{ data: AiProviderInfo[]; warnings: string[] }>("/api/v1/admin/ai/providers"),
 
   aiCredentials: () =>
     request<{ data: AiCredential[] }>("/api/v1/admin/ai/credentials").then((r) => r.data),
@@ -1240,7 +1244,7 @@ export const admin = {
     }),
 
   /** Tests the form as it is; with `id` and no key, the stored key is used. */
-  testAiDraft: (input: Omit<AiCredentialInput, "label"> & { id?: number }) =>
+  testAiDraft: (input: Omit<AiCredentialInput, "label" | "allows_personal_data"> & { id?: number }) =>
     request<{ test: AiTest }>("/api/v1/admin/ai/test", {
       method: "POST",
       body: JSON.stringify(input),

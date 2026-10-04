@@ -39,6 +39,7 @@ const time = (iso: string) =>
 export default function AiProvidersPage() {
   const [rows, setRows] = useState<AiCredential[] | null>(null);
   const [providers, setProviders] = useState<AiProviderInfo[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   // null closed · 0 new · otherwise the id being edited
   const [open, setOpen] = useState<number | null>(null);
@@ -58,7 +59,11 @@ export default function AiProvidersPage() {
         !isSignedOut(e) &&
         setError(e instanceof ApiError && e.status === 403 ? "Your account cannot manage AI keys." : e.message),
     );
-    admin.aiProviders().then((p) => live && setProviders(p), () => {});
+    admin.aiProviders().then((p) => {
+      if (!live) return;
+      setProviders(p.data);
+      setWarnings(p.warnings);
+    }, () => {});
     return () => {
       live = false;
     };
@@ -147,6 +152,12 @@ export default function AiProvidersPage() {
         </p>
       )}
 
+      {warnings.map((w) => (
+        <p key={w} role="alert" className="mt-6 border border-[var(--color-signal)] px-4 py-3 text-sm text-[var(--color-signal)]">
+          {w}
+        </p>
+      ))}
+
       {open === 0 && (
         <Editor
           providers={providers}
@@ -197,6 +208,11 @@ export default function AiProvidersPage() {
                     </div>
                     <p className="mt-1 font-mono text-[0.7rem] text-[var(--fg-dim)]">
                       {row.provider_name} · {row.model} · {row.key_hint}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--fg-faint)]">
+                      {row.allows_personal_data
+                        ? "Receives personal data as written"
+                        : "E-mails, phone numbers and bank details are masked before sending"}
                     </p>
                     <p className="mt-1 text-xs text-[var(--fg-faint)]">
                       {row.requests_today} request{row.requests_today === 1 ? "" : "s"} today
@@ -260,6 +276,7 @@ function Editor({
     model: existing?.model ?? "",
     base_url: existing?.base_url ?? null,
     api_key: "",
+    allows_personal_data: existing?.allows_personal_data ?? false,
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [test, setTest] = useState<AiTest | null>(null);
@@ -387,6 +404,23 @@ function Editor({
           />
         </Field>
       </div>
+
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={input.allows_personal_data}
+          onChange={(e) => set("allows_personal_data", e.target.checked)}
+        />
+        <span>
+          Send personal data as written
+          <span className="mt-0.5 block text-xs text-[var(--fg-faint)]">
+            Off by default: e-mails, phone numbers and bank details are replaced by placeholders before
+            a request leaves, and put back in the answer. Only turn this on for a paid plan whose terms
+            say your data is not used for training.
+          </span>
+        </span>
+      </label>
 
       {test && (
         <div role="status" className="border border-[var(--hairline)] bg-[var(--ground)] px-4 py-3 text-sm">

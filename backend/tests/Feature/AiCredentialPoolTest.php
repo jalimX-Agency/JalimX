@@ -7,6 +7,7 @@ use App\AI\AiRequest;
 use App\AI\CredentialStatus;
 use App\AI\Exceptions\AiRequestFailed;
 use App\AI\Exceptions\AiUnavailable;
+use App\AI\PrivacyShield;
 use App\Models\AiCredential;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -199,5 +200,45 @@ class AiCredentialPoolTest extends TestCase
         $user->assignRole('owner');
 
         return $user;
+    }
+
+    public function test_personal_data_is_masked_on_the_way_out_and_restored_on_the_way_back(): void
+    {
+        $this->key('Groq', 'groq', 'gsk_groqkeygroqkeygroqkey0000', 1);
+
+        Http::fake(['api.groq.com/*' => Http::response(['choices' => [['message' => ['content' => 'Write to [EMAIL_1] or call [PHONE_1].']]]])]);
+
+        $text = app(AIManager::class)->complete(
+            new AiRequest('system', 'Reply to sara@example.com, phone +212 6 12 34 56 78, IBAN MA64 0115 1900 0001 2050 0053 4921.'),
+            'test',
+        )->text;
+
+        Http::assertSent(function (Request $r) {
+            $body = json_encode($r->data());
+
+            return ! str_contains($body, 'sara@example.com')
+                && ! str_contains($body, '12 34 56 78')
+                && ! str_contains($body, '0115 1900')
+                && str_contains($body, '[EMAIL_1]');
+        });
+        $this->assertSame('Write to sara@example.com or call +212 6 12 34 56 78.', $text);
+    }
+
+    public function test_a_key_trusted_with_personal_data_receives_it_as_it_is(): void
+    {
+        $this->key('Paid', 'groq', 'gsk_paidkeypaidkeypaidkey0000', 1, ['allows_personal_data' => true]);
+        Http::fake(['api.groq.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]])]);
+
+        app(AIManager::class)->complete(new AiRequest('system', 'Reply to sara@example.com'), 'test');
+
+        Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'sara@example.com'));
+    }
+
+    public function test_prices_years_and_dates_are_not_taken_for_phone_numbers(): void
+    {
+        $shield = new PrivacyShield;
+        $text = 'From 1 200 MAD per night in 2026, open 08:00-18:00, 4.9 from 105 reviews.';
+
+        $this->assertSame($text, $shield->mask($text));
     }
 }

@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 class AiCredential extends Model
 {
     protected $fillable = [
-        'label', 'provider', 'model', 'base_url', 'status', 'priority',
+        'label', 'provider', 'model', 'base_url', 'status', 'priority', 'allows_personal_data',
     ];
 
     /** Never serialised by accident. */
@@ -29,6 +29,7 @@ class AiCredential extends Model
             'api_key' => 'encrypted',
             'status' => CredentialStatus::class,
             'priority' => 'integer',
+            'allows_personal_data' => 'boolean',
             'available_at' => 'datetime',
             'last_used_at' => 'datetime',
             'last_success_at' => 'datetime',
