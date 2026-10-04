@@ -29,6 +29,7 @@ class EngagementController extends Controller
             'title' => ['required', 'string', 'max:160'],
             'status' => ['required', Rule::in(Engagement::STATUSES)],
             'billing' => ['required', Rule::in(Engagement::BILLINGS)],
+            'payment_timing' => ['sometimes', Rule::in(Engagement::PAYMENT_TIMINGS)],
             /*
              * For a one-off this is the whole price; for a retainer it is
              * what is charged each month. One column, because it answers

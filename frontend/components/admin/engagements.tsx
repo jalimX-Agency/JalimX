@@ -15,6 +15,7 @@ import {
   emptyEngagement,
   ENGAGEMENT_STATUSES,
   type Billing,
+  type PaymentTiming,
   type Client,
   type Engagement,
   type EngagementInput,
@@ -77,6 +78,22 @@ function span(from: string | null, to: string | null): string | null {
   if (a) return `From ${a}`;
   if (b) return `Due ${b}`;
   return null;
+}
+
+/**
+ * What the choice means for this work, in its own dates: months run from
+ * the day it started, so begun on the 27th, each month is paid on the 27th.
+ */
+function timingHint(startsOn: string | null, timing: PaymentTiming): string {
+  const day = startsOn ? Number(startsOn.slice(8, 10)) : null;
+  if (!day) {
+    return timing === "end"
+      ? "Due on the last day of each month. Set “Running since” to bill from that day instead."
+      : "Due on the 1st of each month. Set “Running since” to bill from that day instead.";
+  }
+  return timing === "end"
+    ? `Months run from the ${day}th; each invoice is due on the ${day}th that closes its month.`
+    : `Months run from the ${day}th; each invoice is due on the ${day}th that opens its month.`;
 }
 
 export function Engagements({ client }: { client: Client }) {
@@ -172,6 +189,7 @@ export function Engagements({ client }: { client: Client }) {
                     title: row.title,
                     status: row.status,
                     billing: row.billing,
+                    payment_timing: row.payment_timing,
                     budget: row.budget,
                     starts_on: row.starts_on,
                     ends_on: row.ends_on,
@@ -542,6 +560,25 @@ function EngagementEditor({
                 />
               </Field>
             </div>
+
+            {monthly && (
+              <Field
+                label="Each month is paid"
+                hint={timingHint(input.starts_on, input.payment_timing)}
+                error={err("payment_timing")}
+              >
+                <select
+                  className="admin-input"
+                  value={input.payment_timing}
+                  onChange={(e) =>
+                    setInput((i) => ({ ...i, payment_timing: e.target.value as PaymentTiming }))
+                  }
+                >
+                  <option value="end">At the end of the month (after the work)</option>
+                  <option value="start">At the start of the month (in advance)</option>
+                </select>
+              </Field>
+            )}
 
             <div className="lg:col-span-3">
               <Field label="What it covers" hint="Only you see this" error={err("description")}>

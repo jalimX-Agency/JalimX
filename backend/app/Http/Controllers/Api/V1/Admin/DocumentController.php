@@ -52,15 +52,27 @@ class DocumentController extends Controller
             ? Carbon::parse($data['period'])->startOfMonth()
             : null;
 
-        $document = DB::transaction(function () use ($client, $data, $engagement, $profile, $period) {
+        /*
+         * A retainer's month is dated by its own cycle — due on the day the
+         * work started each month, at the month's end or its start — rather
+         * than by the day the invoice happens to be written. Issued today
+         * when written ahead of time, on the due date when written late.
+         */
+        $cycle = ($data['preset'] ?? null) === 'month' && $engagement && $period
+            ? $engagement->billingCycle($period)
+            : null;
+        $issueDate = $cycle ? Carbon::today()->min($cycle['due']) : now();
+        $dueDate = $cycle ? $cycle['due'] : now()->addDays(30);
+
+        $document = DB::transaction(function () use ($client, $data, $engagement, $profile, $period, $cycle, $issueDate, $dueDate) {
             $document = $client->documents()->create([
                 'type' => $data['type'],
                 'engagement_id' => $engagement?->id,
                 'status' => 'draft',
                 'period' => $period?->toDateString(),
-                'issue_date' => now()->toDateString(),
+                'issue_date' => $issueDate->toDateString(),
                 'due_date' => $data['type'] === 'invoice'
-                    ? now()->addDays(30)->toDateString()
+                    ? $dueDate->toDateString()
                     : null,
                 'currency' => $client->currency,
                 'tva_rate' => $profile['tva_rate'],
@@ -68,7 +80,7 @@ class DocumentController extends Controller
                 'terms' => $profile['payment_terms'] ?: null,
             ]);
 
-            $line = $this->presetLine($data['preset'] ?? null, $engagement, $period);
+            $line = $this->presetLine($data['preset'] ?? null, $engagement, $period, $cycle);
             if ($line) {
                 $document->items()->create($line);
             }
@@ -267,7 +279,8 @@ class DocumentController extends Controller
     }
 
     /** @return array<string, mixed>|null */
-    private function presetLine(?string $preset, ?Engagement $engagement, ?Carbon $period = null): ?array
+    /** @param  array{start: Carbon, end: Carbon, due: Carbon}|null  $cycle */
+    private function presetLine(?string $preset, ?Engagement $engagement, ?Carbon $period = null, ?array $cycle = null): ?array
     {
         if ($preset === null || $engagement === null || $engagement->budget === null) {
             return null;
@@ -297,11 +310,13 @@ class DocumentController extends Controller
                 'quantity' => 1,
                 'unit_price' => $budget / 100,
             ],
-            // A retainer's month, named by the month so the client can see
-            // at a glance which one this is.
+            // A retainer's month, with the dates it covers so the client
+            // sees exactly which one this is.
             'month' => [
                 'position' => 0,
-                'description' => $engagement->title.' — '.($period ?? now())->translatedFormat('F Y'),
+                'description' => $cycle
+                    ? $engagement->title.' — du '.$cycle['start']->format('d/m/Y').' au '.$cycle['end']->format('d/m/Y')
+                    : $engagement->title.' — '.($period ?? now())->translatedFormat('F Y'),
                 'quantity' => 1,
                 'unit_price' => $budget / 100,
             ],

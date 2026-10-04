@@ -560,6 +560,9 @@ export type EngagementStatus = (typeof ENGAGEMENT_STATUSES)[number];
 export const BILLINGS = ["one_off", "monthly"] as const;
 export type Billing = (typeof BILLINGS)[number];
 
+/** A retainer's month is paid once it is over (end), or in advance (start). */
+export type PaymentTiming = "end" | "start";
+
 /** A piece of work for a client — the internal side of a "project". */
 export type Engagement = {
   id: number;
@@ -567,6 +570,7 @@ export type Engagement = {
   title: string;
   status: EngagementStatus;
   billing: Billing;
+  payment_timing: PaymentTiming;
   /**
    * A decimal string, in the client's currency. Never a float. The whole
    * price for a one-off, the monthly charge for a retainer.
@@ -599,6 +603,7 @@ export const emptyEngagement = (): EngagementInput => ({
   title: "",
   status: "planned",
   billing: "one_off",
+  payment_timing: "end",
   budget: null,
   starts_on: null,
   ends_on: null,

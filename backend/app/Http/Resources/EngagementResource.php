@@ -22,6 +22,8 @@ class EngagementResource extends JsonResource
             'title' => (string) $this->title,
             'status' => (string) $this->status,
             'billing' => (string) $this->billing,
+            // A retainer's month is paid at its end (default) or its start.
+            'payment_timing' => (string) ($this->payment_timing ?: 'end'),
             // A string, not a float: money read back as a float is money one
             // rounding away from disagreeing with the invoice.
             'budget' => $this->budget !== null ? (string) $this->budget : null,
