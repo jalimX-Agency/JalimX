@@ -156,7 +156,15 @@ class OverviewController extends Controller
         $out = [];
 
         foreach ($retainers as $retainer) {
-            $start = $retainer->starts_on?->copy()->startOfMonth() ?? $now->copy()->startOfMonth();
+            /*
+             * A month's invoice covers the cycle that closes in that month
+             * (see Engagement::billingCycle): begun on 27 June, the first
+             * cycle closes on 27 July, so July is the first month owed and
+             * June never is. Without a start date, months are calendar
+             * months and only the current one is checked.
+             */
+            $start = $retainer->starts_on?->copy()->startOfMonth()->addMonthNoOverflow()
+                ?? $now->copy()->startOfMonth();
             $floor = $now->copy()->startOfMonth()->subMonths(5);
             $from = $start->greaterThan($floor) ? $start : $floor;
 
