@@ -270,4 +270,22 @@ class AiCredentialPoolTest extends TestCase
 
         $this->assertSame('gsk_replacementreplacement00', $broken->fresh()->api_key);
     }
+
+    public function test_a_written_request_is_followed_and_needs_words(): void
+    {
+        Sanctum::actingAs($this->owner());
+        $this->key('Groq', 'groq', 'gsk_groqkeygroqkeygroqkey0000', 1);
+        Http::fake(['api.groq.com/*' => Http::response(['choices' => [['message' => ['content' => 'Warmer text']]]])]);
+
+        $this->postJson('/api/v1/admin/ai/assist', ['action' => 'custom', 'text' => 'Cold text'])
+            ->assertStatus(422)->assertJsonValidationErrors('instruction');
+
+        $this->postJson('/api/v1/admin/ai/assist', [
+            'action' => 'custom',
+            'instruction' => 'Make it warmer and mention the pool',
+            'text' => 'Cold text',
+        ])->assertOk()->assertJsonPath('data.text', 'Warmer text');
+
+        Http::assertSent(fn (Request $r) => str_contains($r['messages'][1]['content'], "<request>\nMake it warmer and mention the pool\n</request>"));
+    }
 }

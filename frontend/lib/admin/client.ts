@@ -160,12 +160,14 @@ export type AiCredentialInput = {
   save_anyway?: boolean;
 };
 
-export type AiAction = "write" | "complete" | "improve" | "shorten" | "expand" | "fix" | "translate";
+export type AiAction = "write" | "complete" | "improve" | "shorten" | "expand" | "fix" | "translate" | "custom";
 
 export type AiAssistInput = {
   action: AiAction;
   text: string;
   target_lang?: "en" | "fr" | "ar";
+  /** The person's own request, for action "custom". */
+  instruction?: string;
   field: {
     label?: string;
     hint?: string;

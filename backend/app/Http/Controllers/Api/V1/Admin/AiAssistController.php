@@ -22,6 +22,8 @@ class AiAssistController extends Controller
         $input = $request->validate([
             'action' => ['required', Rule::in(TextAssist::ACTIONS)],
             'text' => ['nullable', 'string', 'max:8000'],
+            // The person's own words: "make it warmer", "mention the pool"…
+            'instruction' => ['required_if:action,custom', 'nullable', 'string', 'max:500'],
             'target_lang' => ['nullable', Rule::in(['en', 'fr', 'ar'])],
             'field' => ['nullable', 'array'],
             'field.label' => ['nullable', 'string', 'max:200'],
@@ -36,7 +38,7 @@ class AiAssistController extends Controller
         ]);
 
         // Continuing or reworking nothing is not a request worth a quota.
-        if ($input['action'] !== 'write' && trim((string) ($input['text'] ?? '')) === '') {
+        if (! in_array($input['action'], ['write', 'custom'], true) && trim((string) ($input['text'] ?? '')) === '') {
             return response()->json(['message' => 'There is no text to work on yet.'], 422);
         }
 

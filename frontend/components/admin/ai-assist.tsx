@@ -38,6 +38,8 @@ type Job = {
   el: Target;
   action: AiAction;
   target?: Lang;
+  /** What was typed in the prompt box, for action "custom". */
+  instruction?: string;
   /** Started by typing, not by a click: quieter, and dropped when left. */
   auto: boolean;
   loading: boolean;
@@ -48,6 +50,26 @@ type Job = {
 // Whole words only: "tel" must not catch "hotel".
 const SENSITIVE = /\b(pass(word)?|secret|token|api.?key|iban|rib|swift|cvv|user.?name|logins?|e-?mail|phone|tel|whatsapp|slug)\b/i;
 const AUTO_KEY = "jx.ai.autocomplete";
+const PROMPTS_KEY = "jx.ai.prompts";
+
+/** The last few requests typed in the prompt box, newest first. */
+function recentPrompts(): string[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(PROMPTS_KEY) ?? "[]");
+    return Array.isArray(list) ? list.filter((p) => typeof p === "string").slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberPrompt(prompt: string) {
+  try {
+    const next = [prompt, ...recentPrompts().filter((p) => p !== prompt)].slice(0, 5);
+    localStorage.setItem(PROMPTS_KEY, JSON.stringify(next));
+  } catch {
+    /* not remembered */
+  }
+}
 const AUTO_DELAY = 1200;
 const AUTO_GAP = 4000;
 
@@ -241,17 +263,18 @@ export function AiAssist() {
   }, []);
 
   const ask = useCallback(
-    async (el: Target, action: AiAction, opts: { auto?: boolean; target?: Lang } = {}) => {
+    async (el: Target, action: AiAction, opts: { auto?: boolean; target?: Lang; instruction?: string } = {}) => {
       inflight.current?.abort();
       const controller = new AbortController();
       inflight.current = controller;
       setMenu(false);
-      setJob({ el, action, target: opts.target, auto: !!opts.auto, loading: true, suggestion: null });
+      setJob({ el, action, target: opts.target, instruction: opts.instruction, auto: !!opts.auto, loading: true, suggestion: null });
 
       const input: AiAssistInput = {
         action,
         text: el.value,
         target_lang: opts.target,
+        instruction: opts.instruction,
         field: {
           label: labelOf(el) || undefined,
           hint: hintOf(el),
@@ -321,6 +344,8 @@ export function AiAssist() {
     const onFocusIn = (e: FocusEvent) => {
       const el = e.target as Element;
       if (el === focusRef.current) return;
+      // Our own prompt box: the field it belongs to stays the one in focus.
+      if (el.closest("[data-jx-ai]")) return;
       setMenu(false);
       const j = jobRef.current;
       if (j?.auto && j.el !== el) drop();
@@ -443,7 +468,10 @@ export function AiAssist() {
   }
 
   // Keeps focus in the field: every control here acts on mousedown.
-  const keep = (e: React.MouseEvent) => e.preventDefault();
+  // The prompt box is the exception: it has to take focus to be typed in.
+  const keep = (e: React.MouseEvent) => {
+    if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
+  };
 
   const button = (() => {
     if (!focus) return null;
@@ -476,9 +504,21 @@ export function AiAssist() {
           <div
             role="menu"
             onMouseDown={keep}
-            className="pointer-events-auto fixed w-60 border border-[var(--hairline)] bg-[var(--panel)] py-1 text-sm shadow-lg"
-            style={{ top: top + 22, left: Math.max(8, rect.right - 240) }}
+            className="pointer-events-auto fixed w-72 border border-[var(--hairline)] bg-[var(--panel)] pb-1 text-sm shadow-lg"
+            style={{ top: top + 22, left: Math.max(8, rect.right - 288) }}
           >
+            <PromptBox
+              hasText={hasText}
+              onSubmit={(instruction) => {
+                rememberPrompt(instruction);
+                ask(focus, "custom", { instruction });
+                focus.focus();
+              }}
+              onCancel={() => {
+                setMenu(false);
+                focus.focus();
+              }}
+            />
             {MENU.filter((m) => hasText || !m.needsText).map((m) => (
               <button
                 key={`${m.action}-${m.target ?? ""}`}
@@ -556,7 +596,7 @@ export function AiAssist() {
             <button
               type="button"
               tabIndex={-1}
-              onClick={() => ask(job.el, job.action, { target: job.target })}
+              onClick={() => ask(job.el, job.action, { target: job.target, instruction: job.instruction })}
               className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
             >
               Try again
@@ -576,6 +616,75 @@ export function AiAssist() {
       {button}
       {panel}
     </>
+  );
+}
+
+/**
+ * "Ask AI…": the person's own words for what to do with this field — "make it
+ * warmer", "mention the pool and the sunset dinner", "turn this into three
+ * bullet points". Enter sends, Esc closes. The last few requests are offered
+ * again underneath.
+ */
+function PromptBox({
+  hasText,
+  onSubmit,
+  onCancel,
+}: {
+  hasText: boolean;
+  onSubmit: (instruction: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState("");
+  const [recent] = useState(recentPrompts);
+
+  const send = (text: string) => {
+    const instruction = text.trim();
+    if (instruction) onSubmit(instruction);
+  };
+
+  return (
+    <div className="border-b border-[var(--hairline)] p-2">
+      <input
+        data-ai="off"
+        autoFocus
+        value={value}
+        maxLength={500}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          // Kept here, so neither the page nor a dialog acts on these keys.
+          e.stopPropagation();
+          if (e.key === "Enter") {
+            e.preventDefault();
+            send(value);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
+        }}
+        placeholder={hasText ? "Ask AI to change this… then Enter" : "Ask AI to write… then Enter"}
+        aria-label="Ask AI"
+        dir="auto"
+        className="block w-full border border-[var(--hairline)] bg-[var(--ground)] px-2.5 py-1.5 text-sm outline-none placeholder:text-[var(--fg-faint)] focus:border-[var(--link)]"
+      />
+      {recent.length > 0 && !value && (
+        <ul className="mt-1.5">
+          {recent.map((p) => (
+            <li key={p}>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => send(p)}
+                dir="auto"
+                className="block w-full truncate px-1 py-1 text-left text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                title={p}
+              >
+                ↺ {p}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
