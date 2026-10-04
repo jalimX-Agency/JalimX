@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\AI\CredentialStatus;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -45,6 +46,21 @@ class AiCredential extends Model
         $plain = trim($plain);
         $this->api_key = $plain;
         $this->key_hint = mb_substr($plain, -4);
+    }
+
+    /**
+     * Laravel decides whether the key changed by decrypting the stored one. A
+     * key saved under a different APP_KEY cannot be decrypted — and that is
+     * exactly the key someone is trying to replace — so here an unreadable
+     * old value simply counts as different.
+     */
+    public function originalIsEquivalent($key)
+    {
+        try {
+            return parent::originalIsEquivalent($key);
+        } catch (DecryptException) {
+            return false;
+        }
     }
 
     /**

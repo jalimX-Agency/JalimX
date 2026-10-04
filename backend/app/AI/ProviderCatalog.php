@@ -5,6 +5,8 @@ namespace App\AI;
 use App\AI\Drivers\AiDriver;
 use App\AI\Drivers\GeminiDriver;
 use App\AI\Drivers\OpenAiCompatibleDriver;
+use App\Models\AiCredential;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 /**
  * Every provider the pool knows how to talk to.
@@ -98,6 +100,24 @@ final class ProviderCatalog
         }
 
         return app($class);
+    }
+
+    /**
+     * Runs a driver call, turning a key that can no longer be decrypted
+     * (APP_KEY changed since it was saved) into a refused key — so the pool
+     * moves on and the dashboard says to enter it again — instead of an
+     * error that fails every request.
+     */
+    public static function call(AiCredential $credential, AiRequest $request): AiResult
+    {
+        try {
+            return self::driver($credential->provider)->generate($credential, $request);
+        } catch (DecryptException) {
+            throw new Exceptions\ProviderError(
+                ErrorType::Auth,
+                'The stored key can no longer be decrypted (APP_KEY changed since it was saved). Enter the key again.',
+            );
+        }
     }
 
     public static function name(string $provider): string

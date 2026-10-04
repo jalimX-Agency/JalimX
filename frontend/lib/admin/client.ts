@@ -339,6 +339,8 @@ export type BillingProfile = {
 export type WorkType = {
   id: number;
   name: string;
+  /** What this kind covers; read by the writing help when it is chosen. */
+  description: string | null;
   slug: string;
   position: number;
   /** Whether work of this kind involves signing in somewhere. */
@@ -346,7 +348,7 @@ export type WorkType = {
   is_active: boolean;
 };
 
-export type WorkTypeInput = Pick<WorkType, "name" | "needs_logins" | "is_active">;
+export type WorkTypeInput = Pick<WorkType, "name" | "description" | "needs_logins" | "is_active">;
 
 export const ATTACHMENT_KINDS = [
   "contract",

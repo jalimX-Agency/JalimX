@@ -75,6 +75,8 @@ class WorkTypeController extends Controller
     {
         return [
             'name' => ['required', 'string', 'max:80'],
+            // Read by the writing help when this kind is chosen on a form.
+            'description' => ['nullable', 'string', 'max:600'],
             'needs_logins' => ['required', 'boolean'],
             'is_active' => ['required', 'boolean'],
             'position' => ['sometimes', 'integer', 'min:0', 'max:999'],
@@ -99,6 +101,7 @@ class WorkTypeController extends Controller
         return [
             'id' => $type->id,
             'name' => (string) $type->name,
+            'description' => $type->description,
             'slug' => (string) $type->slug,
             'position' => (int) $type->position,
             'needs_logins' => (bool) $type->needs_logins,

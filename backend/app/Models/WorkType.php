@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class WorkType extends Model
 {
-    protected $fillable = ['name', 'slug', 'position', 'needs_logins', 'is_active'];
+    protected $fillable = ['name', 'description', 'slug', 'position', 'needs_logins', 'is_active'];
 
     protected function casts(): array
     {

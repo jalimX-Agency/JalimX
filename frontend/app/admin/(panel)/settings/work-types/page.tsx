@@ -66,7 +66,7 @@ export default function WorkTypesPage() {
         <div className="mt-8 border border-[var(--hairline)] bg-[var(--panel)]">
           {open === "new" && (
             <TypeEditor
-              value={{ name: "", needs_logins: false, is_active: true }}
+              value={{ name: "", description: "", needs_logins: false, is_active: true }}
               onCancel={() => setOpen(null)}
               onSave={async (input) => {
                 const created = await admin.createWorkType(input);
@@ -90,6 +90,7 @@ export default function WorkTypesPage() {
                       type={row}
                       value={{
                         name: row.name,
+                        description: row.description ?? "",
                         needs_logins: row.needs_logins,
                         is_active: row.is_active,
                       }}
@@ -111,13 +112,16 @@ export default function WorkTypesPage() {
                       onClick={() => setOpen(row.id)}
                       className="flex w-full flex-wrap items-baseline justify-between gap-4 px-5 py-4 text-left hover:bg-[color-mix(in_oklab,var(--fg)_3%,transparent)]"
                     >
-                      <span className={row.is_active ? "" : "text-[var(--fg-faint)]"}>
+                      <span className={`min-w-0 flex-1 ${row.is_active ? "" : "text-[var(--fg-faint)]"}`}>
                         {row.name}
                         {!row.is_active && (
                           <span className="ml-3 font-mono text-[0.6rem] uppercase tracking-[0.12em]">
                             Retired
                           </span>
                         )}
+                        <span className="mt-1 block truncate text-xs text-[var(--fg-faint)]">
+                          {row.description || "No description yet — the writing help works better with one."}
+                        </span>
                       </span>
                       {row.needs_logins && (
                         <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
@@ -199,6 +203,21 @@ function TypeEditor({
             onChange={(e) => setInput((i) => ({ ...i, name: e.target.value }))}
           />
         </Field>
+
+        <div className="sm:col-span-2 sm:order-last">
+          <Field
+            label="What it covers"
+            hint="A sentence or two on what this means at JalimX. The writing help reads it whenever this kind is chosen on a form."
+          >
+            <textarea
+              className="admin-input resize-y leading-relaxed"
+              rows={3}
+              maxLength={600}
+              value={input.description ?? ""}
+              onChange={(e) => setInput((i) => ({ ...i, description: e.target.value }))}
+            />
+          </Field>
+        </div>
 
         <div className="flex flex-col justify-center gap-3 pt-1">
           <label className="flex cursor-pointer items-start gap-3 text-sm">
