@@ -21,6 +21,7 @@ const SECTIONS: { group: string; items: { href: string; label: string; hint: str
       { href: "/admin/settings/work-types", label: "Work types", hint: "What kinds of work you do" },
       { href: "/admin/settings/task-templates", label: "Task templates", hint: "The steps a job always takes" },
       { href: "/admin/settings/whatsapp", label: "WhatsApp", hint: "Where reminders go, and what they say" },
+      { href: "/admin/settings/ai", label: "AI providers", hint: "The keys the writing help runs on" },
     ],
   },
   {

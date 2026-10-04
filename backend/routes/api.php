@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AiAssistController;
+use App\Http\Controllers\Api\V1\Admin\AiCredentialController;
 use App\Http\Controllers\Api\V1\Admin\AttachmentController;
 use App\Http\Controllers\Api\V1\Admin\BillingProfileController;
 use App\Http\Controllers\Api\V1\Admin\ClientController as AdminClientController;
@@ -110,6 +112,24 @@ Route::prefix('v1')->group(function () {
             Route::post('/testimonials', [AdminTestimonialController::class, 'store']);
             Route::put('/testimonials/{testimonial}', [AdminTestimonialController::class, 'update']);
             Route::delete('/testimonials/{testimonial}', [AdminTestimonialController::class, 'destroy']);
+
+            /*
+             * AI. The keys are managed only by an account allowed to
+             * (`ai.manage`); the writing help is for anyone with `ai.use`.
+             * Neither ever returns a key.
+             */
+            Route::middleware('can:ai.manage')->prefix('ai')->group(function () {
+                Route::get('/providers', [AiCredentialController::class, 'providers']);
+                Route::get('/credentials', [AiCredentialController::class, 'index']);
+                Route::post('/credentials', [AiCredentialController::class, 'store'])->middleware('throttle:20,1');
+                Route::put('/credentials/{credential}', [AiCredentialController::class, 'update'])->middleware('throttle:20,1');
+                Route::delete('/credentials/{credential}', [AiCredentialController::class, 'destroy']);
+                Route::post('/credentials/{credential}/test', [AiCredentialController::class, 'test'])->middleware('throttle:20,1');
+                Route::post('/credentials/{credential}/state', [AiCredentialController::class, 'state'])->middleware('throttle:20,1');
+                Route::post('/credentials-order', [AiCredentialController::class, 'reorder']);
+                Route::post('/test', [AiCredentialController::class, 'testDraft'])->middleware('throttle:20,1');
+            });
+            Route::post('/ai/assist', AiAssistController::class)->middleware(['can:ai.use', 'throttle:40,1']);
 
             Route::get('/services', [AdminServiceController::class, 'index']);
             Route::put('/services/{service}', [AdminServiceController::class, 'update']);

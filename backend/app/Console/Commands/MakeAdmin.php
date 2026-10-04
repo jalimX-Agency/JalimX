@@ -5,8 +5,9 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 /**
  * Creates or updates the dashboard account.
@@ -65,6 +66,11 @@ class MakeAdmin extends Command
             ['email' => $email],
             ['name' => $name, 'password' => Hash::make($password)]
         );
+
+        // The account this command makes is the owner: every permission.
+        if (Role::where('name', 'owner')->exists()) {
+            $user->assignRole('owner');
+        }
 
         $this->info(($user->wasRecentlyCreated ? 'Created' : 'Updated').": {$user->email}");
 

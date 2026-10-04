@@ -48,5 +48,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Never echoed back into a session or an error page.
+        $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'api_key']);
     })->create();

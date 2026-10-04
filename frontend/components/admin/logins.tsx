@@ -165,7 +165,8 @@ export function Logins({ client }: { client: Client }) {
   }
 
   return (
-    <section className="border border-[var(--hairline)] bg-[var(--panel)]">
+    // Passwords and usernames: the writing assistant stays out of here.
+    <section data-ai="off" className="border border-[var(--hairline)] bg-[var(--panel)]">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
         <div className="flex items-center gap-3">
           {rows.length > 0 && (
