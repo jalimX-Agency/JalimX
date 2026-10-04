@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useToast } from "@/components/admin/toast";
 import { admin, ApiError, type AiAction, type AiAssistInput } from "@/lib/admin/client";
@@ -9,11 +10,17 @@ import { admin, ApiError, type AiAction, type AiAssistInput } from "@/lib/admin/
  * Writing help in every text field of the dashboard, without touching the
  * forms themselves.
  *
- * It listens for focus on the page: when a text field is focused, a small ✦
- * button appears in its corner with what can be done to it — write it,
+ * It listens for focus on the page: when a text field is focused, a small AI
+ * button appears above its corner with what can be done to it — write it,
  * continue it, improve, shorten, fix or translate what is there. In a
  * multi-line field it can also suggest how the sentence goes on after a
  * pause in typing; Tab takes the suggestion, Esc or typing drops it.
+ *
+ * A request asked for by hand belongs to its field, not to the focus: click
+ * somewhere else while it is writing and it keeps going, and the suggestion
+ * waits under its field until it is used or dismissed. Only the suggestions
+ * made from typing are dropped when the field is left — those are cheap and
+ * would otherwise pile up.
  *
  * Nothing is written into a field without a click or a Tab. Suggestions are
  * shown first, because a model can be wrong and the dashboard's words go to
@@ -25,14 +32,17 @@ import { admin, ApiError, type AiAction, type AiAssistInput } from "@/lib/admin/
  */
 
 type Target = HTMLInputElement | HTMLTextAreaElement;
+type Lang = "en" | "fr" | "ar";
 
-type Suggestion = {
-  text: string;
-  /** "append" continues the text; "replace" swaps it. */
-  mode: "append" | "replace";
-  /** Came from typing, not from a click: quieter, and any keystroke drops it. */
-  auto: boolean;
+type Job = {
+  el: Target;
   action: AiAction;
+  target?: Lang;
+  /** Started by typing, not by a click: quieter, and dropped when left. */
+  auto: boolean;
+  loading: boolean;
+  /** "append" continues the text; "replace" swaps it. */
+  suggestion: { text: string; mode: "append" | "replace" } | null;
 };
 
 // Whole words only: "tel" must not catch "hotel".
@@ -82,33 +92,69 @@ function hintOf(el: Target): string | undefined {
   return last || undefined;
 }
 
-function langOf(el: Target): "en" | "fr" | "ar" | undefined {
+function langOf(el: Target): Lang | undefined {
   // Only a language the form itself declares — the page's own <html lang>
   // says nothing about what this field holds.
   const code = (el.lang || el.closest<HTMLElement>("main [lang]")?.lang || "").slice(0, 2);
   return code === "en" || code === "fr" || code === "ar" ? code : undefined;
 }
 
-/** The other filled fields of the same form, for "write" to work from. */
+/**
+ * The name of a group of choices: the first small heading inside the nearest
+ * ancestor that holds both the heading and the choice.
+ */
+function groupOf(choice: HTMLElement): string {
+  let node: HTMLElement | null = choice.parentElement;
+  for (let depth = 0; node && depth < 4; depth++, node = node.parentElement) {
+    const heading = Array.from(node.children).find(
+      (c) => (c.tagName === "SPAN" || c.tagName === "LEGEND" || c.tagName === "P") && !c.contains(choice),
+    );
+    const text = clean(heading?.textContent);
+    if (text) return text.slice(0, 120);
+  }
+  return "";
+}
+
+/**
+ * What else the form says, for "write" to work from: the other filled text
+ * fields, the chosen option of each select, and — of the choices made with
+ * checkboxes, radios or toggle buttons — only the ones that are on, grouped
+ * under their heading ("Kind of work: Website, SEO").
+ */
 function contextOf(el: Target): AiAssistInput["context"] {
-  const scope = el.closest("form") ?? el.closest("section") ?? el.closest("main");
+  const scope = el.closest("form") ?? el.closest("dialog") ?? el.closest("section") ?? el.closest("main");
   if (!scope) return [];
 
   const out: AiAssistInput["context"] = [];
+  const add = (label: string, value: string) => {
+    if (value && out.length < 12) out.push({ label: label.slice(0, 200), value: value.slice(0, 300) });
+  };
+
   scope.querySelectorAll<HTMLElement>("input, textarea, select").forEach((other) => {
-    if (out.length >= 10 || other === el) return;
+    if (other === el || other.closest('[data-ai="off"]')) return;
 
-    let value = "";
     if (other instanceof HTMLSelectElement) {
-      value = clean(other.selectedOptions[0]?.textContent);
+      add(clean(other.labels?.[0]?.querySelector("span")?.textContent), clean(other.selectedOptions[0]?.textContent));
     } else if (eligible(other)) {
-      value = clean(other.value);
+      add(labelOf(other), clean(other.value));
     }
-    if (!value) return;
-
-    const label = other instanceof HTMLSelectElement ? clean(other.labels?.[0]?.querySelector("span")?.textContent) : labelOf(other as Target);
-    out.push({ label: label.slice(0, 200), value: value.slice(0, 300) });
   });
+
+  // Checked boxes, chosen radios and pressed toggles; the rest is not sent.
+  const groups = new Map<string, string[]>();
+  scope
+    .querySelectorAll<HTMLElement>('input[type="checkbox"]:checked, input[type="radio"]:checked, [aria-pressed="true"]')
+    .forEach((choice) => {
+      if (choice.closest('[data-ai="off"]') || choice.closest("[data-jx-ai]")) return;
+      const name =
+        choice instanceof HTMLInputElement
+          ? clean(choice.labels?.[0]?.textContent || choice.getAttribute("aria-label"))
+          : clean(choice.textContent || choice.getAttribute("aria-label"));
+      if (!name) return;
+      const group = groupOf(choice);
+      groups.set(group, [...(groups.get(group) ?? []), name.slice(0, 80)]);
+    });
+  groups.forEach((names, group) => add(group || "Selected", names.join(", ")));
 
   return out;
 }
@@ -131,7 +177,16 @@ function joined(current: string, addition: string): string {
   return `${current} ${addition}`;
 }
 
-const MENU: { action: AiAction; label: string; needsText: boolean; target?: "en" | "fr" | "ar" }[] = [
+/**
+ * Where the overlay has to live. A field inside a modal <dialog> sits in the
+ * browser's top layer, above everything on the page — an overlay mounted on
+ * <body> would be drawn underneath it, invisible. So it goes into the dialog.
+ */
+function hostOf(el: Target): HTMLElement {
+  return el.closest("dialog") ?? document.body;
+}
+
+const MENU: { action: AiAction; label: string; needsText: boolean; target?: Lang }[] = [
   { action: "write", label: "Write it for me", needsText: false },
   { action: "complete", label: "Continue writing", needsText: true },
   { action: "improve", label: "Improve", needsText: true },
@@ -145,11 +200,13 @@ const MENU: { action: AiAction; label: string; needsText: boolean; target?: "en"
 
 export function AiAssist() {
   const toast = useToast();
-  const [target, setTarget] = useState<Target | null>(null);
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  // The field that has focus: where the AI button is.
+  const [focus, setFocus] = useState<Target | null>(null);
   const [menu, setMenu] = useState(false);
-  const [loading, setLoading] = useState<string | null>(null);
-  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  // The one request in progress or waiting to be used, and its field.
+  const [job, setJob] = useState<Job | null>(null);
+  // Bumped whenever the page moves, so positions are read again.
+  const [, setTick] = useState(0);
   // Remembered per browser; a private window falls back to on.
   const [auto, setAuto] = useState(() => {
     try {
@@ -158,10 +215,9 @@ export function AiAssist() {
       return true;
     }
   });
-  const [lastAsk, setLastAsk] = useState<{ action: AiAction; target?: "en" | "fr" | "ar" } | null>(null);
 
-  const targetRef = useRef<Target | null>(null);
-  const suggestionRef = useRef<Suggestion | null>(null);
+  const focusRef = useRef<Target | null>(null);
+  const jobRef = useRef<Job | null>(null);
   const autoRef = useRef(true);
   const inflight = useRef<AbortController | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,36 +226,26 @@ export function AiAssist() {
 
   // The listeners below outlive renders; they read the latest values here.
   useEffect(() => {
-    targetRef.current = target;
-    suggestionRef.current = suggestion;
+    focusRef.current = focus;
+    jobRef.current = job;
     autoRef.current = auto;
-  }, [target, suggestion, auto]);
+  }, [focus, job, auto]);
 
-  const reset = useCallback(() => {
+  const drop = useCallback(() => {
     inflight.current?.abort();
     inflight.current = null;
     if (timer.current) clearTimeout(timer.current);
-    setLoading(null);
-    setSuggestion(null);
-    setMenu(false);
+    setJob(null);
   }, []);
 
   const ask = useCallback(
-    async (action: AiAction, opts: { auto?: boolean; target?: "en" | "fr" | "ar" } = {}) => {
-      const el = targetRef.current;
-      if (!el) return;
-
+    async (el: Target, action: AiAction, opts: { auto?: boolean; target?: Lang } = {}) => {
       inflight.current?.abort();
       const controller = new AbortController();
       inflight.current = controller;
       setMenu(false);
-      setSuggestion(null);
-      if (!opts.auto) {
-        setLoading(action);
-        setLastAsk({ action, target: opts.target });
-      }
+      setJob({ el, action, target: opts.target, auto: !!opts.auto, loading: true, suggestion: null });
 
-      const maxLength = el.maxLength > 0 ? el.maxLength : undefined;
       const input: AiAssistInput = {
         action,
         text: el.value,
@@ -209,24 +255,33 @@ export function AiAssist() {
           hint: hintOf(el),
           page: clean(document.querySelector("main h1")?.textContent) || undefined,
           lang: langOf(el),
-          max_length: maxLength,
+          max_length: el.maxLength > 0 ? el.maxLength : undefined,
           multiline: el instanceof HTMLTextAreaElement,
         },
         context: contextOf(el),
       };
 
+      // Checked now, not inside the state update: React runs updaters later,
+      // after `finally` below has already let go of the controller.
+      const mine = () => inflight.current === controller;
+      const finish = (suggestion: Job["suggestion"]) => {
+        if (mine()) setJob((j) => (j && j.el === el ? { ...j, loading: false, suggestion } : j));
+      };
+
       try {
         const res = await admin.aiAssist(input, controller.signal);
-        if (controller.signal.aborted || targetRef.current !== el) return;
+        if (controller.signal.aborted) return;
 
         const text = action === "complete" ? res.text.replace(/^\s+/, (m) => (m.includes("\n") ? "\n" : " ")) : res.text;
         if (!text.trim()) {
           if (!opts.auto) toast.error("The model returned nothing. Try again.");
+          if (mine()) setJob(null);
           return;
         }
-        setSuggestion({ text, mode: action === "complete" ? "append" : "replace", auto: !!opts.auto, action });
+        finish({ text, mode: action === "complete" ? "append" : "replace" });
       } catch (e) {
         if (controller.signal.aborted) return;
+        if (mine()) setJob(null);
         if (opts.auto) {
           // Typing must never produce error toasts. Back off instead, so a
           // dashboard with no working key does not ask on every pause.
@@ -241,44 +296,43 @@ export function AiAssist() {
               : "The AI request failed.",
         );
       } finally {
-        if (inflight.current === controller) {
-          inflight.current = null;
-          setLoading(null);
-        }
+        if (inflight.current === controller) inflight.current = null;
       }
     },
     [toast],
   );
 
   const accept = useCallback(() => {
-    const el = targetRef.current;
-    const s = suggestionRef.current;
-    if (!el || !s) return;
+    const j = jobRef.current;
+    if (!j?.suggestion || !j.el.isConnected) return;
 
-    let next = s.mode === "append" ? joined(el.value, s.text.trimEnd()) : s.text;
-    if (el.maxLength > 0) next = next.slice(0, el.maxLength);
+    let next = j.suggestion.mode === "append" ? joined(j.el.value, j.suggestion.text.trimEnd()) : j.suggestion.text;
+    if (j.el.maxLength > 0) next = next.slice(0, j.el.maxLength);
 
-    writeInto(el, next);
-    setSuggestion(null);
+    writeInto(j.el, next);
+    setJob(null);
   }, []);
 
-  // Which field is being worked on.
+  // Which field has focus. Leaving a field drops a typing suggestion, never
+  // a request asked for by hand.
   useEffect(() => {
     const onFocusIn = (e: FocusEvent) => {
       const el = e.target as Element;
-      if (el === targetRef.current) return;
-      reset();
-      setTarget(eligible(el) ? el : null);
+      if (el === focusRef.current) return;
+      setMenu(false);
+      const j = jobRef.current;
+      if (j?.auto && j.el !== el) drop();
+      setFocus(eligible(el) ? el : null);
     };
     const onFocusOut = (e: FocusEvent) => {
       const next = e.relatedTarget as Node | null;
-      if (next && document.getElementById("jx-ai-assist")?.contains(next)) return;
-      // Let the focus land first: focusin on another field replaces the target.
+      if (next instanceof Element && next.closest("[data-jx-ai]")) return;
+      // Let the focus land first: focusin on another field replaces it.
       setTimeout(() => {
-        if (!eligible(document.activeElement)) {
-          reset();
-          setTarget(null);
-        }
+        if (eligible(document.activeElement)) return;
+        setFocus(null);
+        setMenu(false);
+        if (jobRef.current?.auto) drop();
       }, 0);
     };
     document.addEventListener("focusin", onFocusIn);
@@ -287,78 +341,94 @@ export function AiAssist() {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
     };
-  }, [reset]);
+  }, [drop]);
 
-  // Where it is on screen, kept up to date while the page moves.
+  // Positions follow the page as it scrolls, resizes or reflows; a field
+  // that left the page (a dialog closed) takes its request with it.
   useEffect(() => {
-    if (!target) return;
-    const place = () => setRect(target.getBoundingClientRect());
-    place();
-    window.addEventListener("scroll", place, true);
-    window.addEventListener("resize", place);
-    const observer = new ResizeObserver(place);
-    observer.observe(target);
-    return () => {
-      window.removeEventListener("scroll", place, true);
-      window.removeEventListener("resize", place);
-      observer.disconnect();
+    if (!focus && !job) return;
+    const move = () => {
+      if (job && !job.el.isConnected) {
+        drop();
+        return;
+      }
+      setTick((t) => t + 1);
     };
-  }, [target]);
+    window.addEventListener("scroll", move, true);
+    window.addEventListener("resize", move);
+    const observer = new ResizeObserver(move);
+    if (focus) observer.observe(focus);
+    if (job) observer.observe(job.el);
+    const check = setInterval(move, 1000);
+    return () => {
+      window.removeEventListener("scroll", move, true);
+      window.removeEventListener("resize", move);
+      observer.disconnect();
+      clearInterval(check);
+    };
+  }, [focus, job, drop]);
 
-  // Typing: drop a suggestion made from typing, and maybe ask for the next one.
+  // Typing in the focused field: drop a typing suggestion, maybe ask for the next.
   useEffect(() => {
-    if (!target) return;
+    if (!focus) return;
 
     const onInput = (e: Event) => {
       // Our own insert fires `input` too; it is not typing.
       if (!(e as InputEvent).inputType) return;
 
-      if (suggestionRef.current?.auto) setSuggestion(null);
+      const j = jobRef.current;
+      if (j?.auto && j.el === focus) drop();
       if (timer.current) clearTimeout(timer.current);
-      if (!(target instanceof HTMLTextAreaElement) || !autoRef.current) return;
+      if (!(focus instanceof HTMLTextAreaElement) || !autoRef.current) return;
 
       timer.current = setTimeout(() => {
-        const value = target.value;
-        const atEnd = target.selectionStart === value.length;
+        const value = focus.value;
+        const atEnd = focus.selectionStart === value.length;
         const now = Date.now();
         if (
-          document.activeElement !== target ||
+          document.activeElement !== focus ||
           !atEnd ||
           value.trim().length < 20 ||
           /\n\s*$/.test(value) ||
           now < quietUntil.current ||
           now - lastAuto.current < AUTO_GAP ||
-          suggestionRef.current
+          // A request asked for by hand is never replaced by a typing one.
+          (jobRef.current && !jobRef.current.auto)
         ) {
           return;
         }
         lastAuto.current = now;
-        ask("complete", { auto: true });
+        ask(focus, "complete", { auto: true });
       }, AUTO_DELAY);
     };
 
+    const el: HTMLElement = focus;
+    el.addEventListener("input", onInput);
+    return () => {
+      el.removeEventListener("input", onInput);
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [focus, ask, drop]);
+
+  // Tab takes the suggestion and Esc drops it, while its field has focus.
+  // Captured before a dialog sees the key, so Esc closes the suggestion,
+  // not the whole dialog.
+  useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const s = suggestionRef.current;
-      if (e.key === "Escape" && (s || inflight.current)) {
+      const j = jobRef.current;
+      if (!j || document.activeElement !== j.el) return;
+      if (e.key === "Escape") {
         e.preventDefault();
-        reset();
-        return;
-      }
-      if (e.key === "Tab" && s && !e.shiftKey) {
+        e.stopPropagation();
+        drop();
+      } else if (e.key === "Tab" && j.suggestion && !e.shiftKey) {
         e.preventDefault();
         accept();
       }
     };
-
-    const el: HTMLElement = target;
-    el.addEventListener("input", onInput);
-    el.addEventListener("keydown", onKeyDown);
-    return () => {
-      el.removeEventListener("input", onInput);
-      el.removeEventListener("keydown", onKeyDown);
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [target, ask, accept, reset]);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [accept, drop]);
 
   function toggleAuto() {
     const next = !auto;
@@ -370,108 +440,140 @@ export function AiAssist() {
     }
   }
 
-  if (!target || !rect || rect.width === 0) return null;
-
-  const hasText = target.value.trim().length > 0;
-  const multiline = target instanceof HTMLTextAreaElement;
-  const panelWidth = Math.max(280, Math.min(rect.width, 560));
-  const panelLeft = Math.max(8, Math.min(rect.left, window.innerWidth - panelWidth - 8));
-  const below = rect.bottom + 6;
   // Keeps focus in the field: every control here acts on mousedown.
   const keep = (e: React.MouseEvent) => e.preventDefault();
 
-  return (
-    <div id="jx-ai-assist" className="pointer-events-none fixed inset-0 z-50">
-      {/* Above the field's top-right corner, on the label's line, so it never
-          sits on top of what is being typed. */}
-      <button
-        type="button"
-        tabIndex={-1}
+  const button = (() => {
+    if (!focus) return null;
+    const rect = focus.getBoundingClientRect();
+    if (rect.width === 0) return null;
+    const busyHere = job?.el === focus && job.loading && !job.auto;
+    const hasText = focus.value.trim().length > 0;
+    const top = Math.max(4, rect.top - 22);
+
+    return createPortal(
+      <div data-jx-ai className="pointer-events-none fixed inset-0 z-[60]">
+        {/* Above the field's top-right corner, on the label's line, so it
+            never sits on top of what is being typed. */}
+        <button
+          type="button"
+          tabIndex={-1}
+          onMouseDown={keep}
+          onClick={() => setMenu((m) => !m)}
+          title="Writing help"
+          aria-label="Writing help"
+          aria-expanded={menu}
+          className="pointer-events-auto fixed flex h-5 -translate-x-full items-center gap-1 px-1 font-mono text-[0.6rem] uppercase tracking-[0.1em] text-[var(--link)] hover:text-[var(--fg)]"
+          style={{ top, left: rect.right }}
+        >
+          <Sparkle className={`h-3 w-3 ${busyHere ? "animate-spin" : ""}`} />
+          {busyHere ? "Writing…" : "AI"}
+        </button>
+
+        {menu && (
+          <div
+            role="menu"
+            onMouseDown={keep}
+            className="pointer-events-auto fixed w-60 border border-[var(--hairline)] bg-[var(--panel)] py-1 text-sm shadow-lg"
+            style={{ top: top + 22, left: Math.max(8, rect.right - 240) }}
+          >
+            {MENU.filter((m) => hasText || !m.needsText).map((m) => (
+              <button
+                key={`${m.action}-${m.target ?? ""}`}
+                type="button"
+                role="menuitem"
+                tabIndex={-1}
+                onClick={() => ask(focus, m.action, { target: m.target })}
+                className="block w-full px-3.5 py-1.5 text-left hover:bg-[color-mix(in_oklab,var(--link)_8%,transparent)]"
+                dir={m.target === "ar" ? "rtl" : undefined}
+              >
+                {m.action === "write" && hasText ? "Rewrite from scratch" : m.label}
+              </button>
+            ))}
+            {focus instanceof HTMLTextAreaElement && (
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={auto}
+                tabIndex={-1}
+                onClick={toggleAuto}
+                className="mt-1 flex w-full items-center justify-between border-t border-[var(--hairline)] px-3.5 pb-1 pt-2 text-left text-xs text-[var(--fg-dim)]"
+              >
+                Suggest while I type
+                <span className="font-mono">{auto ? "on" : "off"}</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>,
+      hostOf(focus),
+    );
+  })();
+
+  const panel = (() => {
+    if (!job || !job.el.isConnected) return null;
+    // A typing suggestion only shows while its field is being typed in.
+    if (job.auto && (!job.suggestion || focus !== job.el)) return null;
+    const rect = job.el.getBoundingClientRect();
+    if (rect.width === 0) return null;
+    const width = Math.max(280, Math.min(rect.width, 560));
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+    const s = job.suggestion;
+
+    return createPortal(
+      <div
+        data-jx-ai
+        role="status"
         onMouseDown={keep}
-        onClick={() => setMenu((m) => !m)}
-        title="Writing help"
-        aria-label="Writing help"
-        aria-expanded={menu}
-        className="pointer-events-auto fixed flex h-5 -translate-x-full items-center gap-1 px-1 font-mono text-[0.6rem] uppercase tracking-[0.1em] text-[var(--link)] hover:text-[var(--fg)]"
-        style={{ top: Math.max(4, rect.top - 22), left: rect.right }}
+        className="fixed z-[60] border border-[var(--hairline)] bg-[var(--panel)] shadow-lg"
+        style={{ top: rect.bottom + 6, left, width }}
       >
-        <Sparkle className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-        {loading ? "Writing…" : "AI"}
-      </button>
-
-      {menu && (
-        <div
-          role="menu"
-          onMouseDown={keep}
-          className="pointer-events-auto fixed w-60 border border-[var(--hairline)] bg-[var(--panel)] py-1 text-sm shadow-lg"
-          style={{ top: Math.max(4, rect.top - 22) + 22, left: Math.max(8, rect.right - 240) }}
-        >
-          {MENU.filter((m) => hasText || !m.needsText).map((m) => (
-            <button
-              key={`${m.action}-${m.target ?? ""}`}
-              type="button"
-              role="menuitem"
-              tabIndex={-1}
-              onClick={() => ask(m.action, { target: m.target })}
-              className="block w-full px-3.5 py-1.5 text-left hover:bg-[color-mix(in_oklab,var(--link)_8%,transparent)]"
-              dir={m.target === "ar" ? "rtl" : undefined}
-            >
-              {m.action === "write" && hasText ? "Rewrite from scratch" : m.label}
-            </button>
-          ))}
-          {multiline && (
-            <button
-              type="button"
-              role="menuitemcheckbox"
-              aria-checked={auto}
-              tabIndex={-1}
-              onClick={toggleAuto}
-              className="mt-1 flex w-full items-center justify-between border-t border-[var(--hairline)] px-3.5 pb-1 pt-2 text-left text-xs text-[var(--fg-dim)]"
-            >
-              Suggest while I type
-              <span className="font-mono">{auto ? "on" : "off"}</span>
-            </button>
-          )}
-        </div>
-      )}
-
-      {suggestion && (
-        <div
-          role="status"
-          onMouseDown={keep}
-          className="pointer-events-auto fixed border border-[var(--hairline)] bg-[var(--panel)] shadow-lg"
-          style={{ top: below, left: panelLeft, width: panelWidth }}
-        >
+        {s ? (
           <p
             dir="auto"
             className={`max-h-56 overflow-auto whitespace-pre-wrap px-3.5 py-2.5 text-sm ${
-              suggestion.auto ? "text-[var(--fg-dim)]" : "text-[var(--fg)]"
+              job.auto ? "text-[var(--fg-dim)]" : "text-[var(--fg)]"
             }`}
           >
-            {suggestion.mode === "append" && <span className="text-[var(--fg-faint)]">…</span>}
-            {suggestion.text.trim()}
+            {s.mode === "append" && <span className="text-[var(--fg-faint)]">…</span>}
+            {s.text.trim()}
           </p>
-          <div className="flex items-center gap-4 border-t border-[var(--hairline)] px-3.5 py-2 text-xs">
+        ) : (
+          <p className="flex items-center gap-2 px-3.5 py-2.5 text-sm text-[var(--fg-dim)]">
+            <Sparkle className="h-3 w-3 animate-spin text-[var(--link)]" />
+            Writing… you can keep working; it will wait here.
+          </p>
+        )}
+        <div className="flex items-center gap-4 border-t border-[var(--hairline)] px-3.5 py-2 text-xs">
+          {s && (
             <button type="button" tabIndex={-1} onClick={accept} className="font-medium text-[var(--link)] hover:underline">
-              {suggestion.mode === "append" ? "Add" : "Use this"} <span className="font-mono text-[var(--fg-faint)]">Tab</span>
+              {s.mode === "append" ? "Add" : "Use this"} <span className="font-mono text-[var(--fg-faint)]">Tab</span>
             </button>
-            {!suggestion.auto && lastAsk && (
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => ask(lastAsk.action, { target: lastAsk.target })}
-                className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
-              >
-                Try again
-              </button>
-            )}
-            <button type="button" tabIndex={-1} onClick={() => setSuggestion(null)} className="text-[var(--fg-dim)] hover:text-[var(--fg)]">
-              Dismiss <span className="font-mono text-[var(--fg-faint)]">Esc</span>
+          )}
+          {s && !job.auto && (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => ask(job.el, job.action, { target: job.target })}
+              className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              Try again
             </button>
-          </div>
+          )}
+          <button type="button" tabIndex={-1} onClick={drop} className="text-[var(--fg-dim)] hover:text-[var(--fg)]">
+            {s ? "Dismiss" : "Cancel"} <span className="font-mono text-[var(--fg-faint)]">Esc</span>
+          </button>
         </div>
-      )}
-    </div>
+      </div>,
+      hostOf(job.el),
+    );
+  })();
+
+  return (
+    <>
+      {button}
+      {panel}
+    </>
   );
 }
 
