@@ -53,15 +53,15 @@ class DocumentController extends Controller
             : null;
 
         /*
-         * A retainer's month is dated by its own cycle — due on the day the
-         * work started each month, at the month's end or its start — rather
-         * than by the day the invoice happens to be written. Issued today
-         * when written ahead of time, on the due date when written late.
+         * A retainer's month is dated by its own cycle, never by the day the
+         * invoice happens to be written: dated the first day of the month
+         * it covers, and due on the day the work started each month — at
+         * that month's end (default) or its start.
          */
         $cycle = ($data['preset'] ?? null) === 'month' && $engagement && $period
             ? $engagement->billingCycle($period)
             : null;
-        $issueDate = $cycle ? Carbon::today()->min($cycle['due']) : now();
+        $issueDate = $cycle ? $cycle['start'] : now();
         $dueDate = $cycle ? $cycle['due'] : now()->addDays(30);
 
         $document = DB::transaction(function () use ($client, $data, $engagement, $profile, $period, $cycle, $issueDate, $dueDate) {
