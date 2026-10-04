@@ -9,7 +9,8 @@ import { ConfirmProvider } from "@/components/admin/confirm";
 import { ToastProvider } from "@/components/admin/toast";
 import { InboxNotice, InboxPulseProvider, useInboxPulseSource } from "@/components/admin/inbox-pulse";
 import { Block } from "@/components/admin/skeleton";
-import { admin, ApiError, type User } from "@/lib/admin/client";
+import { AiAssist } from "@/components/admin/ai-assist";
+import { admin, ApiError, can, type User } from "@/lib/admin/client";
 
 /**
  * The signed-in shell: session check, sidebar, sign out.
@@ -186,6 +187,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <ToastProvider>
             <ConfirmProvider>
               <InboxPulseProvider value={pulse}>{children}</InboxPulseProvider>
+              {/* Writing help on every text field, for accounts allowed to use it. */}
+              {can(user, "ai.use") && <AiAssist />}
             </ConfirmProvider>
           </ToastProvider>
           <InboxNotice pulse={pulse} onInbox={pathname.startsWith("/admin/inbox")} />

@@ -95,7 +95,87 @@ export type ProjectInput = {
   metrics: Metric[];
 };
 
-export type User = { id: number; name: string; email: string };
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  roles?: string[];
+  permissions?: string[];
+};
+
+export const can = (user: User | null, permission: string) =>
+  !!user?.permissions?.includes(permission);
+
+export type AiProviderInfo = {
+  key: string;
+  name: string;
+  needs_base_url: boolean;
+  models: string[];
+  keys_at: string | null;
+};
+
+export type AiStatus = "active" | "cooling_down" | "invalid" | "disabled";
+
+/** A saved key, as the dashboard may see it: never the key itself. */
+export type AiCredential = {
+  id: number;
+  label: string;
+  provider: string;
+  provider_name: string;
+  model: string;
+  base_url: string | null;
+  key_hint: string;
+  /** Off: e-mails, phones and bank details are masked before sending. */
+  allows_personal_data: boolean;
+  status: AiStatus;
+  priority: number;
+  available_at: string | null;
+  last_used_at: string | null;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  last_error_type: string | null;
+  last_error_note: string | null;
+  consecutive_failures: number;
+  requests_today: number;
+  successes_today: number;
+};
+
+export type AiTest = {
+  ok: boolean;
+  error_type: string | null;
+  message: string;
+  checks: { label: string; ok: boolean | null }[];
+  latency_ms: number | null;
+};
+
+export type AiCredentialInput = {
+  label: string;
+  provider: string;
+  model: string;
+  base_url: string | null;
+  /** Blank on an edit keeps the stored key. */
+  api_key: string;
+  priority?: number;
+  allows_personal_data: boolean;
+  save_anyway?: boolean;
+};
+
+export type AiAction = "write" | "complete" | "improve" | "shorten" | "expand" | "fix" | "translate";
+
+export type AiAssistInput = {
+  action: AiAction;
+  text: string;
+  target_lang?: "en" | "fr" | "ar";
+  field: {
+    label?: string;
+    hint?: string;
+    page?: string;
+    lang?: "en" | "fr" | "ar";
+    max_length?: number;
+    multiline: boolean;
+  };
+  context: { label: string; value: string }[];
+};
 
 export type ServiceRow = {
   slug: string;
@@ -665,6 +745,8 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public errors: Record<string, string[]> = {},
+    /** The whole response body, for endpoints that explain a refusal. */
+    public body: unknown = null,
   ) {
     super(message);
   }
@@ -695,6 +777,7 @@ async function parse<T>(res: Response): Promise<T> {
       res.status,
       body?.message ?? `Request failed (${res.status})`,
       body?.errors ?? {},
+      body,
     );
   }
 
@@ -1138,6 +1221,52 @@ export const admin = {
       method: "PUT",
       body: JSON.stringify(input),
     }).then((r) => r.data),
+
+  /** The providers the form offers, and server settings that weaken security. */
+  aiProviders: () =>
+    request<{ data: AiProviderInfo[]; warnings: string[] }>("/api/v1/admin/ai/providers"),
+
+  aiCredentials: () =>
+    request<{ data: AiCredential[] }>("/api/v1/admin/ai/credentials").then((r) => r.data),
+
+  saveAiCredential: (input: AiCredentialInput, id?: number) =>
+    request<{ data: AiCredential; test: AiTest | null }>(
+      id ? `/api/v1/admin/ai/credentials/${id}` : "/api/v1/admin/ai/credentials",
+      { method: id ? "PUT" : "POST", body: JSON.stringify(input) },
+    ),
+
+  removeAiCredential: (id: number) =>
+    request(`/api/v1/admin/ai/credentials/${id}`, { method: "DELETE" }),
+
+  testAiCredential: (id: number) =>
+    request<{ data: AiCredential; test: AiTest }>(`/api/v1/admin/ai/credentials/${id}/test`, {
+      method: "POST",
+    }),
+
+  /** Tests the form as it is; with `id` and no key, the stored key is used. */
+  testAiDraft: (input: Omit<AiCredentialInput, "label" | "allows_personal_data"> & { id?: number }) =>
+    request<{ test: AiTest }>("/api/v1/admin/ai/test", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.test),
+
+  setAiCredentialState: (id: number, action: "enable" | "disable" | "retry") =>
+    request<{ data: AiCredential; test?: AiTest }>(`/api/v1/admin/ai/credentials/${id}/state`, {
+      method: "POST",
+      body: JSON.stringify({ action }),
+    }),
+
+  reorderAiCredentials: (ids: number[]) =>
+    request<{ data: AiCredential[] }>("/api/v1/admin/ai/credentials-order", {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    }).then((r) => r.data),
+
+  aiAssist: (input: AiAssistInput, signal?: AbortSignal) =>
+    request<{ data: { text: string; source: string | null; model: string | null } }>(
+      "/api/v1/admin/ai/assist",
+      { method: "POST", body: JSON.stringify(input), signal },
+    ).then((r) => r.data),
 
   removeMedia: (id: number) =>
     request(`/api/v1/admin/media/${id}`, { method: "DELETE" }),
