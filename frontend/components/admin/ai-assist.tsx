@@ -126,8 +126,8 @@ function contextOf(el: Target): AiAssistInput["context"] {
   if (!scope) return [];
 
   const out: AiAssistInput["context"] = [];
-  const add = (label: string, value: string) => {
-    if (value && out.length < 12) out.push({ label: label.slice(0, 200), value: value.slice(0, 300) });
+  const add = (label: string, value: string, max = 300) => {
+    if (value && out.length < 12) out.push({ label: label.slice(0, 200), value: value.slice(0, max) });
   };
 
   scope.querySelectorAll<HTMLElement>("input, textarea, select").forEach((other) => {
@@ -151,10 +151,12 @@ function contextOf(el: Target): AiAssistInput["context"] {
           ? clean(choice.labels?.[0]?.textContent || choice.getAttribute("aria-label"))
           : clean(choice.textContent || choice.getAttribute("aria-label"));
       if (!name) return;
+      // A choice can say what it means (a kind of work's description).
+      const about = clean(choice.dataset.aiDescription);
       const group = groupOf(choice);
-      groups.set(group, [...(groups.get(group) ?? []), name.slice(0, 80)]);
+      groups.set(group, [...(groups.get(group) ?? []), about ? `${name.slice(0, 80)} (${about.slice(0, 280)})` : name.slice(0, 80)]);
     });
-  groups.forEach((names, group) => add(group || "Selected", names.join(", ")));
+  groups.forEach((names, group) => add(group || "Selected", names.join("; "), 600));
 
   return out;
 }

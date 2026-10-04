@@ -471,6 +471,9 @@ function EngagementEditor({
                         type="button"
                         aria-pressed={on}
                         onClick={() => toggleType(t.id)}
+                        title={t.description ?? undefined}
+                        // Read by the writing help when this kind is chosen.
+                        data-ai-description={t.description ?? undefined}
                         className={`border px-3 py-1.5 text-sm transition-colors ${
                           on
                             ? "border-[var(--fg)] bg-[var(--fg)] text-[var(--ground)]"

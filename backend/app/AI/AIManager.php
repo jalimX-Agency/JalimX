@@ -64,8 +64,7 @@ class AIManager
             $shield = $credential->allows_personal_data ? null : new PrivacyShield;
 
             try {
-                $result = ProviderCatalog::driver($credential->provider)
-                    ->generate($credential, $shield ? $shield->protect($request) : $request);
+                $result = ProviderCatalog::call($credential, $shield ? $shield->protect($request) : $request);
             } catch (ProviderError $error) {
                 $this->log($credential, $task, $userId, $started, $error);
 

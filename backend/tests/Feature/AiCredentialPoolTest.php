@@ -241,4 +241,33 @@ class AiCredentialPoolTest extends TestCase
 
         $this->assertSame($text, $shield->mask($text));
     }
+
+    public function test_a_key_that_can_no_longer_be_decrypted_is_skipped_not_fatal(): void
+    {
+        $broken = $this->key('Old', 'groq', 'gsk_oldkeyoldkeyoldkeyold0000', 1);
+        // As if APP_KEY changed after this key was saved.
+        DB::table('ai_credentials')->where('id', $broken->id)->update(['api_key' => 'not-a-valid-payload']);
+        $this->key('New', 'groq', 'gsk_newkeynewkeynewkeynew0000', 2);
+
+        Http::fake(['api.groq.com/*' => Http::response(['choices' => [['message' => ['content' => 'From the new key']]]])]);
+
+        $this->assertSame('From the new key', $this->ask());
+        $this->assertSame(CredentialStatus::Invalid, $broken->refresh()->status);
+        $this->assertStringContainsString('APP_KEY', $broken->last_error_note);
+    }
+
+    public function test_an_unreadable_key_can_be_replaced_from_the_dashboard(): void
+    {
+        Sanctum::actingAs($this->owner());
+        $broken = $this->key('Old', 'groq', 'gsk_oldkeyoldkeyoldkeyold0000', 1);
+        DB::table('ai_credentials')->where('id', $broken->id)->update(['api_key' => 'not-a-valid-payload']);
+        Http::fake(['api.groq.com/*' => Http::response(['choices' => [['message' => ['content' => 'ok']]]])]);
+
+        $this->putJson("/api/v1/admin/ai/credentials/{$broken->id}", [
+            'label' => 'Old', 'provider' => 'groq', 'model' => 'llama-3.3-70b-versatile',
+            'api_key' => 'gsk_replacementreplacement00',
+        ])->assertOk()->assertJsonPath('data.status', 'active');
+
+        $this->assertSame('gsk_replacementreplacement00', $broken->fresh()->api_key);
+    }
 }

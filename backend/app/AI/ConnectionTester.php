@@ -23,7 +23,7 @@ class ConnectionTester
         $started = hrtime(true);
 
         try {
-            ProviderCatalog::driver($credential->provider)->generate(
+            ProviderCatalog::call(
                 $credential,
                 new AiRequest(
                     system: 'Reply with the single word: ok',
