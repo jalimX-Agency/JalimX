@@ -2,8 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
-
-const BASE = "https://jalimx.com";
+import { absoluteUrl } from "@/lib/seo";
 
 /**
  * Every route in every locale, with the alternates declared.
@@ -14,23 +13,21 @@ const BASE = "https://jalimx.com";
  *
  * Built from the API rather than a hand-kept list so a project published from
  * the dashboard appears here without anyone remembering to add it.
+ *
+ * The addresses are the ones the site really serves (see lib/seo): a sitemap
+ * listing addresses that redirect elsewhere is a list of pages Google is told
+ * to index and then sent away from.
  */
-
-/** English sits at the root; French is prefixed. Mirrors `localePrefix`. */
-function url(locale: string, path: string): string {
-  const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
-  return `${BASE}${prefix}${path === "/" ? "" : path}` || BASE;
-}
 
 function entry(
   path: string,
   options: Partial<MetadataRoute.Sitemap[number]> = {}
 ): MetadataRoute.Sitemap[number] {
   return {
-    url: url(routing.defaultLocale, path),
+    url: absoluteUrl(routing.defaultLocale, path),
     alternates: {
       languages: Object.fromEntries(
-        routing.locales.map((locale) => [locale, url(locale, path)])
+        routing.locales.map((locale) => [locale, absoluteUrl(locale, path)])
       ),
     },
     ...options,

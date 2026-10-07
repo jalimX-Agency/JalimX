@@ -5,12 +5,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { JsonLd } from "@/components/site/json-ld";
 import { ProjectImage } from "@/components/site/project-media";
 import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import type { Locale, Project } from "@/lib/api/client";
 import { api, t as pickLocale } from "@/lib/api/client";
+import { absoluteUrl, ogImage, pageAlternates, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
 
@@ -88,25 +90,23 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description,
     openGraph: {
       type: "article",
+      siteName: SITE_NAME,
+      url: absoluteUrl(active, `/work/${slug}`),
       title,
       description,
-      locale: active === "fr" ? "fr_FR" : "en_US",
-      ...(image
-        ? {
-            images: [
-              {
-                url: image.url,
-                ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
-                alt: image.alt || project.client_name,
-              },
-            ],
-          }
-        : {}),
+      locale: active === "fr" ? "fr_FR" : "en_GB",
+      // The client's own picture when there is one; the studio's card when not.
+      images: image
+        ? [
+            {
+              url: image.url,
+              ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
+              alt: image.alt || project.client_name,
+            },
+          ]
+        : [ogImage(active)],
     },
-    alternates: {
-      canonical: active === "fr" ? `/fr/work/${slug}` : `/work/${slug}`,
-      languages: { en: `/work/${slug}`, fr: `/fr/work/${slug}` },
-    },
+    alternates: pageAlternates(active, `/work/${slug}`),
   };
 }
 
@@ -132,6 +132,7 @@ export default async function CaseStudy({ params }: Params) {
   setRequestLocale(locale);
 
   const t = await getTranslations("caseStudy");
+  const tWork = await getTranslations({ locale, namespace: "work" });
   const active = locale as Locale;
 
   const [project, shots, settings] = await Promise.all([
@@ -149,8 +150,47 @@ export default async function CaseStudy({ params }: Params) {
   const gallery = project.gallery ?? [];
   const dashboard = project.dashboard ?? [];
 
+  const url = absoluteUrl(active, `/work/${project.slug}`);
+  const picture = project.cover?.url ?? site?.src;
+  const title = pickLocale(project.title, active);
+
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: SITE_NAME, item: absoluteUrl(active, "/") },
+                { "@type": "ListItem", position: 2, name: tWork("pageTitle"), item: absoluteUrl(active, "/work") },
+                { "@type": "ListItem", position: 3, name: project.client_name, item: url },
+              ],
+            },
+            {
+              "@type": "CreativeWork",
+              "@id": `${url}#work`,
+              url,
+              name: `${project.client_name} — ${title}`,
+              description: pickLocale(project.summary, active),
+              inLanguage: active,
+              ...(picture
+                ? { image: picture.startsWith("http") ? picture : `${SITE_URL}${picture}` }
+                : {}),
+              ...(project.published_at ? { datePublished: project.published_at } : {}),
+              ...(project.updated_at ? { dateModified: project.updated_at } : {}),
+              creator: { "@id": `${SITE_URL}/#organization` },
+              about: {
+                "@type": "Organization",
+                name: project.client_name,
+                ...(project.project_url ? { url: project.project_url } : {}),
+              },
+              isPartOf: { "@id": `${SITE_URL}/#website` },
+            },
+          ],
+        }}
+      />
       <div className="surface-light">
         <Header />
 

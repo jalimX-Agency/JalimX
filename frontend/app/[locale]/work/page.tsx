@@ -3,12 +3,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
+import { JsonLd } from "@/components/site/json-ld";
 import { ProjectImage } from "@/components/site/project-media";
 import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import type { Locale, Project } from "@/lib/api/client";
 import { api, t as pickLocale } from "@/lib/api/client";
+import { absoluteUrl, pageAlternates, pageOpenGraph, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
 
@@ -34,12 +36,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "work" });
+  const t = await getTranslations({ locale, namespace: "seo" });
 
   return {
-    title: t("pageTitle"),
-    description: t("pageDescription"),
-    alternates: { languages: { en: "/work", fr: "/fr/work" } },
+    title: t("workTitle"),
+    description: t("workDescription"),
+    alternates: pageAlternates(locale, "/work"),
+    openGraph: pageOpenGraph(
+      locale,
+      "/work",
+      `${t("workTitle")} · JalimX`,
+      t("workDescription")
+    ),
   };
 }
 
@@ -68,8 +76,41 @@ export default async function WorkPage({
     getWorkShots(),
   ]);
 
+  const pageUrl = absoluteUrl(active, "/work");
+
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: SITE_NAME, item: absoluteUrl(active, "/") },
+                { "@type": "ListItem", position: 2, name: t("pageTitle"), item: pageUrl },
+              ],
+            },
+            {
+              "@type": "CollectionPage",
+              "@id": `${pageUrl}#page`,
+              url: pageUrl,
+              name: t("pageTitle"),
+              inLanguage: active,
+              isPartOf: { "@id": `${SITE_URL}/#website` },
+              mainEntity: {
+                "@type": "ItemList",
+                itemListElement: projects.map((project, i) => ({
+                  "@type": "ListItem",
+                  position: i + 1,
+                  url: absoluteUrl(active, `/work/${project.slug}`),
+                  name: `${project.client_name} — ${pickLocale(project.title, active)}`,
+                })),
+              },
+            },
+          ],
+        }}
+      />
       <div className="surface-light">
         <Header />
 

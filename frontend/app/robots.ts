@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { SITE_URL } from "@/lib/seo";
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
@@ -9,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       // sends noindex itself; robots.txt alone is a request, not a lock.
       disallow: ["/design-system", "/api/", "/admin"],
     },
-    sitemap: "https://jalimx.com/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

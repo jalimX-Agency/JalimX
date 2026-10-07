@@ -7,6 +7,7 @@ import { Header } from "@/components/site/header";
 import { TitleBlockHero } from "@/components/site/title-block-hero";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
+import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { text } from "@/lib/settings";
 
 export function generateStaticParams() {
@@ -19,12 +20,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "approach" });
+  const t = await getTranslations({ locale, namespace: "seo" });
 
   return {
-    title: t("title"),
-    description: t("description"),
-    alternates: { languages: { en: "/approach", fr: "/fr/approach" } },
+    title: t("approachTitle"),
+    description: t("approachDescription"),
+    alternates: pageAlternates(locale, "/approach"),
+    openGraph: pageOpenGraph(
+      locale,
+      "/approach",
+      `${t("approachTitle")} · JalimX`,
+      t("approachDescription")
+    ),
   };
 }
 

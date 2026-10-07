@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ClosingBlock } from "@/components/site/footer";
@@ -18,6 +19,7 @@ import type {
 } from "@/lib/api/client";
 import { api, t as tr } from "@/lib/api/client";
 import { getWorkShots } from "@/lib/work-shots";
+import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { pick, text } from "@/lib/settings";
 
 /**
@@ -31,6 +33,24 @@ import { pick, text } from "@/lib/settings";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+/*
+ * The title and description come from the layout (the homepage is the page that
+ * takes its defaults); what the homepage adds is its own address.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "seo" });
+
+  return {
+    alternates: pageAlternates(locale, "/"),
+    openGraph: pageOpenGraph(locale, "/", t("homeTitle"), t("homeDescription")),
+  };
 }
 
 const FALLBACK = {

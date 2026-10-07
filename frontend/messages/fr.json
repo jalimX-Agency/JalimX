@@ -120,7 +120,7 @@
   },
   "about": {
     "title": "À propos",
-    "description": "Quatre choses que nous ne ferons pas à votre site, et quatre que nous ferons. Cadrage fixe, prix fixe, aucun abonnement, et le code est à vous le jour de la mise en ligne.",
+    "description": "Quatre choses que nous ne ferons pas à votre site, et quatre que nous ferons. Cadrage fixe, prix fixe, aucun abonnement obligatoire, et le code est à vous le jour de la mise en ligne.",
     "heading": "Quatre choses que nous ne ferons pas. Quatre que nous ferons.",
     "intro": "Sans détour et sans petits caractères. Si l'un de ces points cessait d'être vrai, vous seriez le premier à le remarquer — c'est bien l'intérêt de l'écrire.",
     "refuseHeading": "Jamais sur votre site",
@@ -134,8 +134,8 @@
         "note": "Des conteneurs imbriqués qui ne veulent rien dire pour un lecteur d'écran, un moteur de recherche, ou le prochain développeur qui ouvre le fichier."
       },
       "retainers": {
-        "term": "Les abonnements mensuels.",
-        "note": "Un site ne devrait pas avoir besoin d'un abonnement pour rester debout. S'il en a besoin, quelque chose a été mal construit."
+        "term": "Les abonnements obligatoires.",
+        "note": "Un site ne devrait pas avoir besoin d'un abonnement pour rester debout. S'il en a besoin, quelque chose a été mal construit. Le suivi marketing ou éditorial, si vous le souhaitez, est un service distinct et facultatif."
       },
       "surprises": {
         "term": "Les factures surprises.",
@@ -258,5 +258,17 @@
       "revisionsLabel": "Retours",
       "revisionsValue": "2 inclus"
     }
+  },
+  "seo": {
+    "homeTitle": "JalimX — Studio de développement web à Marrakech",
+    "homeDescription": "Studio de développement web à Marrakech. Sites sur mesure et systèmes de réservation pour tour-opérateurs, camps et villas — cadrage et prix fixes, code à vous.",
+    "workTitle": "Sites pour tour-opérateurs, camps et villas",
+    "workDescription": "Études de cas des sites réalisés pour des tour-opérateurs, des camps dans le désert et des villas privées — ce que chacun devait faire, et ce qui en est sorti.",
+    "aboutTitle": "Le studio : cadrage fixe, votre code",
+    "aboutDescription": "Quatre choses que nous ne ferons pas à votre site, et quatre que nous ferons : cadrage fixe, prix fixe, aucun abonnement obligatoire, et le code est à vous dès la mise en ligne.",
+    "approachTitle": "Comment nous construisons un site, étape par étape",
+    "approachDescription": "Tout le processus, écrit noir sur blanc : chaque étape d'un projet JalimX, ce dont nous avons besoin de vous, le temps que cela prend, et ce que reçoit chaque site quel que soit le budget.",
+    "contactTitle": "Contact : dites-nous ce que votre site doit faire",
+    "contactDescription": "Dites-nous ce que le site doit faire. Un appel, puis un périmètre écrit à prix ferme. Studio basé à Marrakech."
   }
 }

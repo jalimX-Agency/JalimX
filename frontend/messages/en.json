@@ -120,7 +120,7 @@
   },
   "about": {
     "title": "About",
-    "description": "Four things we will not do to your site, and four we will. Fixed scope, fixed price, no retainer, and the code is yours the day it ships.",
+    "description": "Four things we will not do to your site, and four we will. Fixed scope, fixed price, no mandatory retainer, and the code is yours the day it ships.",
     "heading": "Four things we will not do. Four we will.",
     "intro": "No hedging, no small print. If any of this stops being true you will be the first to notice, which is rather the point of writing it down.",
     "refuseHeading": "Not on your site",
@@ -134,8 +134,8 @@
         "note": "Nested containers that mean nothing to a screen reader, a search engine, or the next developer who opens the file."
       },
       "retainers": {
-        "term": "Monthly retainers.",
-        "note": "A site should not need a subscription to stay upright. If it does, something was built wrong."
+        "term": "Mandatory retainers.",
+        "note": "A site should not need a subscription to stay upright. If it does, something was built wrong. Ongoing marketing or content work, if you want it, is a separate and optional service."
       },
       "surprises": {
         "term": "Surprise invoices.",
@@ -258,5 +258,17 @@
       "revisionsLabel": "Revisions",
       "revisionsValue": "2 included"
     }
+  },
+  "seo": {
+    "homeTitle": "JalimX — Web development studio in Marrakech",
+    "homeDescription": "Web development studio in Marrakech. Custom websites and booking systems for tour operators, camps and villas — fixed scope, fixed price, and the code is yours.",
+    "workTitle": "Websites for tour operators, camps and villas",
+    "workDescription": "Case studies of the websites we built for tour operators, desert camps and private villas — what each had to do, and what came of it.",
+    "aboutTitle": "About the studio: fixed scope, your code",
+    "aboutDescription": "Four things we will not do to your website, and four we will: fixed scope, fixed price, no mandatory retainer, and the code is yours the day it ships.",
+    "approachTitle": "How we build a website, step by step",
+    "approachDescription": "The whole process, written down: every step of a JalimX project, what we need from you, how long it takes, and what every site gets regardless of budget.",
+    "contactTitle": "Contact — tell us what your website must do",
+    "contactDescription": "Tell us what the site has to do. A call, then a written scope with a fixed price. Studio based in Marrakech."
   }
 }

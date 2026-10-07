@@ -10,6 +10,7 @@ import { Header } from "@/components/site/header";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
+import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { text } from "@/lib/settings";
 
 /**
@@ -38,12 +39,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "about" });
+  const t = await getTranslations({ locale, namespace: "seo" });
 
   return {
-    title: t("title"),
-    description: t("description"),
-    alternates: { languages: { en: "/about", fr: "/fr/about" } },
+    title: t("aboutTitle"),
+    description: t("aboutDescription"),
+    alternates: pageAlternates(locale, "/about"),
+    openGraph: pageOpenGraph(
+      locale,
+      "/about",
+      `${t("aboutTitle")} · JalimX`,
+      t("aboutDescription")
+    ),
   };
 }
 

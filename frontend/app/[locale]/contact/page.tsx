@@ -8,6 +8,7 @@ import { Header } from "@/components/site/header";
 import { routing } from "@/i18n/routing";
 import type { Locale, Service } from "@/lib/api/client";
 import { api } from "@/lib/api/client";
+import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { text } from "@/lib/settings";
 
 export function generateStaticParams() {
@@ -20,12 +21,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "contact" });
+  const t = await getTranslations({ locale, namespace: "seo" });
 
   return {
-    title: t("title"),
-    description: t("description"),
-    alternates: { languages: { en: "/contact", fr: "/fr/contact" } },
+    title: t("contactTitle"),
+    description: t("contactDescription"),
+    alternates: pageAlternates(locale, "/contact"),
+    openGraph: pageOpenGraph(
+      locale,
+      "/contact",
+      `${t("contactTitle")} · JalimX`,
+      t("contactDescription")
+    ),
   };
 }
 
