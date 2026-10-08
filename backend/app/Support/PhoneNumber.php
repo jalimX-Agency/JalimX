@@ -9,6 +9,19 @@ namespace App\Support;
 final class PhoneNumber
 {
     /**
+     * Digits as people read them: "+212 620 569 446" for a Moroccan number,
+     * "+" and the digits for anything else.
+     */
+    public static function display(string $digits): string
+    {
+        if (preg_match('/^212(\d{3})(\d{3})(\d{3})$/', $digits, $m)) {
+            return "+212 {$m[1]} {$m[2]} {$m[3]}";
+        }
+
+        return '+'.$digits;
+    }
+
+    /**
      * A Moroccan number written the local way (06…, 07…, 05…) gets its
      * 212; one that already has a country code keeps it. Null when what is
      * left cannot be a phone number.

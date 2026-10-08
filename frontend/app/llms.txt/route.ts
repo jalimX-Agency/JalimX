@@ -1,6 +1,7 @@
 import { api, t as pick } from "@/lib/api/client";
 import { absoluteUrl, SITE_URL } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { formatPhone } from "@/lib/phone";
+import { numbers, text } from "@/lib/settings";
 
 /**
  * A plain-text summary of the site for AI answer engines (the llms.txt
@@ -24,6 +25,7 @@ export async function GET() {
 
   const email = text(settings, "contact_email");
   const phone = text(settings, "contact_phone");
+  const whatsapp = numbers(settings, "contact_whatsapp");
   const location = text(settings, "contact_location") || "Marrakech, Morocco";
 
   const lines: string[] = [
@@ -62,6 +64,7 @@ export async function GET() {
   lines.push(`- Website: ${SITE_URL}`);
   if (email) lines.push(`- Email: ${email}`);
   if (phone) lines.push(`- Phone: ${phone}`);
+  for (const n of whatsapp) lines.push(`- WhatsApp: ${formatPhone(n)} (https://wa.me/${n})`);
   lines.push(`- Location: ${location}`, "");
 
   return new Response(lines.join("\n"), {

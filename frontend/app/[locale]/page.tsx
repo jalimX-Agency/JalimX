@@ -20,7 +20,7 @@ import type {
 import { api, t as tr } from "@/lib/api/client";
 import { getWorkShots } from "@/lib/work-shots";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
-import { pick, text } from "@/lib/settings";
+import { numbers, pick, text } from "@/lib/settings";
 
 /**
  * Section order follows the questions a business owner actually asks, in the
@@ -150,6 +150,7 @@ export default async function Home({
       <ClosingBlock
         email={text(settings, "contact_email")}
         phone={text(settings, "contact_phone")}
+        whatsapp={numbers(settings, "contact_whatsapp")}
         location={text(settings, "contact_location")}
       />
     </>

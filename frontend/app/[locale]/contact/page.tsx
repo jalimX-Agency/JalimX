@@ -3,13 +3,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { PlottedHeadline } from "@/components/motion/plotted-headline";
 import { ContactForm } from "@/components/site/contact-form";
+import { WhatsAppLinks } from "@/components/site/whatsapp-links";
 import { ClosingBlock } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { routing } from "@/i18n/routing";
 import type { Locale, Service } from "@/lib/api/client";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { numbers, text } from "@/lib/settings";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -62,6 +63,7 @@ export default async function ContactPage({
 
   const email = text(settings, "contact_email");
   const phone = text(settings, "contact_phone");
+  const whatsapp = numbers(settings, "contact_whatsapp");
   const location = text(settings, "contact_location");
 
   const steps = [t("next1"), t("next2"), t("next3")];
@@ -136,7 +138,7 @@ export default async function ContactPage({
                 </p>
               </div>
 
-              {(email || phone || location) && (
+              {(email || phone || whatsapp.length > 0 || location) && (
                 <div>
                   <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
                     {t("directHeading")}
@@ -158,6 +160,10 @@ export default async function ContactPage({
                         {phone}
                       </a>
                     )}
+                    <WhatsAppLinks
+                      numbers={whatsapp}
+                      className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
+                    />
                     {location && (
                       <span className="text-[var(--fg-faint)]">{location}</span>
                     )}
@@ -172,6 +178,7 @@ export default async function ContactPage({
       <ClosingBlock
         email={email}
         phone={phone}
+        whatsapp={whatsapp}
         location={location}
         showCta={false}
       />

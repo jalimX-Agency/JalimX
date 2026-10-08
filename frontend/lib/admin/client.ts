@@ -193,6 +193,8 @@ export type SiteSettings = {
   hero_body: Translated;
   contact_email: string;
   contact_phone: string;
+  /** WhatsApp numbers shown on the site, one per line. */
+  contact_whatsapp: string;
   contact_location: string;
 };
 

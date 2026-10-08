@@ -29,6 +29,22 @@ export function pick(
 }
 
 /**
+ * A list of phone numbers, as the digits the dashboard stored them in. Anything
+ * that is not a plain digit string is dropped: these end up in links.
+ */
+export function numbers(settings: Record<string, unknown>, key: string): string[] {
+  const value = settings[key];
+  const list =
+    value && typeof value === "object" && "values" in value
+      ? (value as { values: unknown }).values
+      : [];
+
+  return Array.isArray(list)
+    ? list.filter((n): n is string => typeof n === "string" && /^[1-9]\d{9,14}$/.test(n))
+    : [];
+}
+
+/**
  * A plain string. Contact details are stored as `{ value: "..." }` so they can
  * be edited as one field in the dashboard; an empty string means "render
  * nothing", not "render a gap".

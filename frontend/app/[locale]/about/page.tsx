@@ -11,7 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { numbers, text } from "@/lib/settings";
 
 /**
  * About, as a standard rather than a story.
@@ -160,6 +160,7 @@ export default async function AboutPage({
       <ClosingBlock
         email={text(settings, "contact_email")}
         phone={text(settings, "contact_phone")}
+        whatsapp={numbers(settings, "contact_whatsapp")}
         location={text(settings, "contact_location")}
       />
     </>

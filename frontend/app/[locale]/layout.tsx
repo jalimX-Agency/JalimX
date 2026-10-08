@@ -10,7 +10,7 @@ import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { ogImage, SITE_NAME, SITE_URL } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { numbers, text } from "@/lib/settings";
 
 /**
  * The root layout. There is no `app/layout.tsx` — every page lives under
@@ -70,6 +70,7 @@ async function siteGraph(locale: string): Promise<Record<string, unknown>> {
 
   const email = text(settings, "contact_email");
   const phone = text(settings, "contact_phone");
+  const whatsapp = numbers(settings, "contact_whatsapp");
   const social = (settings.social ?? {}) as Record<string, unknown>;
   const sameAs = Object.values(social).filter(
     (url): url is string => typeof url === "string" && /^https?:\/\//.test(url)
@@ -91,7 +92,10 @@ async function siteGraph(locale: string): Promise<Record<string, unknown>> {
           addressCountry: "MA",
         },
         ...(email ? { email } : {}),
-        ...(phone ? { telephone: phone } : {}),
+        // The public phone and the WhatsApp numbers, in international form.
+        ...(phone || whatsapp.length
+          ? { telephone: [...(phone ? [phone] : []), ...whatsapp.map((n) => `+${n}`)] }
+          : {}),
         ...(sameAs.length ? { sameAs } : {}),
       },
       {

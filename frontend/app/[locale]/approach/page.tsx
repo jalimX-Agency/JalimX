@@ -8,7 +8,7 @@ import { TitleBlockHero } from "@/components/site/title-block-hero";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { numbers, text } from "@/lib/settings";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -57,6 +57,7 @@ export default async function ApproachPage({
       <ClosingBlock
         email={text(settings, "contact_email")}
         phone={text(settings, "contact_phone")}
+        whatsapp={numbers(settings, "contact_whatsapp")}
         location={text(settings, "contact_location")}
       />
     </div>

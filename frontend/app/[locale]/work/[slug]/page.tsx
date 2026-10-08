@@ -13,7 +13,7 @@ import { routing } from "@/i18n/routing";
 import type { Locale, Project } from "@/lib/api/client";
 import { api, t as pickLocale } from "@/lib/api/client";
 import { absoluteUrl, ogImage, pageAlternates, SITE_NAME, SITE_URL } from "@/lib/seo";
-import { text } from "@/lib/settings";
+import { numbers, text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
 
 /**
@@ -433,6 +433,7 @@ export default async function CaseStudy({ params }: Params) {
       <ClosingBlock
         email={text(settings, "contact_email")}
         phone={text(settings, "contact_phone")}
+        whatsapp={numbers(settings, "contact_whatsapp")}
         location={text(settings, "contact_location")}
       />
     </>

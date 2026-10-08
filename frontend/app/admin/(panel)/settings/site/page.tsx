@@ -48,7 +48,10 @@ export default function SettingsPage() {
   const err = (key: string) => errors[key]?.[0];
   const setText = (key: "hero_headline" | "hero_body", locale: keyof Translated, value: string) =>
     setInput((i) => (i ? { ...i, [key]: { ...i[key], [locale]: value } } : i));
-  const set = (key: "contact_email" | "contact_phone" | "contact_location", value: string) =>
+  const set = (
+    key: "contact_email" | "contact_phone" | "contact_whatsapp" | "contact_location",
+    value: string,
+  ) =>
     setInput((i) => (i ? { ...i, [key]: value } : i));
 
   async function save() {
@@ -133,7 +136,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="border border-[var(--hairline)] bg-[var(--panel)]">
-          <Heading title="Contact details" hint="Footer and contact page · leave phone or location empty to hide it" />
+          <Heading title="Contact details" hint="Footer and contact page · leave phone, WhatsApp or location empty to hide it" />
           <div className="grid gap-5 p-5 sm:grid-cols-3">
             <Field label="Email" error={err("contact_email")}>
               <input
@@ -162,6 +165,23 @@ export default function SettingsPage() {
                 onChange={(e) => set("contact_location", e.target.value)}
               />
             </Field>
+            <div className="sm:col-span-3">
+              <Field
+                label="WhatsApp numbers"
+                hint="One per line, with the country code. Each opens a chat on the site"
+                error={err("contact_whatsapp")}
+              >
+                <textarea
+                  rows={3}
+                  maxLength={400}
+                  className="admin-input resize-y tabular-nums leading-relaxed"
+                  placeholder="+212 6…"
+                  value={input.contact_whatsapp}
+                  aria-invalid={!!err("contact_whatsapp")}
+                  onChange={(e) => set("contact_whatsapp", e.target.value)}
+                />
+              </Field>
+            </div>
           </div>
         </section>
       </div>

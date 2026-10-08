@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { JxMark } from "@/components/brand/logo";
+import { WhatsAppLinks } from "@/components/site/whatsapp-links";
 import { Link } from "@/i18n/navigation";
 
 /**
@@ -15,6 +16,8 @@ type Props = {
   /** From `settings`. Empty strings render as nothing rather than as a gap. */
   email?: string;
   phone?: string;
+  /** WhatsApp numbers as digits with the country code (see lib/phone). */
+  whatsapp?: string[];
   location?: string;
   /** Off on the contact page itself, where it would point at the current page. */
   showCta?: boolean;
@@ -23,6 +26,7 @@ type Props = {
 export async function ClosingBlock({
   email,
   phone,
+  whatsapp = [],
   location,
   showCta = true,
 }: Props) {
@@ -123,6 +127,10 @@ export async function ClosingBlock({
                   {phone}
                 </a>
               )}
+              <WhatsAppLinks
+                numbers={whatsapp}
+                className="text-sm text-[var(--fg-dim)] hover:text-[var(--fg)]"
+              />
               {location && (
                 <span className="text-sm text-[var(--fg-faint)]">{location}</span>
               )}
