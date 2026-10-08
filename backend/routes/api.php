@@ -57,14 +57,16 @@ Route::prefix('v1')->group(function () {
      * Public reads. These feed the marketing site, which caches them with ISR,
      * so the traffic here is a trickle of revalidations rather than per-visitor.
      */
-    Route::get('/services', [ServiceController::class, 'index']);
-    Route::get('/services/{service}', [ServiceController::class, 'show']);
+    Route::middleware('site.key')->group(function () {
+        Route::get('/services', [ServiceController::class, 'index']);
+        Route::get('/services/{service}', [ServiceController::class, 'show']);
 
-    Route::get('/projects', [ProjectController::class, 'index']);
-    Route::get('/projects/{project}', [ProjectController::class, 'show']);
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
-    Route::get('/testimonials', [TestimonialController::class, 'index']);
-    Route::get('/settings', [SettingController::class, 'index']);
+        Route::get('/testimonials', [TestimonialController::class, 'index']);
+        Route::get('/settings', [SettingController::class, 'index']);
+    });
 
     /*
      * The one public write, and a spam target.

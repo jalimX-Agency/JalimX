@@ -59,8 +59,41 @@ type RequestOptions = CacheOptions & {
   headers?: HeadersInit;
 };
 
+/**
+ * The key the API wants on its public reads (see RequireSiteKey on the backend).
+ *
+ * Made from REVALIDATE_SECRET, which the site's server and the API already
+ * share, so there is no second secret to keep. It is not a NEXT_PUBLIC
+ * variable: in a browser it does not exist, so this returns nothing there and
+ * the key never leaves the server. Web Crypto rather than node:crypto, because
+ * this file is also bundled for the browser, where node:crypto cannot load.
+ */
+let siteKeyPromise: Promise<string | null> | undefined;
+
+function siteKey(): Promise<string | null> {
+  siteKeyPromise ??= (async () => {
+    const secret = process.env.REVALIDATE_SECRET;
+    if (!secret) return null;
+
+    const text = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      text.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const signed = await crypto.subtle.sign("HMAC", key, text.encode("jalimx-site-api-v1"));
+
+    return Array.from(new Uint8Array(signed), (b) => b.toString(16).padStart(2, "0")).join("");
+  })();
+
+  return siteKeyPromise;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
+  const key = await siteKey();
 
   const response = await fetch(`${BASE_URL}/api${path}`, {
     ...rest,
@@ -68,6 +101,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers: {
       Accept: "application/json",
       ...(body ? { "Content-Type": "application/json" } : {}),
+      ...(key ? { "X-Site-Key": key } : {}),
       ...headers,
     },
     ...(body ? { body: JSON.stringify(body) } : {}),

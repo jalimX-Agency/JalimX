@@ -46,6 +46,9 @@ return Application::configure(basePath: dirname(__DIR__))
          * '*' is standard for a PaaS whose edge IPs aren't fixed or published.
          */
         $middleware->trustProxies(at: '*');
+
+        // The public reads that only the site's own server may make.
+        $middleware->alias(['site.key' => \App\Http\Middleware\RequireSiteKey::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Never echoed back into a session or an error page.

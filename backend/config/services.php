@@ -25,6 +25,8 @@ return [
     'frontend' => [
         'url' => env('FRONTEND_URL'),
         'revalidate_secret' => env('REVALIDATE_SECRET'),
+        // Public reads answer only the site's own server (App\Http\Middleware\RequireSiteKey).
+        'enforce_site_key' => (bool) env('SITE_API_ENFORCE', false),
     ],
 
     /*
