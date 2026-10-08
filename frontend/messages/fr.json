@@ -113,7 +113,10 @@
         "b3": "3 000 € – 8 000 €",
         "b4": "Plus de 8 000 €",
         "b5": "Je ne sais pas encore"
-      }
+      },
+      "verifying": "Vérification…",
+      "verifyFailed": "La vérification anti-spam n'a pas abouti. Réessayez.",
+      "verifyUnavailable": "La vérification anti-spam n'a pas pu se charger. Désactivez votre bloqueur de contenu et rechargez la page, ou écrivez-nous directement."
     },
     "costHeading": "Ce que ça coûte de se renseigner",
     "costBody": "Rien. L'appel et le document de cadrage sont gratuits, et vous ne payez rien tant que vous n'avez pas accepté un prix fixe."

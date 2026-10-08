@@ -37,6 +37,19 @@ return [
         'notify' => env('LEADS_NOTIFY_EMAIL'),
     ],
 
+    /*
+     * Cloudflare Turnstile, the check on the contact form. Unset, the form
+     * works as it always did; set, an enquiry needs a token made on our site
+     * (App\Services\Turnstile).
+     */
+    'turnstile' => [
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+        'hostnames' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TURNSTILE_HOSTNAMES', 'jalimx.com,www.jalimx.com'))
+        ))),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

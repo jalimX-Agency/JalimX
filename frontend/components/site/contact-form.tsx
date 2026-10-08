@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   Select,
@@ -11,6 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import {
+  Turnstile,
+  TURNSTILE_SITE_KEY,
+  type TurnstileHandle,
+} from "@/components/site/turnstile";
 import { ApiError, api, t as pickLocale, type Locale, type Service } from "@/lib/api/client";
 
 /**
@@ -42,8 +47,21 @@ export function ContactForm({ services, locale }: Props) {
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [failure, setFailure] = useState<string | null>(null);
 
+  // The spam check. Without a site key the form has none, and the API (which
+  // only asks for it when it has its own secret) takes the form as before.
+  const guarded = TURNSTILE_SITE_KEY !== "";
+  const [token, setToken] = useState<string | null>(null);
+  const [checkUnavailable, setCheckUnavailable] = useState(false);
+  const widget = useRef<TurnstileHandle | null>(null);
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (guarded && !token) {
+      setFailure(t("verifying"));
+      return;
+    }
+
     setStatus("sending");
     setErrors({});
     setFailure(null);
@@ -63,13 +81,22 @@ export function ContactForm({ services, locale }: Props) {
         message: String(form.get("message") ?? ""),
         locale,
         source: "contact-page",
+        turnstile_token: token,
       });
 
       setStatus("sent");
     } catch (error) {
       setStatus("idle");
 
+      // A token is good for one try, whatever the outcome: ask for a new one.
+      widget.current?.reset();
+      setToken(null);
+
       if (error instanceof ApiError) {
+        if (error.errors?.turnstile) {
+          setFailure(t("verifyFailed"));
+          return;
+        }
         if (error.errors) setErrors(error.errors);
         else if (error.status === 429) setFailure(t("throttled"));
         else setFailure(error.message);
@@ -197,9 +224,27 @@ export function ContactForm({ services, locale }: Props) {
         </p>
       )}
 
+      {guarded && (
+        <Turnstile
+          locale={locale}
+          handle={widget}
+          onToken={(value) => {
+            setToken(value);
+            if (value) setCheckUnavailable(false);
+          }}
+          onUnavailable={() => setCheckUnavailable(true)}
+        />
+      )}
+
+      {guarded && checkUnavailable && !token && (
+        <p role="alert" className="text-sm text-[var(--color-signal)]">
+          {t("verifyUnavailable")}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-5">
-        <button type="submit" className="cta" disabled={busy}>
-          {busy ? t("sending") : t("submit")}
+        <button type="submit" className="cta" disabled={busy || (guarded && !token)}>
+          {busy ? t("sending") : guarded && !token && !checkUnavailable ? t("verifying") : t("submit")}
         </button>
         <p className="text-xs text-[var(--fg-faint)]">{t("note")}</p>
       </div>

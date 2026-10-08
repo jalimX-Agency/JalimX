@@ -113,7 +113,10 @@
         "b3": "€3,000 – €8,000",
         "b4": "€8,000+",
         "b5": "Not sure yet"
-      }
+      },
+      "verifying": "Checking…",
+      "verifyFailed": "The spam check did not pass. Please try again.",
+      "verifyUnavailable": "The spam check could not load. Turn off any content blocker and reload the page, or email us directly."
     },
     "costHeading": "What it costs to find out",
     "costBody": "Nothing. The call and the written scope are free, and you pay nothing until you have accepted a fixed price."

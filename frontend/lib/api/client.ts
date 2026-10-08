@@ -128,7 +128,11 @@ const cached = (tag: string): CacheOptions => ({
 type HealthResponse =
   paths["/v1/health"]["get"]["responses"][200]["content"]["application/json"];
 
-type LeadPayload = Schemas["StoreLeadRequest"];
+/**
+ * The turnstile token is the spam check's answer (see components/site/turnstile).
+ * It is not part of the form's own rules, so the generated type does not know it.
+ */
+type LeadPayload = Schemas["StoreLeadRequest"] & { turnstile_token?: string | null };
 
 export const api = {
   /** Liveness probe. Also the smoke test that frontend↔backend wiring works. */
