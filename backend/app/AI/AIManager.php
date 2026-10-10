@@ -5,6 +5,7 @@ namespace App\AI;
 use App\AI\Exceptions\AiRequestFailed;
 use App\AI\Exceptions\AiUnavailable;
 use App\AI\Exceptions\ProviderError;
+use App\AI\Tasks\LeadReply;
 use App\AI\Tasks\TextAssist;
 use App\Models\AiCredential;
 use Illuminate\Support\Carbon;
@@ -28,6 +29,7 @@ class AIManager
     /** @var array<string, class-string<AiTask>> */
     private const TASKS = [
         'text_assist' => TextAssist::class,
+        'lead_reply' => LeadReply::class,
     ];
 
     public function __construct(private readonly CredentialPool $pool) {}

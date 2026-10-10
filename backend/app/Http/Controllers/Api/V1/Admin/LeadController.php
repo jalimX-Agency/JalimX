@@ -66,7 +66,7 @@ class LeadController extends Controller
             $lead->forceFill(['read_at' => now()])->save();
         }
 
-        return new LeadResource($lead->load('client'));
+        return new LeadResource($lead->load(['client', 'replies']));
     }
 
     public function update(Request $request, Lead $lead): LeadResource
@@ -84,7 +84,7 @@ class LeadController extends Controller
 
         $lead->fill($validated)->save();
 
-        return new LeadResource($lead->load('client'));
+        return new LeadResource($lead->load(['client', 'replies']));
     }
 
     /** For spam. A real enquiry that went nowhere is marked lost, not deleted. */

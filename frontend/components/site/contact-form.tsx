@@ -145,7 +145,20 @@ export function ContactForm({ services, locale }: Props) {
         </Field>
 
         <Field label={t("phone")} name="phone" errors={errors.phone} required>
-          <input id="phone" name="phone" type="tel" autoComplete="tel" className="field" disabled={busy} />
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            placeholder={t("phonePlaceholder")}
+            aria-describedby="phone-hint"
+            className="field"
+            disabled={busy}
+          />
+          <p id="phone-hint" className="text-xs leading-snug text-[var(--fg-faint)]">
+            {t("phoneHint")}
+          </p>
         </Field>
 
         <Field label={t("company")} name="company" errors={errors.company} optional={optional}>

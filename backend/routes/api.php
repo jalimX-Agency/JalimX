@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\DocumentWhatsAppController;
 use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementController;
 use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
+use App\Http\Controllers\Api\V1\Admin\LeadReplyController;
 use App\Http\Controllers\Api\V1\Admin\OverviewController;
 use App\Http\Controllers\Api\V1\Admin\PaymentController;
 use App\Http\Controllers\Api\V1\Admin\PaymentWhatsAppController;
@@ -258,6 +259,11 @@ Route::prefix('v1')->group(function () {
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show']);
             Route::patch('/leads/{lead}', [AdminLeadController::class, 'update']);
             Route::delete('/leads/{lead}', [AdminLeadController::class, 'destroy']);
+            // Answering an enquiry by email, with a first draft from AI if asked.
+            Route::post('/leads/{lead}/reply/draft', [LeadReplyController::class, 'draft'])
+                ->middleware(['can:ai.use', 'throttle:20,1']);
+            Route::post('/leads/{lead}/reply', [LeadReplyController::class, 'send'])
+                ->middleware('throttle:10,1');
         });
 
         Route::get('/auth/me', function (Request $request) {

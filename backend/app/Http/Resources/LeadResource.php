@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Controllers\Api\V1\Admin\LeadReplyController;
 use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -38,6 +39,19 @@ class LeadResource extends JsonResource
                 'id' => $this->client->id,
                 'name' => (string) $this->client->name,
             ] : null),
+            /*
+             * The number the email's WhatsApp button points to, so the
+             * dashboard can show what it is about to put in the email.
+             */
+            'reply_whatsapp' => ($n = LeadReplyController::agencyWhatsApp()) ? \App\Support\PhoneNumber::display($n) : null,
+            'replies' => $this->whenLoaded('replies', fn () => $this->replies->map(fn ($r) => [
+                'id' => $r->id,
+                'sent_to' => $r->sent_to,
+                'subject' => $r->subject,
+                'body' => $r->body,
+                'with_whatsapp' => $r->with_whatsapp,
+                'created_at' => $r->created_at?->toIso8601String(),
+            ])->values()),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

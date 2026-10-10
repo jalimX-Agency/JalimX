@@ -663,8 +663,23 @@ export type Lead = {
   is_read: boolean;
   /** The client this enquiry became, or null if it hasn't been converted. */
   client: { id: number; name: string } | null;
+  /** The number the reply email's WhatsApp button opens, as written for people. */
+  reply_whatsapp: string | null;
+  /** Emails sent to this enquiry from the dashboard, newest first. */
+  replies?: LeadReply[];
   created_at: string;
 };
+
+export type LeadReply = {
+  id: number;
+  sent_to: string;
+  subject: string;
+  body: string;
+  with_whatsapp: boolean;
+  created_at: string;
+};
+
+export type ReplyTone = "warm" | "professional" | "short";
 
 export type LeadPage = {
   data: Lead[];
@@ -1202,6 +1217,26 @@ export const admin = {
 
   removeLead: (id: number) =>
     request(`/api/v1/admin/leads/${id}`, { method: "DELETE" }),
+
+  /** A first draft of the email answer. Nothing is sent. */
+  draftLeadReply: (
+    id: number,
+    input: { tone: ReplyTone; language: "en" | "fr" | "ar"; instruction?: string; whatsapp: boolean },
+  ) =>
+    request<{ data: { subject: string; body: string; source: string | null } }>(
+      `/api/v1/admin/leads/${id}/reply/draft`,
+      { method: "POST", body: JSON.stringify(input) },
+    ).then((r) => r.data),
+
+  /** Sends the email. The lead comes back with the reply in its history. */
+  sendLeadReply: (
+    id: number,
+    input: { subject: string; body: string; whatsapp: boolean; to?: string },
+  ) =>
+    request<{ data: Lead }>(`/api/v1/admin/leads/${id}/reply`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
 
   createProject: (input: { client_name: string; title_en: string; slug?: string }) =>
     request<{ data: ProjectDetail }>("/api/v1/admin/projects", {

@@ -92,7 +92,7 @@
     "form": {
       "name": "Nom",
       "email": "E-mail",
-      "phone": "Téléphone",
+      "phone": "Numéro WhatsApp",
       "company": "Société",
       "service": "Ce dont vous avez besoin",
       "budget": "Budget",
@@ -116,7 +116,9 @@
       },
       "verifying": "Vérification…",
       "verifyFailed": "La vérification anti-spam n'a pas abouti. Réessayez.",
-      "verifyUnavailable": "La vérification anti-spam n'a pas pu se charger. Désactivez votre bloqueur de contenu et rechargez la page, ou écrivez-nous directement."
+      "verifyUnavailable": "La vérification anti-spam n'a pas pu se charger. Désactivez votre bloqueur de contenu et rechargez la page, ou écrivez-nous directement.",
+      "phonePlaceholder": "+212 6 12 34 56 78",
+      "phoneHint": "Indiquez un numéro qui a WhatsApp : c'est là que nous continuerons la conversation."
     },
     "costHeading": "Ce que ça coûte de se renseigner",
     "costBody": "Rien. L'appel et le document de cadrage sont gratuits, et vous ne payez rien tant que vous n'avez pas accepté un prix fixe."

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
+import { LeadReply } from "@/components/admin/lead-reply";
 import { STATUS_LABEL } from "@/components/admin/lead-status";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
 import { useToast } from "@/components/admin/toast";
@@ -181,6 +182,8 @@ export default function LeadPage() {
             </dl>
             <p className="whitespace-pre-wrap px-5 py-5 leading-relaxed">{lead.message}</p>
           </section>
+
+          <LeadReply lead={lead} onSent={setLead} />
 
           <section className="border border-[var(--hairline)] bg-[var(--panel)]">
             <header className="flex items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lead extends Model
@@ -31,5 +32,11 @@ class Lead extends Model
     public function client(): HasOne
     {
         return $this->hasOne(Client::class);
+    }
+
+    /** The emails sent to this enquiry from the dashboard, newest first. */
+    public function replies(): HasMany
+    {
+        return $this->hasMany(LeadReply::class)->latest();
     }
 }
