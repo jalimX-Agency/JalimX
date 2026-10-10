@@ -36,6 +36,16 @@ class LeadReplyController extends Controller
             'whatsapp' => ['sometimes', 'boolean'],
         ]);
 
+        /*
+         * A whole email is longer than the field-sized text the other
+         * assists ask for, and the free models behind the pool can take half
+         * a minute. PHP's own 30 seconds killed the request mid-answer, which
+         * came back as a bare 500: give this one room, and try fewer keys so
+         * a slow pool still answers inside it.
+         */
+        set_time_limit(110);
+        config(['ai.timeout' => 55, 'ai.max_attempts' => 2]);
+
         try {
             ['output' => $draft, 'result' => $result] = $ai->generate([
                 'task' => 'lead_reply',

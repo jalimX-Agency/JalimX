@@ -1218,6 +1218,18 @@ export const admin = {
   removeLead: (id: number) =>
     request(`/api/v1/admin/leads/${id}`, { method: "DELETE" }),
 
+  /** The team's own reply templates (the built-in ones live in the dashboard). */
+  leadReplyTemplates: () =>
+    request<{ data: { id: string; name: string; subject: string; body: string }[] }>(
+      "/api/v1/admin/lead-reply-templates",
+    ).then((r) => r.data),
+
+  saveLeadReplyTemplates: (templates: { id?: string; name: string; subject: string; body: string }[]) =>
+    request<{ data: { id: string; name: string; subject: string; body: string }[] }>(
+      "/api/v1/admin/lead-reply-templates",
+      { method: "PUT", body: JSON.stringify({ templates }) },
+    ).then((r) => r.data),
+
   /** A first draft of the email answer. Nothing is sent. */
   draftLeadReply: (
     id: number,

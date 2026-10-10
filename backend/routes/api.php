@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Admin\EngagementController as AdminEngagementCon
 use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\Api\V1\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Api\V1\Admin\LeadReplyController;
+use App\Http\Controllers\Api\V1\Admin\LeadReplyTemplateController;
 use App\Http\Controllers\Api\V1\Admin\OverviewController;
 use App\Http\Controllers\Api\V1\Admin\PaymentController;
 use App\Http\Controllers\Api\V1\Admin\PaymentWhatsAppController;
@@ -264,6 +265,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware(['can:ai.use', 'throttle:20,1']);
             Route::post('/leads/{lead}/reply', [LeadReplyController::class, 'send'])
                 ->middleware('throttle:10,1');
+            Route::get('/lead-reply-templates', [LeadReplyTemplateController::class, 'index']);
+            Route::put('/lead-reply-templates', [LeadReplyTemplateController::class, 'update']);
         });
 
         Route::get('/auth/me', function (Request $request) {

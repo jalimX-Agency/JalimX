@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
 import { useToast } from "@/components/admin/toast";
 import { admin, type Lead, type ReplyTone } from "@/lib/admin/client";
+import { BUILTIN_TEMPLATES, fillTemplate, type ReplyTemplate } from "@/lib/admin/reply-templates";
 
 /**
  * Answering an enquiry by email from the dashboard.
@@ -52,6 +53,24 @@ export function LeadReply({ lead, onSent }: { lead: Lead; onSent: (lead: Lead) =
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const [saved, setSaved] = useState<ReplyTemplate[]>([]);
+  const [templateId, setTemplateId] = useState("");
+  const [tweak, setTweak] = useState("");
+  const [tweaking, setTweaking] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    admin.leadReplyTemplates().then(
+      (items) => live && setSaved(items),
+      () => undefined, // the built-in ones still work
+    );
+    return () => {
+      live = false;
+    };
+  }, [open]);
+
+  const templates = [...BUILTIN_TEMPLATES, ...saved];
   const replies = lead.replies ?? [];
   const ready = subject.trim() !== "" && body.trim().length >= 5;
 
@@ -79,6 +98,67 @@ export function LeadReply({ lead, onSent }: { lead: Lead; onSent: (lead: Lead) =
       toast.error(e, "Could not write a draft.");
     } finally {
       setDrafting(false);
+    }
+  }
+
+  async function pickTemplate(id: string) {
+    setTemplateId(id);
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    if (body.trim() !== "" && !(await ask({
+      title: "Replace what you wrote?",
+      body: "The template overwrites the subject and the message below.",
+      confirmLabel: "Use the template",
+    }))) {
+      setTemplateId("");
+      return;
+    }
+    setSubject(fillTemplate(t.subject, lead));
+    setBody(fillTemplate(t.body, lead));
+  }
+
+  /** Changes the text in the box as asked, in the person's own words. */
+  async function applyTweak() {
+    const request = tweak.trim();
+    if (!request || body.trim() === "") return;
+    setTweaking(true);
+    try {
+      const res = await admin.aiAssist({
+        action: "custom",
+        text: body,
+        instruction: request,
+        field: {
+          label: "Email reply to a website enquiry",
+          hint: "Keep the greeting and the sign-off. Do not invent prices or dates.",
+          lang: language,
+          max_length: 8000,
+          multiline: true,
+        },
+        context: [{ label: "What the visitor wrote", value: lead.message.slice(0, 600) }],
+      });
+      setBody(res.text);
+      setTweak("");
+      toast.success("Changed.", "Read it before sending.");
+    } catch (e) {
+      toast.error(e, "Could not change the text.");
+    } finally {
+      setTweaking(false);
+    }
+  }
+
+  async function saveAsTemplate() {
+    if (!ready) return;
+    const name = window.prompt("Name this template", subject.trim().slice(0, 60));
+    if (!name?.trim()) return;
+    try {
+      const next = await admin.saveLeadReplyTemplates([
+        ...saved.map(({ id, name: n, subject: s, body: b }) => ({ id, name: n, subject: s, body: b })),
+        { name: name.trim(), subject: subject.trim(), body: body.trim() },
+      ]);
+      setSaved(next);
+      toast.success("Template saved.", "It is in the list above for the next enquiry.");
+    } catch (e) {
+      toast.error(e, "Could not save the template.");
     }
   }
 
@@ -133,6 +213,31 @@ export function LeadReply({ lead, onSent }: { lead: Lead; onSent: (lead: Lead) =
         </div>
       ) : (
         <div className="flex flex-col gap-4 px-5 py-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+              Start from a template
+            </span>
+            <select
+              value={templateId}
+              onChange={(e) => pickTemplate(e.target.value)}
+              className="border border-[var(--hairline)] bg-transparent px-3 py-2 text-sm"
+            >
+              <option value="">Choose one…</option>
+              <optgroup label="Ready-made">
+                {BUILTIN_TEMPLATES.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </optgroup>
+              {saved.length > 0 && (
+                <optgroup label="Yours">
+                  {saved.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </label>
+
           {/* The draft controls: what to write and in which voice. */}
           <div className="flex flex-col gap-3 border border-[var(--hairline)] p-3">
             <div className="flex flex-wrap gap-4">
@@ -202,6 +307,45 @@ export function LeadReply({ lead, onSent }: { lead: Lead; onSent: (lead: Lead) =
               className="resize-y border border-[var(--hairline)] bg-transparent px-3 py-2.5 text-sm leading-relaxed outline-none"
             />
           </label>
+
+          <div className="flex flex-col gap-2 border border-[var(--hairline)] p-3">
+            <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+              Change the text with AI
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={tweak}
+                onChange={(e) => setTweak(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyTweak();
+                  }
+                }}
+                maxLength={500}
+                data-ai="off"
+                placeholder="e.g. make it shorter, add that we build in Next.js, mention Villa Elk"
+                aria-label="What to change"
+                className="min-w-0 flex-1 border border-[var(--hairline)] bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[var(--fg-faint)]"
+              />
+              <button
+                type="button"
+                onClick={applyTweak}
+                disabled={tweaking || tweak.trim() === "" || body.trim() === ""}
+                className="shrink-0 border border-[var(--hairline)] px-3 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--link)] hover:border-[var(--link)] disabled:opacity-40"
+              >
+                {tweaking ? "Working…" : "Apply"}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={saveAsTemplate}
+              disabled={!ready}
+              className="self-start text-xs text-[var(--fg-dim)] underline-offset-4 hover:text-[var(--fg)] hover:underline disabled:opacity-40"
+            >
+              Save this text as a template
+            </button>
+          </div>
 
           <label className="flex items-start gap-2.5 text-sm">
             <input

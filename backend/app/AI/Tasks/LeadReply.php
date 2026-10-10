@@ -68,7 +68,7 @@ class LeadReply implements AiTask
         return new AiRequest(
             system: $system,
             prompt: $prompt,
-            maxTokens: 700,
+            maxTokens: 500,
             temperature: 0.6,
         );
     }
