@@ -64,6 +64,14 @@ class LeadReplyController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        // Some models spend their whole budget thinking and answer with
+        // nothing; an empty draft is a failure, not a result.
+        if (trim($draft['body']) === '') {
+            return response()->json([
+                'message' => 'The AI came back empty. Try again, or start from a template.',
+            ], 422);
+        }
+
         return response()->json([
             'data' => [
                 'subject' => $draft['subject'],
