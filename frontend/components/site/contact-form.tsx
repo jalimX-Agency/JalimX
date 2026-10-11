@@ -40,6 +40,15 @@ const BUDGET_KEYS = ["b1", "b2", "b3", "b4", "b5"] as const;
 
 type Status = "idle" | "sending" | "sent";
 
+/** An international number: optional +, then 7 to 15 digits with common separators. */
+function validPhone(value: string): boolean {
+  // Arabic-Indic and Persian digits count as digits; the API normalises them.
+  const latin = value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+  if (!/^\+?[\d\s().\-]+$/.test(latin)) return false;
+  const digits = latin.replace(/\D/g, "").length;
+  return digits >= 7 && digits <= 15;
+}
+
 export function ContactForm({ services, locale }: Props) {
   const t = useTranslations("contact.form");
 
@@ -56,6 +65,16 @@ export function ContactForm({ services, locale }: Props) {
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    // Checked here too, before the spam token is spent on a number that the
+    // server would bounce. Same rule as the API: 7 to 15 digits, written
+    // with a "+", spaces, dots, dashes or brackets.
+    const typed = String(new FormData(event.currentTarget).get("phone") ?? "").trim();
+    if (!validPhone(typed)) {
+      setErrors({ phone: [t("phoneInvalid")] });
+      document.getElementById("phone")?.focus();
+      return;
+    }
 
     if (guarded && !token) {
       setFailure(t("verifying"));
@@ -151,7 +170,6 @@ export function ContactForm({ services, locale }: Props) {
             type="tel"
             autoComplete="tel"
             inputMode="tel"
-            placeholder={t("phonePlaceholder")}
             aria-describedby="phone-hint"
             className="field"
             disabled={busy}

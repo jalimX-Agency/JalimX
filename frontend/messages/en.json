@@ -117,8 +117,8 @@
       "verifying": "Checking…",
       "verifyFailed": "The spam check did not pass. Please try again.",
       "verifyUnavailable": "The spam check could not load. Turn off any content blocker and reload the page, or email us directly.",
-      "phonePlaceholder": "+212 6 12 34 56 78",
-      "phoneHint": "Please give a number that has WhatsApp — we will continue the conversation there."
+      "phoneHint": "Please give a number that has WhatsApp — we will continue the conversation there.",
+      "phoneInvalid": "Enter a valid phone number, with its country code."
     },
     "costHeading": "What it costs to find out",
     "costBody": "Nothing. The call and the written scope are free, and you pay nothing until you have accepted a fixed price."

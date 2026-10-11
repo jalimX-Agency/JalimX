@@ -21,7 +21,16 @@ class StoreLeadRequest extends FormRequest
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email:rfc', 'max:190'],
             // Required: a number is how these conversations actually start.
-            'phone' => ['required', 'string', 'min:6', 'max:40'],
+            // Written the way people write numbers anywhere: a "+" and a country
+            // code, spaces, dots, dashes, brackets. Between 7 and 15 digits,
+            // the range an international number can have (E.164).
+            'phone' => ['required', 'string', 'max:40', function (string $attribute, mixed $value, \Closure $fail) {
+                $digits = strlen((string) preg_replace('/\D/', '', (string) $value));
+
+                if (! preg_match('/^\+?[\d\s().\-]+$/', (string) $value) || $digits < 7 || $digits > 15) {
+                    $fail('Enter a valid phone number, with its country code.');
+                }
+            }],
             'company' => ['nullable', 'string', 'max:120'],
             'budget_range' => ['nullable', 'string', 'max:60'],
             'service_interest' => ['nullable', 'string', 'max:60'],
@@ -64,6 +73,16 @@ class StoreLeadRequest extends FormRequest
     {
         $this->merge([
             'locale' => $this->input('locale', 'en'),
+            // Numbers typed with Arabic-Indic or Persian digits (٠٦١٢…) are
+            // the same numbers; store them the way every tool reads them.
+            'phone' => is_string($this->input('phone'))
+                ? strtr(trim($this->input('phone')), [
+                    '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+                    '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+                    '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+                    '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+                ])
+                : $this->input('phone'),
         ]);
     }
 }
