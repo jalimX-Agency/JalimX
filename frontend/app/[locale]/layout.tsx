@@ -11,6 +11,7 @@ import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { ogImage, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * The root layout. There is no `app/layout.tsx` — every page lives under
@@ -65,7 +66,7 @@ export async function generateMetadata({
 async function siteGraph(locale: string): Promise<Record<string, unknown>> {
   const [t, settings] = await Promise.all([
     getTranslations({ locale, namespace: "seo" }),
-    api.settings.all().catch(() => ({}) as Record<string, unknown>),
+    api.settings.all().catch((error) => degrade(error, {} as Record<string, unknown>)),
   ]);
 
   const email = text(settings, "contact_email");

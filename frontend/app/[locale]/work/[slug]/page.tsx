@@ -11,10 +11,11 @@ import { SiteFrame } from "@/components/site/site-frame";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import type { Locale, Project } from "@/lib/api/client";
-import { api, t as pickLocale } from "@/lib/api/client";
+import { api, ApiError, t as pickLocale } from "@/lib/api/client";
 import { absoluteUrl, ogImage, pageAlternates, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * One case study.
@@ -45,16 +46,18 @@ export async function generateStaticParams() {
     return routing.locales.flatMap((locale) =>
       projects.map((project) => ({ locale, slug: project.slug })),
     );
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 
 async function find(slug: string): Promise<Project | null> {
   try {
     return await api.projects.get(slug);
-  } catch {
-    return null;
+  } catch (error) {
+    // A missing project is a 404; anything else is the API being unwell.
+    if (error instanceof ApiError && error.status === 404) return null;
+    return degrade(error, null);
   }
 }
 
@@ -138,7 +141,7 @@ export default async function CaseStudy({ params }: Params) {
   const [project, shots, settings] = await Promise.all([
     find(slug),
     getWorkShots(),
-    api.settings.all().catch(() => ({}) as Record<string, unknown>),
+    api.settings.all().catch((error) => degrade(error, {} as Record<string, unknown>)),
   ]);
 
   if (!project) notFound();

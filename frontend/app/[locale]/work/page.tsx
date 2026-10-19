@@ -13,6 +13,7 @@ import { api, t as pickLocale } from "@/lib/api/client";
 import { absoluteUrl, pageAlternates, pageOpenGraph, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
 import { getWorkShots, shotFor } from "@/lib/work-shots";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * The work index.
@@ -54,8 +55,8 @@ export async function generateMetadata({
 async function getProjects(): Promise<Project[]> {
   try {
     return await api.projects.list();
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 
@@ -72,7 +73,7 @@ export default async function WorkPage({
 
   const [projects, settings, shots] = await Promise.all([
     getProjects(),
-    api.settings.all().catch(() => ({}) as Record<string, unknown>),
+    api.settings.all().catch((error) => degrade(error, {} as Record<string, unknown>)),
     getWorkShots(),
   ]);
 

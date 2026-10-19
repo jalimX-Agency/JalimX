@@ -2,6 +2,7 @@ import { api, t as pick } from "@/lib/api/client";
 import { absoluteUrl, SITE_URL } from "@/lib/seo";
 import { formatPhone } from "@/lib/phone";
 import { numbers, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * A plain-text summary of the site for AI answer engines (the llms.txt
@@ -18,9 +19,9 @@ export const revalidate = 3600;
 
 export async function GET() {
   const [projects, services, settings] = await Promise.all([
-    api.projects.list().catch(() => []),
-    api.services.list().catch(() => []),
-    api.settings.all().catch(() => ({}) as Record<string, unknown>),
+    api.projects.list().catch((error) => degrade(error, [])),
+    api.services.list().catch((error) => degrade(error, [])),
+    api.settings.all().catch((error) => degrade(error, {} as Record<string, unknown>)),
   ]);
 
   const email = text(settings, "contact_email");

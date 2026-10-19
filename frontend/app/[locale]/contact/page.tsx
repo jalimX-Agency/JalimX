@@ -11,6 +11,7 @@ import type { Locale, Service } from "@/lib/api/client";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -40,8 +41,8 @@ export async function generateMetadata({
 async function getServices(): Promise<Service[]> {
   try {
     return await api.services.list();
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 
@@ -58,7 +59,7 @@ export default async function ContactPage({
 
   const [services, settings] = await Promise.all([
     getServices(),
-    api.settings.all().catch(() => ({}) as Record<string, unknown>),
+    api.settings.all().catch((error) => degrade(error, {} as Record<string, unknown>)),
   ]);
 
   const email = text(settings, "contact_email");

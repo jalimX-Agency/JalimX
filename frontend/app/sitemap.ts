@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { absoluteUrl } from "@/lib/seo";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * Every route in every locale, with the alternates declared.
@@ -61,8 +62,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         })
       ),
     ];
-  } catch {
-    // A sitemap missing the case studies still beats a build failure.
-    return fixed;
+  } catch (error) {
+    // A sitemap missing the case studies still beats a build failure; at
+    // runtime the last good one is kept instead.
+    return degrade(error, fixed);
   }
 }

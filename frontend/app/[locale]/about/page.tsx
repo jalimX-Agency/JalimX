@@ -12,6 +12,7 @@ import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * About, as a standard rather than a story.
@@ -65,7 +66,7 @@ export default async function AboutPage({
   const t = await getTranslations("about");
   const settings = await api.settings
     .all()
-    .catch(() => ({}) as Record<string, unknown>);
+    .catch((error) => degrade(error, {} as Record<string, unknown>));
 
   /*
    * Split on the sentence boundary rather than left to wrap. The heading is two

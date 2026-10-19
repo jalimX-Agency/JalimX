@@ -21,6 +21,7 @@ import { api, t as tr } from "@/lib/api/client";
 import { getWorkShots } from "@/lib/work-shots";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { numbers, pick, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 /**
  * Section order follows the questions a business owner actually asks, in the
@@ -70,32 +71,32 @@ const FALLBACK = {
 async function getSettings(): Promise<Record<string, unknown>> {
   try {
     return await api.settings.all();
-  } catch {
-    return {};
+  } catch (error) {
+    return degrade(error, {} as Record<string, unknown>);
   }
 }
 
 async function getServices(): Promise<Service[]> {
   try {
     return await api.services.list();
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 
 async function getProjects(): Promise<Project[]> {
   try {
     return await api.projects.list();
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 
 async function getTestimonials(): Promise<Testimonial[]> {
   try {
     return await api.testimonials.list();
-  } catch {
-    return [];
+  } catch (error) {
+    return degrade(error, []);
   }
 }
 

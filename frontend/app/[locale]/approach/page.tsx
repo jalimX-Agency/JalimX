@@ -9,6 +9,7 @@ import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { pageAlternates, pageOpenGraph } from "@/lib/seo";
 import { numbers, text } from "@/lib/settings";
+import { degrade } from "@/lib/api/degrade";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -45,7 +46,7 @@ export default async function ApproachPage({
 
   const settings = await api.settings
     .all()
-    .catch(() => ({}) as Record<string, unknown>);
+    .catch((error) => degrade(error, {} as Record<string, unknown>));
 
   return (
     <div className="surface-dark">
