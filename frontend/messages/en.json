@@ -9,7 +9,8 @@
     "menu": "Menu",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "language": "Language"
+    "language": "Language",
+    "services": "Services"
   },
   "hero": {
     "eyebrow": "Web development studio",
@@ -21,7 +22,7 @@
   "services": {
     "heading": "What we do",
     "intro": "Four things, and they compound. Most projects start with the first one.",
-    "deepLink": "How we build"
+    "deepLink": "See the service"
   },
   "work": {
     "heading": "Selected work",
@@ -279,7 +280,27 @@
     "privacyTitle": "Privacy: what happens to what you send us",
     "privacyDescription": "What the JalimX contact form collects, who handles it, how long it is kept, and how to have it corrected or deleted. No cookies, no analytics.",
     "tourismTitle": "Websites for tour operators, camps and villas in Morocco",
-    "tourismDescription": "Websites that take direct bookings for Moroccan tour operators, desert camps and villas: multilingual, fast on a phone, WhatsApp, and your own dashboard."
+    "tourismDescription": "Websites that take direct bookings for Moroccan tour operators, desert camps and villas: multilingual, fast on a phone, WhatsApp, and your own dashboard.",
+    "servicesTitle": "Services: web development, branding, content and SEO",
+    "servicesDescription": "Web development, brand identity, content and SEO for businesses in Morocco, from the studio that built the sites, with case studies for each.",
+    "service": {
+      "web-development": {
+        "title": "Custom website development in Marrakech",
+        "description": "Websites and booking systems built from an empty file on Next.js and Laravel, with your own dashboard. Fixed scope, fixed price, and the code is yours."
+      },
+      "brand-identity": {
+        "title": "Brand identity and logo design in Morocco",
+        "description": "Logo systems, type, colour and a written guide, applied to your website, booking listings and social accounts."
+      },
+      "content-social": {
+        "title": "Content and social media for hospitality brands",
+        "description": "Content plans, shot briefs, Reel scripts and campaign templates for hotels, villas, camps and tour operators in Morocco."
+      },
+      "seo-growth": {
+        "title": "SEO and Google Business Profile in Morocco",
+        "description": "Technical SEO built into the site, local search, Google Business Profile and multilingual pages, measured in Search Console."
+      }
+    }
   },
   "privacy": {
     "title": "Privacy",
@@ -424,5 +445,195 @@
       }
     ],
     "cta": "Tell us about your business"
+  },
+  "servicePages": {
+    "eyebrow": "Services",
+    "heading": "Four services, and they compound.",
+    "intro": "Most projects start with the website. The identity, the content and the search work make it pay off, and each one is done by the same studio that built the site.",
+    "open": "See the service",
+    "proofHeading": "Where we did it",
+    "faqHeading": "Questions",
+    "cta": "Tell us about the project",
+    "allServices": "All services",
+    "tourismLink": "Running a tour company, a camp or a villa? See the tourism page",
+    "approachLink": "How a project runs, step by step",
+    "pages": {
+      "web-development": {
+        "includesHeading": "What the work includes",
+        "includes": [
+          {
+            "term": "Designed and built from an empty file.",
+            "note": "No template and no page builder. The site carries only what it needs, which is most of why it loads fast."
+          },
+          {
+            "term": "Bookings, the way you sell.",
+            "note": "A booking request that reaches you straight away, or a full booking system with availability and seasonal prices."
+          },
+          {
+            "term": "A dashboard you run yourself.",
+            "note": "Content, prices, photos and translations are edited by you. A new offer goes live without waiting on a developer."
+          },
+          {
+            "term": "Several languages, written properly.",
+            "note": "Our clients' sites run in two, three or four languages, Arabic included where it is needed."
+          },
+          {
+            "term": "Built to be found.",
+            "note": "Every page has its own address, title, description and structured data, and is fast on a phone."
+          },
+          {
+            "term": "Yours on the day it ships.",
+            "note": "The code, the domain and the accounts are in your name. Another developer can pick it up without asking us."
+          }
+        ],
+        "forHeading": "Who it is for",
+        "for": "Businesses whose website has to do a job: take a booking, answer the question a customer asks before buying, or replace a spreadsheet and a phone. Most of our clients are in tourism and hospitality.",
+        "faq": [
+          {
+            "q": "Which technology do you use?",
+            "a": "Next.js for the website and Laravel for the dashboard and the data. Both are widely used, so any competent developer can work on the code after us."
+          },
+          {
+            "q": "Can I change the content myself?",
+            "a": "Yes. Every site comes with its own dashboard for the content, the prices and the photos."
+          },
+          {
+            "q": "Is the site built for Google?",
+            "a": "Yes: titles, descriptions, structured data, sitemaps and speed are part of the build. Rankings also depend on content and links over time, so we do not promise positions."
+          },
+          {
+            "q": "What does it cost?",
+            "a": "It depends on the project. After a short call you receive a written scope with a fixed price, and you pay nothing until you accept it."
+          }
+        ]
+      },
+      "brand-identity": {
+        "includesHeading": "What the work includes",
+        "includes": [
+          {
+            "term": "A logo system, not a single logo.",
+            "note": "Versions for every place it has to work: the website, a profile picture, a booking platform, a printed card."
+          },
+          {
+            "term": "Type and colour.",
+            "note": "The typefaces and the palette that go with the logo, chosen to stay readable on a phone and on paper."
+          },
+          {
+            "term": "A written guide.",
+            "note": "The rules that keep it consistent, so the identity survives the next person who touches it."
+          },
+          {
+            "term": "Files you can use.",
+            "note": "Vector files and ready exports, delivered with the guide."
+          },
+          {
+            "term": "Applied where guests see it.",
+            "note": "On the website and on the profiles that sell, as we did for Villa Elk: Booking.com, Airbnb, Google, Instagram and Facebook."
+          }
+        ],
+        "forHeading": "Who it is for",
+        "for": "A new business that has nothing yet, or one whose logo looks different on every platform. For a villa or a camp, the identity is what a guest recognises from one listing to the next.",
+        "faq": [
+          {
+            "q": "What do I receive?",
+            "a": "The logo system in vector files and ready exports, the typefaces and colours, and a written guide to using them."
+          },
+          {
+            "q": "Can the identity be applied to my listings and social accounts?",
+            "a": "Yes. For Villa Elk we created the logo and set it up across Booking.com, Airbnb, Google, Instagram and Facebook, together with the website."
+          },
+          {
+            "q": "What does it cost?",
+            "a": "It depends on the project. After a short call you receive a written scope with a fixed price."
+          }
+        ]
+      },
+      "content-social": {
+        "includesHeading": "What the work includes",
+        "includes": [
+          {
+            "term": "A content plan.",
+            "note": "What to publish, when, and why, built around the seasons and offers of the business."
+          },
+          {
+            "term": "Shot briefs.",
+            "note": "What to film and photograph, so what is captured on site is usable instead of random."
+          },
+          {
+            "term": "Reel scripts and captions.",
+            "note": "Written for the platform they run on and the guest they are talking to, in the guest's language."
+          },
+          {
+            "term": "Campaign templates.",
+            "note": "Reusable formats for an offer, a season or an event, so every post does not start from nothing."
+          },
+          {
+            "term": "Accounts set up properly.",
+            "note": "Profiles created or cleaned up, with the identity applied, as we did for Villa Elk's Instagram and Facebook."
+          }
+        ],
+        "forHeading": "Who it is for",
+        "for": "Hospitality and tourism businesses that know guests choose on Instagram before they ever open a website, and want posts that sound like the business rather than like everyone else.",
+        "faq": [
+          {
+            "q": "Is content work tied to a website project?",
+            "a": "No. It is a separate and optional service. It works best alongside a site we built, but it does not require one."
+          },
+          {
+            "q": "Which platforms do you work on?",
+            "a": "Instagram and Facebook first, because that is where hospitality guests look before they book."
+          },
+          {
+            "q": "What does it cost?",
+            "a": "It depends on what the business needs. After a short call you receive a written scope with a fixed price."
+          }
+        ]
+      },
+      "seo-growth": {
+        "includesHeading": "What the work includes",
+        "includes": [
+          {
+            "term": "Technical SEO, built in.",
+            "note": "Indexing, canonical addresses, sitemaps, structured data and speed, done as part of the site rather than bolted on afterwards."
+          },
+          {
+            "term": "A page for every search.",
+            "note": "Each tour, room or service on its own page, written around what guests actually type."
+          },
+          {
+            "term": "Several languages, kept apart.",
+            "note": "Each language version tagged so search engines show the right one to the right visitor."
+          },
+          {
+            "term": "Local search and Google Business Profile.",
+            "note": "The profile set up and kept consistent with the website, so the business shows on maps and local results."
+          },
+          {
+            "term": "Ready for AI answers.",
+            "note": "Pages set up for Google, Bing and AI answer engines, as on the Villa Elk site."
+          },
+          {
+            "term": "Measured.",
+            "note": "Search Console and analytics, so you can tell whether any of it worked."
+          }
+        ],
+        "forHeading": "Who it is for",
+        "for": "Businesses that want guests to find them on Google instead of only on booking platforms, and that would rather see the numbers than take our word for it.",
+        "faq": [
+          {
+            "q": "Can you guarantee the first position on Google?",
+            "a": "No, and nobody honestly can. Rankings depend on competition, content and links. What we commit to is the work, and the numbers that show what changed."
+          },
+          {
+            "q": "Do I need a new website for SEO?",
+            "a": "Not always, but a site built for search from the start makes the work far more effective. Every site we build includes the technical part."
+          },
+          {
+            "q": "What does it cost?",
+            "a": "It depends on the business and the market. After a short call you receive a written scope with a fixed price."
+          }
+        ]
+      }
+    }
   }
 }

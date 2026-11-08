@@ -4,6 +4,7 @@ import { routing } from "@/i18n/routing";
 import { api } from "@/lib/api/client";
 import { absoluteUrl } from "@/lib/seo";
 import { degrade } from "@/lib/api/degrade";
+import { SERVICE_SLUGS, servicePath } from "@/lib/services";
 
 /**
  * Every route in every locale, with the alternates declared.
@@ -43,6 +44,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/about", { changeFrequency: "yearly", priority: 0.6 }),
     entry("/contact", { changeFrequency: "yearly", priority: 0.7 }),
     entry("/tourism-websites", { changeFrequency: "monthly", priority: 0.9 }),
+    entry("/services", { changeFrequency: "monthly", priority: 0.8 }),
+    ...SERVICE_SLUGS.map((slug) =>
+      entry(servicePath(slug), { changeFrequency: "monthly", priority: 0.8 })
+    ),
     entry("/privacy", { changeFrequency: "yearly", priority: 0.3 }),
   ];
 

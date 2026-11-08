@@ -9,7 +9,8 @@
     "menu": "Menu",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
-    "language": "Langue"
+    "language": "Langue",
+    "services": "Services"
   },
   "hero": {
     "eyebrow": "Studio de développement web",
@@ -21,7 +22,7 @@
   "services": {
     "heading": "Ce que nous faisons",
     "intro": "Quatre choses, et elles se renforcent. La plupart des projets commencent par la première.",
-    "deepLink": "Notre façon de construire"
+    "deepLink": "Voir le service"
   },
   "work": {
     "heading": "Réalisations choisies",
@@ -279,7 +280,27 @@
     "privacyTitle": "Confidentialité : ce que devient votre message",
     "privacyDescription": "Ce que collecte le formulaire de contact JalimX, qui le traite, combien de temps il est conservé, et comment le faire corriger ou supprimer. Ni cookies, ni analytics.",
     "tourismTitle": "Création de site web pour tour-opérateurs au Maroc",
-    "tourismDescription": "Sites web qui prennent des réservations directes pour tour-opérateurs, camps du désert et villas au Maroc : multilingues, rapides, WhatsApp et votre tableau de bord."
+    "tourismDescription": "Sites web qui prennent des réservations directes pour tour-opérateurs, camps du désert et villas au Maroc : multilingues, rapides, WhatsApp et votre tableau de bord.",
+    "servicesTitle": "Services : création de site web, identité, contenu et SEO",
+    "servicesDescription": "Création de site web, identité de marque, contenu et référencement pour les entreprises au Maroc, par le studio qui a construit les sites, avec des études de cas.",
+    "service": {
+      "web-development": {
+        "title": "Création de site web sur mesure à Marrakech",
+        "description": "Sites et systèmes de réservation développés à partir d'une page blanche avec Next.js et Laravel, avec votre tableau de bord. Prix ferme, code à vous."
+      },
+      "brand-identity": {
+        "title": "Création de logo et identité visuelle au Maroc",
+        "description": "Système de logo, typographie, couleurs et charte écrite, appliqués à votre site, vos annonces de réservation et vos réseaux sociaux."
+      },
+      "content-social": {
+        "title": "Contenu et réseaux sociaux pour l'hôtellerie",
+        "description": "Plans de contenu, briefs de tournage, scripts de Reels et modèles de campagne pour hôtels, villas, camps et tour-opérateurs au Maroc."
+      },
+      "seo-growth": {
+        "title": "Référencement naturel et fiche Google au Maroc",
+        "description": "SEO technique intégré au site, recherche locale, Google Business Profile et pages multilingues, mesurés dans Search Console."
+      }
+    }
   },
   "privacy": {
     "title": "Confidentialité",
@@ -424,5 +445,195 @@
       }
     ],
     "cta": "Parlez-nous de votre activité"
+  },
+  "servicePages": {
+    "eyebrow": "Services",
+    "heading": "Quatre services, qui se renforcent.",
+    "intro": "La plupart des projets commencent par le site. L'identité, le contenu et le référencement le rendent rentable, et chacun est réalisé par le studio qui a construit le site.",
+    "open": "Voir le service",
+    "proofHeading": "Où nous l'avons fait",
+    "faqHeading": "Questions",
+    "cta": "Parlez-nous du projet",
+    "allServices": "Tous les services",
+    "tourismLink": "Tour-opérateur, camp ou villa ? Voyez la page tourisme",
+    "approachLink": "Le déroulement d'un projet, étape par étape",
+    "pages": {
+      "web-development": {
+        "includesHeading": "Ce que comprend le travail",
+        "includes": [
+          {
+            "term": "Conçu et développé à partir d'une page blanche.",
+            "note": "Ni modèle ni constructeur de pages. Le site ne contient que ce dont il a besoin, ce qui explique en grande partie sa rapidité."
+          },
+          {
+            "term": "Des réservations, comme vous vendez.",
+            "note": "Une demande de réservation qui vous parvient immédiatement, ou un vrai système de réservation avec disponibilités et tarifs saisonniers."
+          },
+          {
+            "term": "Un tableau de bord que vous gérez vous-même.",
+            "note": "Contenus, tarifs, photos et traductions sont modifiés par vous. Une nouvelle offre est en ligne sans attendre un développeur."
+          },
+          {
+            "term": "Plusieurs langues, rédigées correctement.",
+            "note": "Les sites de nos clients fonctionnent en deux, trois ou quatre langues, arabe compris quand c'est utile."
+          },
+          {
+            "term": "Fait pour être trouvé.",
+            "note": "Chaque page a sa propre adresse, son titre, sa description et ses données structurées, et se charge vite sur téléphone."
+          },
+          {
+            "term": "À vous dès la mise en ligne.",
+            "note": "Le code, le nom de domaine et les comptes sont à votre nom. Un autre développeur peut reprendre le projet sans rien nous demander."
+          }
+        ],
+        "forHeading": "Pour qui",
+        "for": "Les entreprises dont le site doit faire un travail : prendre une réservation, répondre à la question qu'un client pose avant d'acheter, ou remplacer un tableur et un téléphone. La plupart de nos clients sont dans le tourisme et l'hôtellerie.",
+        "faq": [
+          {
+            "q": "Quelle technologie utilisez-vous ?",
+            "a": "Next.js pour le site et Laravel pour le tableau de bord et les données. Les deux sont très répandus : n'importe quel développeur compétent peut reprendre le code après nous."
+          },
+          {
+            "q": "Puis-je modifier le contenu moi-même ?",
+            "a": "Oui. Chaque site a son propre tableau de bord pour les contenus, les tarifs et les photos."
+          },
+          {
+            "q": "Le site est-il conçu pour Google ?",
+            "a": "Oui : titres, descriptions, données structurées, sitemaps et rapidité font partie du développement. Le positionnement dépend aussi du contenu et des liens avec le temps : nous ne promettons pas de positions."
+          },
+          {
+            "q": "Combien ça coûte ?",
+            "a": "Cela dépend du projet. Après un court appel, vous recevez un cadrage écrit à prix ferme, et vous ne payez rien avant de l'avoir accepté."
+          }
+        ]
+      },
+      "brand-identity": {
+        "includesHeading": "Ce que comprend le travail",
+        "includes": [
+          {
+            "term": "Un système de logo, pas un seul logo.",
+            "note": "Des versions pour chaque endroit où il doit fonctionner : le site, une photo de profil, une plateforme de réservation, une carte imprimée."
+          },
+          {
+            "term": "Typographie et couleurs.",
+            "note": "Les polices et la palette qui accompagnent le logo, choisies pour rester lisibles sur téléphone comme sur papier."
+          },
+          {
+            "term": "Une charte écrite.",
+            "note": "Les règles qui gardent l'ensemble cohérent, pour que l'identité survive à la prochaine personne qui y touche."
+          },
+          {
+            "term": "Des fichiers utilisables.",
+            "note": "Fichiers vectoriels et exports prêts à l'emploi, livrés avec la charte."
+          },
+          {
+            "term": "Appliquée là où les clients la voient.",
+            "note": "Sur le site et sur les profils qui vendent, comme pour Villa Elk : Booking.com, Airbnb, Google, Instagram et Facebook."
+          }
+        ],
+        "forHeading": "Pour qui",
+        "for": "Une nouvelle activité qui n'a encore rien, ou une entreprise dont le logo change d'une plateforme à l'autre. Pour une villa ou un camp, l'identité est ce que le client reconnaît d'une annonce à l'autre.",
+        "faq": [
+          {
+            "q": "Qu'est-ce que je reçois ?",
+            "a": "Le système de logo en fichiers vectoriels et en exports prêts à l'emploi, les polices et les couleurs, et une charte écrite pour les utiliser."
+          },
+          {
+            "q": "L'identité peut-elle être appliquée à mes annonces et à mes réseaux ?",
+            "a": "Oui. Pour Villa Elk, nous avons créé le logo et l'avons déployé sur Booking.com, Airbnb, Google, Instagram et Facebook, en même temps que le site."
+          },
+          {
+            "q": "Combien ça coûte ?",
+            "a": "Cela dépend du projet. Après un court appel, vous recevez un cadrage écrit à prix ferme."
+          }
+        ]
+      },
+      "content-social": {
+        "includesHeading": "Ce que comprend le travail",
+        "includes": [
+          {
+            "term": "Un plan de contenu.",
+            "note": "Quoi publier, quand et pourquoi, construit autour des saisons et des offres de l'activité."
+          },
+          {
+            "term": "Des briefs de tournage.",
+            "note": "Ce qu'il faut filmer et photographier, pour que ce qui est capté sur place soit utilisable plutôt qu'aléatoire."
+          },
+          {
+            "term": "Scripts de Reels et légendes.",
+            "note": "Écrits pour la plateforme où ils sont publiés et pour le client auquel ils s'adressent, dans sa langue."
+          },
+          {
+            "term": "Modèles de campagne.",
+            "note": "Des formats réutilisables pour une offre, une saison ou un événement, pour que chaque publication ne parte pas de zéro."
+          },
+          {
+            "term": "Des comptes bien configurés.",
+            "note": "Profils créés ou remis en ordre, avec l'identité appliquée, comme pour l'Instagram et le Facebook de Villa Elk."
+          }
+        ],
+        "forHeading": "Pour qui",
+        "for": "Les entreprises du tourisme et de l'hôtellerie qui savent que les clients choisissent sur Instagram avant même d'ouvrir un site, et qui veulent des publications qui leur ressemblent plutôt qu'à tout le monde.",
+        "faq": [
+          {
+            "q": "Le contenu est-il lié à un projet de site ?",
+            "a": "Non. C'est un service distinct et facultatif. Il fonctionne mieux avec un site que nous avons construit, mais n'en exige pas."
+          },
+          {
+            "q": "Sur quelles plateformes travaillez-vous ?",
+            "a": "Instagram et Facebook d'abord, parce que c'est là que les clients de l'hôtellerie regardent avant de réserver."
+          },
+          {
+            "q": "Combien ça coûte ?",
+            "a": "Cela dépend des besoins de l'activité. Après un court appel, vous recevez un cadrage écrit à prix ferme."
+          }
+        ]
+      },
+      "seo-growth": {
+        "includesHeading": "Ce que comprend le travail",
+        "includes": [
+          {
+            "term": "Le SEO technique, intégré.",
+            "note": "Indexation, adresses canoniques, sitemaps, données structurées et rapidité, faits pendant le développement et non ajoutés après coup."
+          },
+          {
+            "term": "Une page pour chaque recherche.",
+            "note": "Chaque circuit, chambre ou service sur sa propre page, rédigée autour de ce que les clients tapent réellement."
+          },
+          {
+            "term": "Plusieurs langues, bien séparées.",
+            "note": "Chaque version linguistique balisée pour que les moteurs montrent la bonne au bon visiteur."
+          },
+          {
+            "term": "Recherche locale et fiche Google Business Profile.",
+            "note": "La fiche configurée et alignée sur le site, pour que l'activité apparaisse sur les cartes et dans les résultats locaux."
+          },
+          {
+            "term": "Prêt pour les réponses de l'IA.",
+            "note": "Des pages préparées pour Google, Bing et les moteurs de réponse IA, comme sur le site de Villa Elk."
+          },
+          {
+            "term": "Mesuré.",
+            "note": "Search Console et outils d'analyse, pour savoir si le travail a porté ses fruits."
+          }
+        ],
+        "forHeading": "Pour qui",
+        "for": "Les entreprises qui veulent que leurs clients les trouvent sur Google et pas seulement sur les plateformes de réservation, et qui préfèrent voir les chiffres plutôt que nous croire sur parole.",
+        "faq": [
+          {
+            "q": "Pouvez-vous garantir la première position sur Google ?",
+            "a": "Non, et personne ne le peut honnêtement. Le positionnement dépend de la concurrence, du contenu et des liens. Ce à quoi nous nous engageons, c'est le travail, et les chiffres qui montrent ce qui a changé."
+          },
+          {
+            "q": "Faut-il un nouveau site pour le SEO ?",
+            "a": "Pas toujours, mais un site conçu pour la recherche dès le départ rend le travail bien plus efficace. Chaque site que nous construisons inclut la partie technique."
+          },
+          {
+            "q": "Combien ça coûte ?",
+            "a": "Cela dépend de l'activité et du marché. Après un court appel, vous recevez un cadrage écrit à prix ferme."
+          }
+        ]
+      }
+    }
   }
 }

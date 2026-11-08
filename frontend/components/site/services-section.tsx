@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale, Service } from "@/lib/api/client";
 import { t as pickLocale } from "@/lib/api/client";
+import { SERVICE_SLUGS, servicePath } from "@/lib/services";
 
 /**
  * What we do — the section that has to land before any portfolio does.
@@ -10,7 +11,7 @@ import { t as pickLocale } from "@/lib/api/client";
  * A row of four equal cards is the shape every agency template already has, so
  * this is an editorial list instead: a sticky label on the left, the services
  * stacked on the right, web development carrying the extra weight because it is
- * the flagship and the only one with a page of its own.
+ * the flagship. Each service links to its own page.
  */
 
 type Props = {
@@ -18,10 +19,10 @@ type Props = {
   locale: Locale;
 };
 
-/** Only the flagship has somewhere deeper to go, for now. */
-const DEEP_LINKS: Record<string, string> = {
-  "web-development": "/approach",
-};
+/** Each service has a page of its own (app/[locale]/services/[slug]). */
+const DEEP_LINKS: Record<string, string> = Object.fromEntries(
+  SERVICE_SLUGS.map((slug) => [slug, servicePath(slug)]),
+);
 
 export async function ServicesSection({ services, locale }: Props) {
   const t = await getTranslations("services");
