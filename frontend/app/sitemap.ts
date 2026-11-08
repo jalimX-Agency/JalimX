@@ -42,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/approach", { changeFrequency: "yearly", priority: 0.8 }),
     entry("/about", { changeFrequency: "yearly", priority: 0.6 }),
     entry("/contact", { changeFrequency: "yearly", priority: 0.7 }),
+    entry("/tourism-websites", { changeFrequency: "monthly", priority: 0.9 }),
     entry("/privacy", { changeFrequency: "yearly", priority: 0.3 }),
   ];
 

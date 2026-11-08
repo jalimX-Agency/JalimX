@@ -30,7 +30,8 @@
     "pageTitle": "Work",
     "pageHeading": "Every one of these started from an empty file.",
     "pageDescription": "Websites built from an empty file for tour operators, camps and private villas.",
-    "empty": "Nothing published yet."
+    "empty": "Nothing published yet.",
+    "tourismLink": "Running a tour company, a camp or a villa? See how we build tourism websites"
   },
   "caseStudy": {
     "allWork": "All work",
@@ -276,7 +277,9 @@
     "contactTitle": "Contact — tell us what your website must do",
     "contactDescription": "Tell us what the site has to do. A call, then a written scope with a fixed price. Studio based in Marrakech.",
     "privacyTitle": "Privacy: what happens to what you send us",
-    "privacyDescription": "What the JalimX contact form collects, who handles it, how long it is kept, and how to have it corrected or deleted. No cookies, no analytics."
+    "privacyDescription": "What the JalimX contact form collects, who handles it, how long it is kept, and how to have it corrected or deleted. No cookies, no analytics.",
+    "tourismTitle": "Websites for tour operators, camps and villas in Morocco",
+    "tourismDescription": "Websites that take direct bookings for Moroccan tour operators, desert camps and villas: multilingual, fast on a phone, WhatsApp, and your own dashboard."
   },
   "privacy": {
     "title": "Privacy",
@@ -329,5 +332,97 @@
         "body": "If the site starts collecting anything new, this page is updated first and the date at the top changes."
       }
     }
+  },
+  "tourism": {
+    "eyebrow": "Tourism websites",
+    "heading": "Websites for tour operators, desert camps and villas in Morocco.",
+    "intro": "Built so guests book with you directly: in their language, on their phone, with an answer before they leave. Every client on this page now takes bookings through their own site.",
+    "problemsHeading": "Where bookings leak",
+    "problems": [
+      {
+        "term": "A commission on every night.",
+        "note": "When the only way to book is a marketplace, it takes its share of every room and every tour, and keeps the guest's details."
+      },
+      {
+        "term": "One language, many guests.",
+        "note": "Guests arrive from France, Spain, Britain and the Gulf. A site that speaks to one of them loses the others at the first page."
+      },
+      {
+        "term": "No answer at eleven at night.",
+        "note": "A guest with one question before booking will not wait until morning. They book the camp next door."
+      },
+      {
+        "term": "Invisible on Google.",
+        "note": "A site where every tour sits on one page cannot rank for any of them."
+      }
+    ],
+    "buildHeading": "What every tourism site gets",
+    "build": [
+      {
+        "term": "A catalogue you edit yourself.",
+        "note": "Tours, rooms, tents, day passes and prices, each on its own page, changed from your own dashboard."
+      },
+      {
+        "term": "Bookings, the way you sell.",
+        "note": "A booking request that reaches you straight away, or a full booking system with availability, depending on how you work."
+      },
+      {
+        "term": "The languages your guests speak.",
+        "note": "Our clients' sites run in two, three or four languages, each written properly, not machine-translated on the fly."
+      },
+      {
+        "term": "WhatsApp where guests expect it.",
+        "note": "One tap from any page to a conversation with you, so the question gets answered before they look elsewhere."
+      },
+      {
+        "term": "Fast on a phone.",
+        "note": "Most guests plan on a phone, often on a weak connection. The site is built for that first, not shrunk down from a laptop."
+      },
+      {
+        "term": "Built to be found.",
+        "note": "Every tour and every room has its own address, title and description, with the structured data Google reads."
+      }
+    ],
+    "proofHeading": "Built for these businesses",
+    "proofNote": "Each of these clients started taking bookings through their own website.",
+    "howHeading": "How it works",
+    "how": [
+      "A short call about the business: who books, what they ask, where bookings are lost today.",
+      "A written scope with a fixed price, including what is not included. Nothing starts before you accept it.",
+      "The site, the dashboard and the code are yours the day it goes live."
+    ],
+    "howLink": "The whole process, step by step",
+    "faqHeading": "Questions operators ask",
+    "faq": [
+      {
+        "q": "Can I change tours, rooms and prices myself?",
+        "a": "Yes. Every site comes with its own dashboard. Changing a price, adding a tour or swapping photos does not need us."
+      },
+      {
+        "q": "Do I keep my Booking.com and Airbnb listings?",
+        "a": "Yes. The website adds a direct channel next to them, so the guests who find you can book without a commission. We can also set those listings up, as we did for Villa Elk."
+      },
+      {
+        "q": "Which languages can the site have?",
+        "a": "As many as your guests need. Our clients' sites run in two, three or four languages."
+      },
+      {
+        "q": "How do guests reach me?",
+        "a": "Through a booking request or booking form on the site, and through WhatsApp from any page if you use it."
+      },
+      {
+        "q": "Will the site appear on Google?",
+        "a": "Every page is built to be indexed: its own title and description, structured data, and fast loading on a phone. Rankings also depend on content and links built over time, so we do not promise positions."
+      },
+      {
+        "q": "What does it cost, and how long does it take?",
+        "a": "It depends on the project. After a short call you receive a written scope with a fixed price, and you pay nothing until you accept it."
+      },
+      {
+        "q": "Who owns the website?",
+        "a": "You do. The code, the domain and the accounts are in your name from the day the site goes live."
+      }
+    ],
+    "cta": "Tell us about your business"
   }
 }

@@ -30,7 +30,8 @@
     "pageTitle": "Réalisations",
     "pageHeading": "Chacune est partie d'un fichier vide.",
     "pageDescription": "Des sites construits à partir d'un fichier vide pour des tour-opérateurs, des camps et des villas privées.",
-    "empty": "Rien de publié pour l'instant."
+    "empty": "Rien de publié pour l'instant.",
+    "tourismLink": "Tour-opérateur, camp ou villa ? Voyez comment nous concevons les sites touristiques"
   },
   "caseStudy": {
     "allWork": "Toutes les réalisations",
@@ -276,7 +277,9 @@
     "contactTitle": "Contact : dites-nous ce que votre site doit faire",
     "contactDescription": "Dites-nous ce que le site doit faire. Un appel, puis un périmètre écrit à prix ferme. Studio basé à Marrakech.",
     "privacyTitle": "Confidentialité : ce que devient votre message",
-    "privacyDescription": "Ce que collecte le formulaire de contact JalimX, qui le traite, combien de temps il est conservé, et comment le faire corriger ou supprimer. Ni cookies, ni analytics."
+    "privacyDescription": "Ce que collecte le formulaire de contact JalimX, qui le traite, combien de temps il est conservé, et comment le faire corriger ou supprimer. Ni cookies, ni analytics.",
+    "tourismTitle": "Création de site web pour tour-opérateurs au Maroc",
+    "tourismDescription": "Sites web qui prennent des réservations directes pour tour-opérateurs, camps du désert et villas au Maroc : multilingues, rapides, WhatsApp et votre tableau de bord."
   },
   "privacy": {
     "title": "Confidentialité",
@@ -329,5 +332,97 @@
         "body": "Si le site se met à collecter quoi que ce soit de nouveau, cette page est mise à jour d'abord et la date en haut change."
       }
     }
+  },
+  "tourism": {
+    "eyebrow": "Sites pour le tourisme",
+    "heading": "Sites web pour tour-opérateurs, camps du désert et villas au Maroc.",
+    "intro": "Conçus pour que vos clients réservent directement chez vous : dans leur langue, sur leur téléphone, avec une réponse avant qu'ils ne partent. Tous les clients de cette page reçoivent aujourd'hui des réservations par leur propre site.",
+    "problemsHeading": "Où se perdent les réservations",
+    "problems": [
+      {
+        "term": "Une commission sur chaque nuit.",
+        "note": "Quand la seule façon de réserver passe par une plateforme, elle prend sa part de chaque chambre et de chaque circuit, et garde les coordonnées du client."
+      },
+      {
+        "term": "Une langue, des clients du monde entier.",
+        "note": "Vos clients viennent de France, d'Espagne, du Royaume-Uni et du Golfe. Un site qui ne parle qu'à l'un d'eux perd les autres dès la première page."
+      },
+      {
+        "term": "Pas de réponse à 23 heures.",
+        "note": "Un client qui a une question avant de réserver n'attend pas le lendemain. Il réserve le camp d'à côté."
+      },
+      {
+        "term": "Invisible sur Google.",
+        "note": "Un site où tous les circuits tiennent sur une seule page ne peut se positionner sur aucun d'eux."
+      }
+    ],
+    "buildHeading": "Ce que reçoit chaque site touristique",
+    "build": [
+      {
+        "term": "Un catalogue que vous modifiez vous-même.",
+        "note": "Circuits, chambres, tentes, day pass et tarifs, chacun sur sa propre page, modifiés depuis votre propre tableau de bord."
+      },
+      {
+        "term": "Des réservations, comme vous vendez.",
+        "note": "Une demande de réservation qui vous parvient immédiatement, ou un vrai système de réservation avec disponibilités, selon votre façon de travailler."
+      },
+      {
+        "term": "Les langues de vos clients.",
+        "note": "Les sites de nos clients fonctionnent en deux, trois ou quatre langues, chacune rédigée correctement, pas traduite à la volée par une machine."
+      },
+      {
+        "term": "WhatsApp là où on l'attend.",
+        "note": "Depuis n'importe quelle page, un geste suffit pour vous écrire : la question trouve sa réponse avant que le client ne cherche ailleurs."
+      },
+      {
+        "term": "Rapide sur téléphone.",
+        "note": "La plupart des clients préparent leur voyage sur téléphone, souvent avec une connexion faible. Le site est pensé pour cela d'abord."
+      },
+      {
+        "term": "Fait pour être trouvé.",
+        "note": "Chaque circuit et chaque chambre a sa propre adresse, son titre et sa description, avec les données structurées que lit Google."
+      }
+    ],
+    "proofHeading": "Réalisé pour ces établissements",
+    "proofNote": "Chacun de ces clients a commencé à recevoir des réservations par son propre site.",
+    "howHeading": "Comment ça se passe",
+    "how": [
+      "Un court appel sur votre activité : qui réserve, ce qu'on vous demande, où se perdent les réservations aujourd'hui.",
+      "Un cadrage écrit à prix ferme, y compris ce qui n'est pas inclus. Rien ne commence avant votre accord.",
+      "Le site, le tableau de bord et le code sont à vous dès la mise en ligne."
+    ],
+    "howLink": "Tout le processus, étape par étape",
+    "faqHeading": "Les questions qu'on nous pose",
+    "faq": [
+      {
+        "q": "Puis-je modifier moi-même les circuits, les chambres et les tarifs ?",
+        "a": "Oui. Chaque site a son propre tableau de bord. Changer un prix, ajouter un circuit ou remplacer des photos ne nécessite pas notre intervention."
+      },
+      {
+        "q": "Est-ce que je garde mes annonces Booking.com et Airbnb ?",
+        "a": "Oui. Le site ajoute un canal direct à côté, pour que les clients qui vous trouvent puissent réserver sans commission. Nous pouvons aussi créer ces annonces, comme pour Villa Elk."
+      },
+      {
+        "q": "En combien de langues le site peut-il être ?",
+        "a": "Autant qu'il en faut à vos clients. Les sites de nos clients fonctionnent en deux, trois ou quatre langues."
+      },
+      {
+        "q": "Comment les clients me contactent-ils ?",
+        "a": "Par une demande ou un formulaire de réservation sur le site, et par WhatsApp depuis n'importe quelle page si vous l'utilisez."
+      },
+      {
+        "q": "Le site apparaîtra-t-il sur Google ?",
+        "a": "Chaque page est conçue pour être indexée : son propre titre et sa description, des données structurées, un chargement rapide sur téléphone. Le positionnement dépend aussi du contenu et des liens construits avec le temps : nous ne promettons pas de positions."
+      },
+      {
+        "q": "Combien ça coûte, et combien de temps ça prend ?",
+        "a": "Cela dépend du projet. Après un court appel, vous recevez un cadrage écrit à prix ferme, et vous ne payez rien avant de l'avoir accepté."
+      },
+      {
+        "q": "À qui appartient le site ?",
+        "a": "À vous. Le code, le nom de domaine et les comptes sont à votre nom dès la mise en ligne."
+      }
+    ],
+    "cta": "Parlez-nous de votre activité"
   }
 }

@@ -123,6 +123,14 @@ export default async function WorkPage({
             <h1 className="mt-6 font-display text-[clamp(2.4rem,5.5vw,3.8rem)] font-semibold leading-[1.02] tracking-[-0.02em] text-balance">
               {t("pageHeading")}
             </h1>
+            {/* The tourism page is not in the menu; this is its way in. */}
+            <Link
+              href="/tourism-websites"
+              className="mt-6 inline-flex items-center gap-2 text-sm text-[var(--link)] underline-offset-4 hover:underline"
+            >
+              {t("tourismLink")}
+              <span aria-hidden="true">→</span>
+            </Link>
           </header>
 
           {projects.length === 0 ? (
