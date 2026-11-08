@@ -9,9 +9,15 @@
  *
  * Rethrowing instead makes Next keep the last good page and try again at the
  * next request. Only the build itself falls back to empty — a deploy must not
- * depend on the API being up at that moment.
+ * depend on the API being up at that moment — and so does local development,
+ * where the API is a separate process that is often simply not running.
  */
 export function degrade<T>(error: unknown, fallback: T): T {
-  if (process.env.NEXT_PHASE === "phase-production-build") return fallback;
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.NODE_ENV === "development"
+  ) {
+    return fallback;
+  }
   throw error;
 }

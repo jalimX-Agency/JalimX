@@ -274,6 +274,60 @@
     "approachTitle": "How we build a website, step by step",
     "approachDescription": "The whole process, written down: every step of a JalimX project, what we need from you, how long it takes, and what every site gets regardless of budget.",
     "contactTitle": "Contact — tell us what your website must do",
-    "contactDescription": "Tell us what the site has to do. A call, then a written scope with a fixed price. Studio based in Marrakech."
+    "contactDescription": "Tell us what the site has to do. A call, then a written scope with a fixed price. Studio based in Marrakech.",
+    "privacyTitle": "Privacy: what happens to what you send us",
+    "privacyDescription": "What the JalimX contact form collects, who handles it, how long it is kept, and how to have it corrected or deleted. No cookies, no analytics."
+  },
+  "privacy": {
+    "title": "Privacy",
+    "heading": "What happens to what you send us.",
+    "updated": "Last updated November 2026",
+    "intro": "Short, because there is little to say. The site has a contact form and nothing else that collects anything. Here is what it does with the form.",
+    "sections": {
+      "who": {
+        "heading": "Who we are",
+        "body": "JalimX is a web development studio based in Marrakech, Morocco. We decide why and how the information on this page is used. To ask about it, write to"
+      },
+      "collect": {
+        "heading": "What we collect",
+        "body": "Only what you type into the contact form, and what comes with it:",
+        "items": [
+          "Your name, email address and phone number (a WhatsApp number, so we can continue the conversation there).",
+          "Your company, the kind of work you need and your budget, if you chose to fill those in.",
+          "Your message, and the language of the page you wrote from.",
+          "Your IP address, kept to spot abuse of the form. It is never shown on the site and is not used to identify you."
+        ]
+      },
+      "why": {
+        "heading": "Why we use it",
+        "body": "To answer you and, if you want one, prepare a written scope and price. We also use the IP address and a spam check to keep the form free of automated messages. We do not use it for advertising, we do not sell it, and there is no newsletter."
+      },
+      "share": {
+        "heading": "Who else handles it",
+        "body": "Services that run the site for us, and nothing beyond them:",
+        "items": [
+          "Vercel hosts the website, and Railway and Neon run the server and database where enquiries are stored.",
+          "Cloudflare provides the spam check (Turnstile) that runs in your browser on the contact page.",
+          "An email provider delivers our replies and the notice that a message arrived."
+        ],
+        "after": "Some of these providers process data outside Morocco and the European Union. If you move to WhatsApp or email, those services' own terms apply to what you send there."
+      },
+      "keep": {
+        "heading": "How long we keep it",
+        "body": "For as long as it takes to answer you and, if it becomes a project, for the project and the records it requires. An enquiry that goes nowhere is deleted when you ask."
+      },
+      "cookies": {
+        "heading": "Cookies and tracking",
+        "body": "The site sets no cookies, has no analytics and no advertising trackers, and does not follow you to other sites. The spam check may use short-lived storage in your browser to tell a visitor from a script."
+      },
+      "rights": {
+        "heading": "Your rights",
+        "body": "You can ask what we hold about you, have it corrected, or have it deleted, and you can object to its use. This applies under Moroccan law 09-08 and, if you are in the European Union, under the GDPR. Write to the address above and we will answer within 30 days. You can also complain to the Moroccan data protection authority (CNDP) or to the authority in your own country."
+      },
+      "changes": {
+        "heading": "Changes",
+        "body": "If the site starts collecting anything new, this page is updated first and the date at the top changes."
+      }
+    }
   }
 }

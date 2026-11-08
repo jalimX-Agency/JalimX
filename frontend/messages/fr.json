@@ -274,6 +274,60 @@
     "approachTitle": "Comment nous construisons un site, étape par étape",
     "approachDescription": "Tout le processus, écrit noir sur blanc : chaque étape d'un projet JalimX, ce dont nous avons besoin de vous, le temps que cela prend, et ce que reçoit chaque site quel que soit le budget.",
     "contactTitle": "Contact : dites-nous ce que votre site doit faire",
-    "contactDescription": "Dites-nous ce que le site doit faire. Un appel, puis un périmètre écrit à prix ferme. Studio basé à Marrakech."
+    "contactDescription": "Dites-nous ce que le site doit faire. Un appel, puis un périmètre écrit à prix ferme. Studio basé à Marrakech.",
+    "privacyTitle": "Confidentialité : ce que devient votre message",
+    "privacyDescription": "Ce que collecte le formulaire de contact JalimX, qui le traite, combien de temps il est conservé, et comment le faire corriger ou supprimer. Ni cookies, ni analytics."
+  },
+  "privacy": {
+    "title": "Confidentialité",
+    "heading": "Ce qu'il advient de ce que vous nous envoyez.",
+    "updated": "Dernière mise à jour : novembre 2026",
+    "intro": "Court, parce qu'il y a peu à dire. Le site a un formulaire de contact et rien d'autre qui collecte quoi que ce soit. Voici ce que nous faisons du formulaire.",
+    "sections": {
+      "who": {
+        "heading": "Qui nous sommes",
+        "body": "JalimX est un studio de développement web basé à Marrakech, au Maroc. Nous décidons pourquoi et comment les informations de cette page sont utilisées. Pour toute question, écrivez à"
+      },
+      "collect": {
+        "heading": "Ce que nous collectons",
+        "body": "Uniquement ce que vous saisissez dans le formulaire de contact, et ce qui l'accompagne :",
+        "items": [
+          "Votre nom, votre adresse e-mail et votre numéro de téléphone (un numéro WhatsApp, pour poursuivre la conversation par ce canal).",
+          "Votre entreprise, le type de travail souhaité et votre budget, si vous avez choisi de les indiquer.",
+          "Votre message, et la langue de la page depuis laquelle vous avez écrit.",
+          "Votre adresse IP, conservée pour repérer les abus du formulaire. Elle n'est jamais affichée sur le site et ne sert pas à vous identifier."
+        ]
+      },
+      "why": {
+        "heading": "Pourquoi nous l'utilisons",
+        "body": "Pour vous répondre et, si vous le souhaitez, préparer un cadrage écrit et un prix. L'adresse IP et une vérification anti-spam servent aussi à garder le formulaire exempt de messages automatiques. Nous ne l'utilisons pas pour de la publicité, nous ne la vendons pas, et il n'y a pas de newsletter."
+      },
+      "share": {
+        "heading": "Qui d'autre y a accès",
+        "body": "Les services qui font tourner le site pour nous, et rien au-delà :",
+        "items": [
+          "Vercel héberge le site web ; Railway et Neon font tourner le serveur et la base de données où sont stockées les demandes.",
+          "Cloudflare fournit la vérification anti-spam (Turnstile) qui s'exécute dans votre navigateur sur la page de contact.",
+          "Un prestataire d'e-mail transmet nos réponses et l'alerte indiquant qu'un message est arrivé."
+        ],
+        "after": "Certains de ces prestataires traitent des données en dehors du Maroc et de l'Union européenne. Si vous passez à WhatsApp ou à l'e-mail, les conditions propres à ces services s'appliquent à ce que vous y envoyez."
+      },
+      "keep": {
+        "heading": "Combien de temps nous la gardons",
+        "body": "Le temps de vous répondre et, si elle devient un projet, la durée du projet et des documents qu'il impose. Une demande restée sans suite est supprimée sur simple demande."
+      },
+      "cookies": {
+        "heading": "Cookies et suivi",
+        "body": "Le site ne dépose aucun cookie, n'a ni outil d'analyse ni traceur publicitaire, et ne vous suit pas sur d'autres sites. La vérification anti-spam peut utiliser un stockage de courte durée dans votre navigateur pour distinguer un visiteur d'un script."
+      },
+      "rights": {
+        "heading": "Vos droits",
+        "body": "Vous pouvez demander ce que nous détenons sur vous, le faire corriger ou le faire supprimer, et vous opposer à son utilisation. Cela s'applique au titre de la loi marocaine 09-08 et, si vous êtes dans l'Union européenne, du RGPD. Écrivez à l'adresse ci-dessus : nous répondons sous 30 jours. Vous pouvez aussi saisir la CNDP (autorité marocaine de protection des données) ou l'autorité de votre pays."
+      },
+      "changes": {
+        "heading": "Modifications",
+        "body": "Si le site se met à collecter quoi que ce soit de nouveau, cette page est mise à jour d'abord et la date en haut change."
+      }
+    }
   }
 }
