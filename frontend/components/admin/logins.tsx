@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
@@ -26,6 +26,10 @@ import {
  * That keeps every password on the page out of the response, the browser
  * cache and anything watching the network, to draw a row of dots.
  */
+type WorkFilter = "all" | "none" | number;
+type SecretFilter = "all" | "with" | "without";
+type SortOrder = "name" | "recent" | "oldest";
+
 export function Logins({ client }: { client: Client }) {
   const [rows, setRows] = useState<Credential[]>(client.credentials ?? []);
   const [open, setOpen] = useState<number | "new" | null>(null);
@@ -45,9 +49,55 @@ export function Logins({ client }: { client: Client }) {
   } | null>(null);
   const ask = useConfirm();
 
-  const works = client.engagements ?? [];
+  const works = useMemo(() => client.engagements ?? [], [client.engagements]);
   const ids = rows.filter((r) => selected.has(r.id)).map((r) => r.id);
-  const all = rows.length > 0 && ids.length === rows.length;
+
+  /*
+   * Filters, for the client with thirty logins across four jobs. Applied in
+   * the browser: the list is already here (without secrets), so a search is
+   * instant and costs no request.
+   */
+  const [query, setQuery] = useState("");
+  const [workFilter, setWorkFilter] = useState<WorkFilter>("all");
+  const [secretFilter, setSecretFilter] = useState<SecretFilter>("all");
+  const [sort, setSort] = useState<SortOrder>("name");
+  const filtering = query.trim() !== "" || workFilter !== "all" || secretFilter !== "all";
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const titleOf = (id: number | null) => works.find((w) => w.id === id)?.title ?? "";
+    const time = (r: Credential) => (r.updated_at ? Date.parse(r.updated_at) : 0);
+
+    return rows
+      .filter((r) => {
+        if (workFilter === "none" && r.engagement_id !== null) return false;
+        if (typeof workFilter === "number" && r.engagement_id !== workFilter) return false;
+        if (secretFilter === "with" && !r.has_secret) return false;
+        if (secretFilter === "without" && r.has_secret) return false;
+        if (!needle) return true;
+        return [r.label, r.url ?? "", r.username ?? "", titleOf(r.engagement_id)].some((field) =>
+          field.toLowerCase().includes(needle),
+        );
+      })
+      .sort((a, b) =>
+        sort === "recent"
+          ? time(b) - time(a)
+          : sort === "oldest"
+            ? time(a) - time(b)
+            : a.label.localeCompare(b.label),
+      );
+  }, [rows, works, query, workFilter, secretFilter, sort]);
+
+  const clearFilters = () => {
+    setQuery("");
+    setWorkFilter("all");
+    setSecretFilter("all");
+  };
+
+  // "Select all" means the rows on screen. A selection a filter now hides is
+  // still sent, so the header says how many of those there are.
+  const all = visible.length > 0 && visible.every((r) => selected.has(r.id));
+  const hiddenSelected = ids.filter((id) => !visible.some((r) => r.id === id)).length;
 
   const toggle = (id: number) =>
     setSelected((s) => {
@@ -172,17 +222,28 @@ export function Logins({ client }: { client: Client }) {
           {rows.length > 0 && (
             <input
               type="checkbox"
-              aria-label="Select every login"
+              aria-label={filtering ? "Select every login shown" : "Select every login"}
               checked={all}
-              onChange={() => setSelected(all ? new Set() : new Set(rows.map((r) => r.id)))}
+              onChange={() =>
+                setSelected((s) => {
+                  const next = new Set(s);
+                  for (const r of visible) {
+                    if (all) next.delete(r.id);
+                    else next.add(r.id);
+                  }
+                  return next;
+                })
+              }
             />
           )}
           <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-dim)]">
             {rows.length === 0
               ? "Logins"
               : ids.length > 0
-                ? `${ids.length} of ${rows.length} selected`
-                : `${rows.length} ${rows.length === 1 ? "login" : "logins"}`}
+                ? `${ids.length} of ${rows.length} selected${hiddenSelected > 0 ? ` · ${hiddenSelected} hidden by filters` : ""}`
+                : filtering
+                  ? `${visible.length} of ${rows.length} logins`
+                  : `${rows.length} ${rows.length === 1 ? "login" : "logins"}`}
           </h2>
         </div>
         <button
@@ -193,6 +254,67 @@ export function Logins({ client }: { client: Client }) {
           {open === "new" ? "Cancel" : "+ Add login"}
         </button>
       </header>
+
+      {rows.length > 1 && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-[var(--hairline)] px-5 py-3 text-xs">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, address, username, work…"
+            aria-label="Search logins"
+            className="min-w-[14rem] flex-1 border border-[var(--hairline)] bg-transparent px-3 py-2 text-sm outline-none placeholder:text-[var(--fg-faint)]"
+          />
+          {works.length > 0 && (
+            <select
+              value={String(workFilter)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setWorkFilter(v === "all" || v === "none" ? v : Number(v));
+              }}
+              aria-label="Filter by work"
+              className="border border-[var(--hairline)] bg-transparent px-2 py-2"
+            >
+              <option value="all">All work</option>
+              {works.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.title}
+                </option>
+              ))}
+              <option value="none">Not tied to a work</option>
+            </select>
+          )}
+          <select
+            value={secretFilter}
+            onChange={(e) => setSecretFilter(e.target.value as SecretFilter)}
+            aria-label="Filter by password"
+            className="border border-[var(--hairline)] bg-transparent px-2 py-2"
+          >
+            <option value="all">Any password</option>
+            <option value="with">With a password</option>
+            <option value="without">Missing a password</option>
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortOrder)}
+            aria-label="Sort logins"
+            className="border border-[var(--hairline)] bg-transparent px-2 py-2"
+          >
+            <option value="name">Name A–Z</option>
+            <option value="recent">Recently changed</option>
+            <option value="oldest">Not changed longest</option>
+          </select>
+          {filtering && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-[var(--fg-faint)] hover:text-[var(--fg)]"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Handing logins over. Only shown once something is chosen, so the
           everyday view stays a plain list. */}
@@ -345,7 +467,15 @@ export function Logins({ client }: { client: Client }) {
         </div>
       ) : (
         <ul>
-          {rows.map((row) => (
+          {visible.length === 0 && (
+            <li className="px-5 py-8 text-sm text-[var(--fg-faint)]">
+              No login matches these filters.{" "}
+              <button type="button" onClick={clearFilters} className="text-[var(--link)] hover:underline">
+                Clear filters
+              </button>
+            </li>
+          )}
+          {visible.map((row) => (
             <li key={row.id} className="border-t border-[var(--hairline)]">
               {open === row.id ? (
                 <LoginEditor
@@ -388,6 +518,7 @@ export function Logins({ client }: { client: Client }) {
                   <div className="min-w-0 flex-1">
                     <LoginRow
                       credential={row}
+                      showUpdated={sort !== "name"}
                       work={works.find((w) => w.id === row.engagement_id)?.title ?? null}
                       onEdit={() => setOpen(row.id)}
                     />
@@ -490,10 +621,13 @@ function Handed({
 function LoginRow({
   credential,
   work,
+  showUpdated,
   onEdit,
 }: {
   credential: Credential;
   work: string | null;
+  /** When sorted by date, the date is what the order means. */
+  showUpdated?: boolean;
   onEdit: () => void;
 }) {
   const [secret, setSecret] = useState<string | null>(null);
@@ -555,6 +689,19 @@ function LoginRow({
               </a>
             )}
             {credential.username && <span>{credential.username}</span>}
+            {!credential.has_secret && (
+              <span className="text-[var(--color-signal)]">No password</span>
+            )}
+            {showUpdated && credential.updated_at && (
+              <span>
+                Changed{" "}
+                {new Date(credential.updated_at).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
+            )}
           </p>
         </div>
 
