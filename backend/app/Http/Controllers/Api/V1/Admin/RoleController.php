@@ -31,6 +31,7 @@ class RoleController extends Controller
                 'id' => $role->id,
                 'name' => $role->name,
                 'locked' => $role->name === Permissions::OWNER_ROLE,
+                'client_scope' => $role->name === Permissions::OWNER_ROLE ? 'all' : ($role->client_scope ?? 'all'),
                 'members' => (int) ($counts[$role->id] ?? 0),
                 'permissions' => $role->name === Permissions::OWNER_ROLE
                     ? Permissions::all()
@@ -46,6 +47,7 @@ class RoleController extends Controller
         $data = $this->validated($request);
 
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
+        $role->forceFill(['client_scope' => $data['client_scope']])->save();
         $role->syncPermissions($data['permissions']);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -57,7 +59,7 @@ class RoleController extends Controller
         $this->guardLocked($role);
         $data = $this->validated($request, $role);
 
-        $role->update(['name' => $data['name']]);
+        $role->forceFill(['name' => $data['name'], 'client_scope' => $data['client_scope']])->save();
         $role->syncPermissions($data['permissions']);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -91,7 +93,7 @@ class RoleController extends Controller
             ->all();
     }
 
-    /** @return array{name: string, permissions: list<string>} */
+    /** @return array{name: string, permissions: list<string>, client_scope: string} */
     private function validated(Request $request, ?Role $role = null): array
     {
         $data = $request->validate([
@@ -101,13 +103,19 @@ class RoleController extends Controller
                 Rule::unique('roles', 'name')->where('guard_name', 'web')->ignore($role?->id),
             ],
             'permissions' => ['present', 'array'],
+            // Every client, or only the clients assigned to each person.
+            'client_scope' => ['sometimes', Rule::in(['all', 'assigned'])],
             'permissions.*' => ['string', Rule::in(Permissions::all())],
         ], [
             'name.not_in' => 'That name belongs to the owner role.',
             'name.unique' => 'There is already a role with this name.',
         ]);
 
-        return ['name' => trim($data['name']), 'permissions' => array_values(array_unique($data['permissions']))];
+        return [
+            'name' => trim($data['name']),
+            'permissions' => array_values(array_unique($data['permissions'])),
+            'client_scope' => $data['client_scope'] ?? 'all',
+        ];
     }
 
     private function guardLocked(Role $role): void

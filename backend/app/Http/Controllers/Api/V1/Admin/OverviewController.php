@@ -25,10 +25,19 @@ use Illuminate\Support\Carbon;
  */
 class OverviewController extends Controller
 {
+    private ?\App\Models\User $viewer = null;
+
+    /** Limits a query to the clients the viewer may reach. */
+    private function scope(\Illuminate\Database\Eloquent\Builder $query, string $column = 'client_id'): \Illuminate\Database\Eloquent\Builder
+    {
+        return \App\Support\ClientScope::apply($query, $this->viewer, $column);
+    }
+
     public function __invoke(\Illuminate\Http\Request $request): JsonResponse
     {
         $now = Carbon::now();
         $user = $request->user();
+        $this->viewer = $user;
         $money = $user->can('money.view');
 
         // A section the viewer may not see is null, not empty: the page hides
@@ -57,7 +66,7 @@ class OverviewController extends Controller
      */
     private function money(Carbon $now): array
     {
-        $invoices = Document::query()
+        $invoices = $this->scope(Document::query())
             ->where('type', 'invoice')
             ->whereIn('status', ['sent'])
             ->with('items', 'payments')
@@ -85,7 +94,7 @@ class OverviewController extends Controller
 
         // Paid this month is about when the money arrived, not when the
         // invoice was written: it is the answer to "what came in".
-        $payments = Payment::query()
+        $payments = Payment::query()->whereHas('document', fn ($q) => $this->scope($q))
             ->whereBetween('paid_on', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
             ->with('document:id,currency')
             ->get();
@@ -99,7 +108,7 @@ class OverviewController extends Controller
         }
 
         // What comes in every month if nothing changes.
-        $retainers = Engagement::query()
+        $retainers = $this->scope(Engagement::query())
             ->where('billing', 'monthly')
             ->where('status', 'active')
             ->with('client:id,currency')
@@ -143,13 +152,13 @@ class OverviewController extends Controller
      */
     private function unbilledMonths(Carbon $now): array
     {
-        $retainers = Engagement::query()
+        $retainers = $this->scope(Engagement::query())
             ->where('billing', 'monthly')
             ->where('status', 'active')
             ->with('client:id,name,currency')
             ->get();
 
-        $billed = Document::query()
+        $billed = $this->scope(Document::query())
             ->whereNotNull('period')
             ->where('status', '!=', 'cancelled')
             ->get(['engagement_id', 'period'])
@@ -200,7 +209,7 @@ class OverviewController extends Controller
     /** @return array<int, array<string, mixed>> */
     private function overdue(Carbon $now): array
     {
-        return Document::query()
+        return $this->scope(Document::query())
             ->where('type', 'invoice')
             ->where('status', 'sent')
             ->whereNotNull('due_date')
@@ -234,7 +243,7 @@ class OverviewController extends Controller
     {
         $today = $now->copy()->startOfDay();
 
-        return Task::query()
+        return $this->scope(Task::query())
             ->whereNull('done_at')
             ->whereNotNull('due_on')
             ->whereDate('due_on', '<=', $today->copy()->addDays(7)->toDateString())
@@ -266,7 +275,7 @@ class OverviewController extends Controller
     /** Written but never sent — the pile that quietly costs money. */
     private function drafts(): array
     {
-        return Document::query()
+        return $this->scope(Document::query())
             ->where('status', 'draft')
             ->with('items', 'client:id,name')
             ->latest('id')
@@ -309,12 +318,12 @@ class OverviewController extends Controller
     private function counts(): array
     {
         return [
-            'clients' => Client::count(),
+            'clients' => $this->scope(Client::query(), 'id')->count(),
             // Without an ICE a Moroccan invoice is not compliant, so this
             // is the one missing field worth counting.
-            'clients_without_ice' => Client::whereNull('ice')->orWhere('ice', '')->count(),
-            'active_work' => Engagement::where('status', 'active')->count(),
-            'planned_work' => Engagement::where('status', 'planned')->count(),
+            'clients_without_ice' => $this->scope(Client::query(), 'id')->where(fn ($q) => $q->whereNull('ice')->orWhere('ice', ''))->count(),
+            'active_work' => $this->scope(Engagement::query())->where('status', 'active')->count(),
+            'planned_work' => $this->scope(Engagement::query())->where('status', 'planned')->count(),
         ];
     }
 }

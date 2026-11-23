@@ -40,7 +40,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
 
-        $clients = Client::query()
+        $clients = \App\Support\ClientScope::apply(Client::query(), $request->user(), 'id')
             ->withCount('engagements')
             ->when($validated['q'] ?? null, function ($query, $term) {
                 // ILIKE: Postgres LIKE is case-sensitive, and nobody types a
@@ -63,6 +63,8 @@ class ClientController extends Controller
     public function store(Request $request): JsonResponse
     {
         $client = Client::create($request->validate($this->rules()));
+
+        $this->assignToCreator($request, $client);
 
         return response()->json(['data' => new ClientResource($client->refresh())], 201);
     }
@@ -138,6 +140,17 @@ class ClientController extends Controller
          * this the dashboard is handed empty strings for both — and saving
          * that form would write the blanks back over the real values.
          */
+        $this->assignToCreator($request, $client);
+
         return response()->json(['data' => new ClientResource($client->refresh())], 201);
+    }
+
+    /** Someone limited to their own clients keeps the client they just made. */
+    private function assignToCreator(Request $request, Client $client): void
+    {
+        if (\App\Support\ClientScope::limited($request->user())) {
+            $request->user()->clients()->syncWithoutDetaching([$client->id]);
+            \App\Support\ClientScope::forget();
+        }
     }
 }

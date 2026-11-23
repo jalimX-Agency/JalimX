@@ -52,6 +52,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'site.key' => \App\Http\Middleware\RequireSiteKey::class,
             // A switched-off team member is refused, and signed out, on their next request.
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+            // A role limited to assigned clients reaches nothing else, on any route.
+            'client.scope' => \App\Http\Middleware\EnforceClientScope::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

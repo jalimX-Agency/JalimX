@@ -29,9 +29,11 @@ class InboxController extends Controller
     /** Files a reply may carry: what a client can open, nothing that runs. */
     private const REPLY_MIMES = 'pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,zip';
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $contacts = WhatsAppContact::query()
+        $scoped = fn () => \App\Support\ClientScope::apply(WhatsAppContact::query(), $request->user(), 'client_id', 'inbox.unlinked');
+
+        $contacts = $scoped()
             ->whereNotNull('last_message_at')
             ->with('client:id,name', 'latestMessage')
             ->orderByDesc('last_message_at')
@@ -40,7 +42,7 @@ class InboxController extends Controller
 
         return response()->json([
             'data' => $contacts->map(fn (WhatsAppContact $c) => $this->contact($c))->values(),
-            'unread' => (int) WhatsAppContact::sum('unread'),
+            'unread' => (int) $scoped()->sum('unread'),
         ]);
     }
 
@@ -48,9 +50,19 @@ class InboxController extends Controller
      * Whether anything happened, for every page to ask every few seconds:
      * read from the cache, never the database. See InboxPulse.
      */
-    public function pulse(): JsonResponse
+    public function pulse(Request $request): JsonResponse
     {
-        return response()->json(['data' => InboxPulse::current()]);
+        $pulse = InboxPulse::current();
+
+        // Someone limited to their clients counts only their conversations.
+        // The version stays shared: it only says "something changed, look".
+        if (\App\Support\ClientScope::limited($request->user())) {
+            $pulse['unread'] = (int) \App\Support\ClientScope::apply(
+                WhatsAppContact::query(), $request->user(), 'client_id', 'inbox.unlinked'
+            )->sum('unread');
+        }
+
+        return response()->json(['data' => $pulse]);
     }
 
     /**
@@ -149,6 +161,9 @@ class InboxController extends Controller
     {
         $data = $request->validate(['client_id' => ['nullable', 'integer', 'exists:clients,id']]);
 
+        // Only to a client this person may reach, and only unlinked by someone allowed to see unlinked ones.
+        abort_unless(\App\Support\ClientScope::allows($request->user(), $data['client_id'] ?? null, 'inbox.unlinked'), 404);
+
         $contact->forceFill(['client_id' => $data['client_id']])->save();
         InboxPulse::bump();
 
@@ -164,6 +179,7 @@ class InboxController extends Controller
     {
         $viewer = Auth::guard('web')->user();
         abort_unless($viewer && $viewer->is_active && $viewer->can('inbox.view'), 403);
+        abort_unless(\App\Support\ClientScope::allows($viewer, $message->contact?->client_id, 'inbox.unlinked'), 404);
         abort_unless($message->media_path, 404);
 
         try {

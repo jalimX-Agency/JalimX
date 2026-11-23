@@ -93,6 +93,7 @@ class AttachmentController extends Controller
     {
         $viewer = Auth::guard('web')->user();
         abort_unless($viewer && $viewer->is_active && $viewer->can('clients.view'), 403);
+        abort_unless(\App\Support\ClientScope::allows($viewer, $attachment->engagement?->client_id), 404);
 
         return $this->serve($attachment, 'attachment', 'application/octet-stream');
     }
@@ -109,6 +110,7 @@ class AttachmentController extends Controller
     {
         $viewer = Auth::guard('web')->user();
         abort_unless($viewer && $viewer->is_active && $viewer->can('clients.view'), 403);
+        abort_unless(\App\Support\ClientScope::allows($viewer, $attachment->engagement?->client_id), 404);
 
         $mime = (string) $attachment->mime;
 

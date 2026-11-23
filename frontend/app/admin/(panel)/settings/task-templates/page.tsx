@@ -54,11 +54,11 @@ export default function TaskTemplatesPage() {
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Task templates</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Task templates</h1>
         <button
           type="button"
           onClick={() => setOpen(open === "new" ? null : "new")}
-          className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+          className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)]"
         >
           {open === "new" ? "Cancel" : "+ New template"}
         </button>
@@ -141,7 +141,7 @@ export default function TaskTemplatesPage() {
                           </span>
                         )}
                       </span>
-                      <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                      <span className="text-xs font-medium text-[var(--fg-faint)]">
                         {[typeName(row.work_type_id), `${row.items.length} steps`]
                           .filter(Boolean)
                           .join(" · ")}
@@ -276,7 +276,7 @@ function TemplateEditor({
       {/* The steps. The day is counted from the start date chosen when
           the template is used; empty means the task has no date. */}
       <div className="mt-6">
-        <div className="hidden grid-cols-[4.5rem_1fr_7rem_auto] gap-2 px-1 pb-2 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] sm:grid">
+        <div className="hidden grid-cols-[4.5rem_1fr_7rem_auto] gap-2 px-1 pb-2 text-xs font-medium text-[var(--fg-faint)] sm:grid">
           <span>Day</span>
           <span>Step</span>
           <span>Priority</span>
@@ -422,7 +422,7 @@ function TemplateEditor({
             type="button"
             onClick={submit}
             disabled={busy || !input.name.trim()}
-            className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            className="bg-[var(--fg)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
           >
             {busy ? "Saving…" : "Save"}
           </button>

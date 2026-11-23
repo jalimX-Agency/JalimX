@@ -20,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The per-request answer to "which clients", never carried to the next request.
+        $this->app->terminating(fn () => \App\Support\ClientScope::forget());
+
         // The owner passes every permission check, including ones added later.
         \Illuminate\Support\Facades\Gate::before(
             fn ($user) => method_exists($user, 'isOwner') && $user->isOwner() ? true : null

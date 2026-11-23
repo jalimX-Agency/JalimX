@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\TeamInviteMail;
+use App\Models\Client;
 use App\Models\User;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
@@ -32,13 +33,16 @@ class TeamController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $members = User::query()->with('roles')->orderBy('name')->get();
+        $members = User::query()->with('roles', 'clients:id')->orderBy('name')->get();
 
         return response()->json([
             'data' => [
                 'members' => $members->map(fn (User $u) => $this->shape($u, $request->user()))->values(),
                 'roles' => RoleController::rolesPayload(),
                 'permissions' => Permissions::catalog(),
+                // For choosing which clients someone on a limited role works on.
+                'clients' => Client::query()->orderBy('name')->get(['id', 'name'])
+                    ->map(fn (Client $c) => ['id' => $c->id, 'name' => (string) $c->name])->values(),
             ],
         ]);
     }
@@ -49,6 +53,8 @@ class TeamController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email:rfc', 'max:190', Rule::unique('users', 'email')],
             'role' => ['required', 'string', Rule::exists('roles', 'name')],
+            'client_ids' => ['sometimes', 'array'],
+            'client_ids.*' => ['integer', 'exists:clients,id'],
         ]);
 
         $this->guardRole($request->user(), $data['role']);
@@ -62,6 +68,7 @@ class TeamController extends Controller
                 'invited_by' => $request->user()->id,
             ]);
             $member->syncRoles([$data['role']]);
+            $member->clients()->sync($data['client_ids'] ?? []);
 
             return $member;
         });
@@ -70,7 +77,7 @@ class TeamController extends Controller
 
         return response()->json([
             'data' => [
-                'member' => $this->shape($member->fresh('roles'), $request->user()),
+                'member' => $this->shape($member->fresh(['roles', 'clients:id']), $request->user()),
                 'invite_url' => $url,
                 'emailed' => $mailed,
                 'email_error' => $error,
@@ -90,7 +97,7 @@ class TeamController extends Controller
 
         return response()->json([
             'data' => [
-                'member' => $this->shape($user->fresh('roles'), $request->user()),
+                'member' => $this->shape($user->fresh(['roles', 'clients:id']), $request->user()),
                 'invite_url' => $url,
                 'emailed' => $mailed,
                 'email_error' => $error,
@@ -104,6 +111,9 @@ class TeamController extends Controller
             'name' => ['sometimes', 'string', 'max:120'],
             'role' => ['sometimes', 'string', Rule::exists('roles', 'name')],
             'is_active' => ['sometimes', 'boolean'],
+            // The clients this person works on, for a role limited to assigned clients.
+            'client_ids' => ['sometimes', 'array'],
+            'client_ids.*' => ['integer', 'exists:clients,id'],
         ]);
 
         $me = $request->user();
@@ -133,9 +143,13 @@ class TeamController extends Controller
             $user->name = $data['name'];
         }
 
+        if (array_key_exists('client_ids', $data)) {
+            $user->clients()->sync($data['client_ids']);
+        }
+
         $user->save();
 
-        return response()->json(['data' => $this->shape($user->fresh('roles'), $me)]);
+        return response()->json(['data' => $this->shape($user->fresh(['roles', 'clients:id']), $me)]);
     }
 
     /**
@@ -204,6 +218,8 @@ class TeamController extends Controller
             'name' => $u->name,
             'email' => $u->email,
             'role' => $u->roles->first()?->name,
+            'sees_all_clients' => $u->seesAllClients(),
+            'client_ids' => $u->clients->pluck('id')->values(),
             'status' => $u->status(),
             'is_you' => $u->is($me),
             'invite_expires_at' => $u->invite_accepted_at === null ? $u->invite_expires_at?->toIso8601String() : null,

@@ -101,7 +101,7 @@ Route::prefix('v1')->group(function () {
          * The dashboard. Everything under /admin can see unpublished work, so
          * nothing here is reachable without the session.
          */
-        Route::prefix('admin')->group(function () {
+        Route::prefix('admin')->middleware('client.scope')->group(function () {
             // The team: who can sign in, and what each role may do.
             Route::middleware('can:team.manage')->group(function () {
                 Route::get('/team', [TeamController::class, 'index']);

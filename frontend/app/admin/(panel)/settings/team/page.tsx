@@ -42,6 +42,8 @@ export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
   const [roles, setRoles] = useState<TeamRole[]>([]);
   const [catalog, setCatalog] = useState<PermissionGroup[]>([]);
+  const [clients, setClients] = useState<{ id: number; name: string }[]>([]);
+  const [picking, setPicking] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [invited, setInvited] = useState<InviteResult | null>(null);
   const [editing, setEditing] = useState<TeamRole | "new" | null>(null);
@@ -56,6 +58,7 @@ export default function TeamPage() {
         setMembers(t.members);
         setRoles(t.roles);
         setCatalog(t.permissions);
+        setClients(t.clients);
       },
       (e) => live && !isSignedOut(e) && setError(e.message),
     );
@@ -74,6 +77,16 @@ export default function TeamPage() {
       toast.success(`${m.name} is now ${role}.`);
     } catch (e) {
       toast.error(e, "Could not change the role.");
+    }
+  }
+
+  async function saveClients(m: TeamMember, ids: number[]) {
+    try {
+      replace(await admin.updateMember(m.id, { client_ids: ids }));
+      setPicking(null);
+      toast.success(`${m.name} now works on ${ids.length} ${ids.length === 1 ? "client" : "clients"}.`);
+    } catch (e) {
+      toast.error(e, "Could not save the clients.");
     }
   }
 
@@ -162,6 +175,21 @@ export default function TeamPage() {
                     {m.name} {m.is_you && <span className="font-normal text-[var(--fg-faint)]">(you)</span>}
                   </p>
                   <p className="mt-0.5 text-xs text-[var(--fg-dim)]">{m.email}</p>
+                  {!m.sees_all_clients && (
+                    <button
+                      type="button"
+                      onClick={() => setPicking(picking === m.id ? null : m.id)}
+                      className="mt-1.5 text-xs text-[var(--link)] hover:underline"
+                    >
+                      {m.client_ids.length === 0
+                        ? "No clients yet. Choose their clients"
+                        : `${m.client_ids.length} ${m.client_ids.length === 1 ? "client" : "clients"}: ${clients
+                            .filter((c) => m.client_ids.includes(c.id))
+                            .map((c) => c.name)
+                            .slice(0, 3)
+                            .join(", ")}${m.client_ids.length > 3 ? "…" : ""}`}
+                    </button>
+                  )}
                   <p className="mt-1 text-xs text-[var(--fg-faint)]">
                     {m.status === "invited"
                       ? `Link valid until ${date(m.invite_expires_at) ?? "—"}`
@@ -209,6 +237,14 @@ export default function TeamPage() {
                     </button>
                   )}
                 </div>
+                {picking === m.id && (
+                  <ClientPicker
+                    clients={clients}
+                    initial={m.client_ids}
+                    onCancel={() => setPicking(null)}
+                    onSave={(ids) => saveClients(m, ids)}
+                  />
+                )}
               </li>
             );
           })}
@@ -216,6 +252,7 @@ export default function TeamPage() {
 
         <InviteForm
           roles={assignable}
+          clients={clients}
           onInvited={(r) => {
             setMembers((list) => [...(list ?? []), r.member]);
             setInvited(r);
@@ -279,6 +316,8 @@ export default function TeamPage() {
                         ? "Every permission, always. Cannot be changed."
                         : `${r.permissions.length} ${r.permissions.length === 1 ? "permission" : "permissions"}`}
                       {" · "}
+                      {r.client_scope === "assigned" ? "Assigned clients only" : "Every client"}
+                      {" · "}
                       {r.members} {r.members === 1 ? "person" : "people"}
                     </p>
                   </div>
@@ -297,7 +336,15 @@ export default function TeamPage() {
   );
 }
 
-function InviteForm({ roles, onInvited }: { roles: TeamRole[]; onInvited: (r: InviteResult) => void }) {
+function InviteForm({
+  roles,
+  clients,
+  onInvited,
+}: {
+  roles: TeamRole[];
+  clients: { id: number; name: string }[];
+  onInvited: (r: InviteResult) => void;
+}) {
   const toast = useToast();
   const choosable = roles.filter((r) => !r.locked);
   const [name, setName] = useState("");
@@ -307,13 +354,21 @@ function InviteForm({ roles, onInvited }: { roles: TeamRole[]; onInvited: (r: In
   const [busy, setBusy] = useState(false);
 
   const chosen = role || choosable[0]?.name || roles[0]?.name || "";
+  const limited = roles.find((r) => r.name === chosen)?.client_scope === "assigned";
+  const [clientIds, setClientIds] = useState<number[]>([]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErrors({});
     try {
-      const r = await admin.inviteMember({ name: name.trim(), email: email.trim(), role: chosen });
+      const r = await admin.inviteMember({
+        name: name.trim(),
+        email: email.trim(),
+        role: chosen,
+        client_ids: limited ? clientIds : [],
+      });
+      setClientIds([]);
       onInvited(r);
       setName("");
       setEmail("");
@@ -352,6 +407,14 @@ function InviteForm({ roles, onInvited }: { roles: TeamRole[]; onInvited: (r: In
       <button type="submit" disabled={busy || !chosen} className="bg-[var(--fg)] px-4 py-2.5 text-xs font-medium uppercase tracking-[0.08em] text-[var(--ground)] disabled:opacity-40">
         {busy ? "Sending…" : "Send invite"}
       </button>
+      {limited && (
+        <div className="sm:col-span-4">
+          <p className="mb-2 text-xs text-[var(--fg-dim)]">
+            This role only sees the clients you choose. Pick theirs now, or later from the list above.
+          </p>
+          <ClientChecklist clients={clients} picked={clientIds} onChange={setClientIds} />
+        </div>
+      )}
       {choosable.length === 0 && (
         <p className="text-xs text-[var(--fg-faint)] sm:col-span-4">
           Create a role below first, so the person you invite gets only what they need.
@@ -401,7 +464,7 @@ function RoleEditor({
 }: {
   role?: TeamRole;
   catalog: PermissionGroup[];
-  onSave: (input: { name: string; permissions: string[] }) => Promise<void>;
+  onSave: (input: { name: string; permissions: string[]; client_scope: "all" | "assigned" }) => Promise<void>;
   onCancel: () => void;
   onDelete?: () => Promise<void>;
 }) {
@@ -409,6 +472,7 @@ function RoleEditor({
   const ask = useConfirm();
   const [name, setName] = useState(role?.name ?? "");
   const [picked, setPicked] = useState<Set<string>>(new Set(role?.permissions ?? []));
+  const [scope, setScope] = useState<"all" | "assigned">(role?.client_scope ?? "all");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -435,7 +499,7 @@ function RoleEditor({
     setBusy(true);
     setError(null);
     try {
-      await onSave({ name: name.trim(), permissions: [...picked] });
+      await onSave({ name: name.trim(), permissions: [...picked], client_scope: scope });
     } catch (e) {
       const fields = (e as { errors?: Record<string, string[]> }).errors;
       setError(fields?.name?.[0] ?? (e as Error).message);
@@ -477,6 +541,26 @@ function RoleEditor({
         />
         {error && <span className="text-[var(--color-signal)]">{error}</span>}
       </label>
+
+      <fieldset className="border border-[var(--hairline)] px-4 py-3">
+        <legend className="px-1 text-sm font-semibold">Which clients</legend>
+        <div className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:gap-8">
+          {(
+            [
+              ["all", "Every client", "Sees all clients, and everything about them the permissions below allow."],
+              ["assigned", "Only their clients", "Sees only the clients you assign to each person: their work, invoices, logins, tasks and WhatsApp conversations."],
+            ] as const
+          ).map(([value, label, hint]) => (
+            <label key={value} className="flex flex-1 cursor-pointer items-start gap-2.5">
+              <input type="radio" name="client-scope" checked={scope === value} onChange={() => setScope(value)} className="mt-1" />
+              <span>
+                <span className="block text-sm">{label}</span>
+                <span className="block text-xs text-[var(--fg-faint)]">{hint}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <div className="grid gap-4 md:grid-cols-2">
         {catalog.map((g) => {
@@ -526,6 +610,80 @@ function RoleEditor({
             {busy ? "Saving…" : `Save · ${picked.size} ${picked.size === 1 ? "permission" : "permissions"}`}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Checkboxes for clients, with a search once the list is long. */
+function ClientChecklist({
+  clients,
+  picked,
+  onChange,
+}: {
+  clients: { id: number; name: string }[];
+  picked: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const [q, setQ] = useState("");
+  const shown = clients.filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const toggle = (id: number) => onChange(picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id]);
+
+  if (clients.length === 0) return <p className="text-xs text-[var(--fg-faint)]">No clients yet.</p>;
+
+  return (
+    <div>
+      {clients.length > 8 && (
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search clients"
+          aria-label="Search clients"
+          className="mb-2 w-full max-w-xs border border-[var(--hairline)] bg-transparent px-3 py-1.5 text-sm outline-none"
+        />
+      )}
+      <div className="grid max-h-56 gap-1.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+        {shown.map((c) => (
+          <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
+            <input type="checkbox" checked={picked.includes(c.id)} onChange={() => toggle(c.id)} />
+            <span className="truncate">{c.name}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ClientPicker({
+  clients,
+  initial,
+  onSave,
+  onCancel,
+}: {
+  clients: { id: number; name: string }[];
+  initial: number[];
+  onSave: (ids: number[]) => void;
+  onCancel: () => void;
+}) {
+  const [picked, setPicked] = useState<number[]>(initial);
+  return (
+    <div className="w-full border border-[var(--hairline)] bg-[color-mix(in_oklab,var(--fg)_2%,transparent)] px-4 py-3">
+      <p className="mb-2 text-xs text-[var(--fg-dim)]">
+        The clients this person works on. They see these and nothing else.
+      </p>
+      <ClientChecklist clients={clients} picked={picked} onChange={setPicked} />
+      <div className="mt-3 flex items-center justify-end gap-4">
+        <button type="button" onClick={onCancel} className="text-xs text-[var(--fg-dim)] hover:text-[var(--fg)]">
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave(picked)}
+          className="bg-[var(--fg)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--ground)]"
+        >
+          Save · {picked.length} {picked.length === 1 ? "client" : "clients"}
+        </button>
       </div>
     </div>
   );

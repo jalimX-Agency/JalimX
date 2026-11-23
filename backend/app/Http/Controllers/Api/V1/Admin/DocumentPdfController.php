@@ -19,6 +19,7 @@ class DocumentPdfController extends Controller
         // Checked here rather than by middleware: see the note on the route.
         $viewer = Auth::guard('web')->user();
         abort_unless($viewer && $viewer->is_active && $viewer->can('money.view'), 403);
+        abort_unless(\App\Support\ClientScope::allows($viewer, $document->client_id), 404);
 
         // Inline: the dashboard opens this in a tab to check it before it is
         // sent, and a download that must then be found in a folder is worse.

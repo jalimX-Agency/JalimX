@@ -108,6 +108,9 @@ export type TeamMember = {
   name: string;
   email: string;
   role: string | null;
+  /** False when their role is limited to the clients assigned to them. */
+  sees_all_clients: boolean;
+  client_ids: number[];
   status: "active" | "invited" | "disabled";
   is_you: boolean;
   invite_expires_at: string | null;
@@ -120,6 +123,8 @@ export type TeamRole = {
   name: string;
   /** The owner role: every permission, not editable. */
   locked: boolean;
+  /** Every client, or only the clients assigned to each person. */
+  client_scope: "all" | "assigned";
   members: number;
   permissions: string[];
 };
@@ -901,11 +906,18 @@ export const admin = {
   logout: () => request("/logout", { method: "POST" }),
 
   team: () =>
-    request<{ data: { members: TeamMember[]; roles: TeamRole[]; permissions: PermissionGroup[] } }>(
+    request<{
+      data: {
+        members: TeamMember[];
+        roles: TeamRole[];
+        permissions: PermissionGroup[];
+        clients: { id: number; name: string }[];
+      };
+    }>(
       "/api/v1/admin/team",
     ).then((r) => r.data),
 
-  inviteMember: (input: { name: string; email: string; role: string }) =>
+  inviteMember: (input: { name: string; email: string; role: string; client_ids?: number[] }) =>
     request<{ data: InviteResult }>("/api/v1/admin/team/invites", {
       method: "POST",
       body: JSON.stringify(input),
@@ -914,7 +926,10 @@ export const admin = {
   resendInvite: (id: number) =>
     request<{ data: InviteResult }>(`/api/v1/admin/team/${id}/invite`, { method: "POST" }).then((r) => r.data),
 
-  updateMember: (id: number, change: { name?: string; role?: string; is_active?: boolean }) =>
+  updateMember: (
+    id: number,
+    change: { name?: string; role?: string; is_active?: boolean; client_ids?: number[] },
+  ) =>
     request<{ data: TeamMember }>(`/api/v1/admin/team/${id}`, {
       method: "PATCH",
       body: JSON.stringify(change),
@@ -922,13 +937,13 @@ export const admin = {
 
   removeMember: (id: number) => request(`/api/v1/admin/team/${id}`, { method: "DELETE" }),
 
-  createRole: (input: { name: string; permissions: string[] }) =>
+  createRole: (input: { name: string; permissions: string[]; client_scope: "all" | "assigned" }) =>
     request<{ data: TeamRole[] }>("/api/v1/admin/roles", {
       method: "POST",
       body: JSON.stringify(input),
     }).then((r) => r.data),
 
-  updateRole: (id: number, input: { name: string; permissions: string[] }) =>
+  updateRole: (id: number, input: { name: string; permissions: string[]; client_scope: "all" | "assigned" }) =>
     request<{ data: TeamRole[] }>(`/api/v1/admin/roles/${id}`, {
       method: "PUT",
       body: JSON.stringify(input),

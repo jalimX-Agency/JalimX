@@ -12,7 +12,7 @@ import { useToast } from "@/components/admin/toast";
 export function Heading({ title, hint }: { title: string; hint?: string }) {
   return (
     <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
-      <h2 className="font-mono text-[0.66rem] uppercase tracking-[0.14em]">{title}</h2>
+      <h2 className="text-sm font-semibold">{title}</h2>
       {hint && <p className="text-xs text-[var(--fg-faint)]">{hint}</p>}
     </header>
   );
@@ -31,14 +31,14 @@ export function Field({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1.5 block font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+      <span className="mb-1.5 block text-xs font-medium text-[var(--fg-faint)]">
         {label}
       </span>
       {children}
       {error ? (
-        <span className="mt-1 block text-[0.7rem] text-[var(--color-signal)]">{error}</span>
+        <span className="mt-1 block text-xs text-[var(--color-signal)]">{error}</span>
       ) : (
-        hint && <span className="mt-1 block text-[0.7rem] text-[var(--fg-faint)]">{hint}</span>
+        hint && <span className="mt-1 block text-xs text-[var(--fg-faint)]">{hint}</span>
       )}
     </label>
   );
@@ -138,7 +138,7 @@ export function SaveBar({
             type="button"
             onClick={onSave}
             disabled={!dirty || saving}
-            className="bg-[var(--fg)] px-5 py-2.5 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            className="bg-[var(--fg)] px-5 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
           >
             {saving ? "Saving…" : "Save"}
           </button>

@@ -47,7 +47,7 @@ function StatusPill({ status }: { status: string | null }) {
     ? (STATUS[status] ?? { label: status.toLowerCase(), tone: "border-[var(--hairline)] text-[var(--fg-faint)]" })
     : { label: "Not created", tone: "border-[var(--hairline)] text-[var(--fg-faint)]" };
   return (
-    <span className={`inline-block border px-1.5 py-px font-mono text-[0.56rem] uppercase tracking-[0.12em] ${s.tone}`}>
+    <span className={`inline-block border px-1.5 py-px text-xs font-medium ${s.tone}`}>
       {s.label}
     </span>
   );
@@ -188,7 +188,7 @@ export default function WhatsAppSettingsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">WhatsApp</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">WhatsApp</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-[var(--fg-dim)]">
           Task reminders are sent from the agency&apos;s WhatsApp number to yours. Here you choose which number
           receives them and what they say. Any change to the wording goes back to Meta for review.
@@ -198,7 +198,7 @@ export default function WhatsAppSettingsPage() {
 
       {/* ——— Connection ——— */}
       <section className="border border-[var(--hairline)] bg-[var(--panel)] px-5 py-5">
-        <h2 className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">Connection</h2>
+        <h2 className="text-xs font-medium text-[var(--fg-faint)]">Connection</h2>
         {!data.configured ? (
           <p className="mt-3 text-sm text-[var(--color-signal)]">
             Not connected. The WhatsApp credentials are missing from the server&apos;s environment.
@@ -247,7 +247,7 @@ export default function WhatsAppSettingsPage() {
                   toast.success("Sent to Meta for review.", "It usually takes from a few minutes to a few hours.");
                 })
               }
-              className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+              className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
             >
               {busy === "missing" ? "Sending…" : "Create missing templates"}
             </button>
@@ -355,7 +355,7 @@ function Recipient({
 
   return (
     <section className="border border-[var(--hairline)] bg-[var(--panel)] px-5 py-5">
-      <h2 className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+      <h2 className="text-xs font-medium text-[var(--fg-faint)]">
         Reminders go to
       </h2>
       <form
@@ -387,7 +387,7 @@ function Recipient({
           <button
             type="submit"
             disabled={!dirty || saving}
-            className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            className="bg-[var(--fg)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
           >
             {saving ? "Saving…" : saved ? "Saved" : "Save"}
           </button>
@@ -396,7 +396,7 @@ function Recipient({
             onClick={onTest}
             disabled={!canTest || !value || dirty || testing}
             title={dirty ? "Save the number first" : undefined}
-            className="border border-[var(--hairline)] px-3 py-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--fg-dim)] hover:border-[var(--fg)] hover:text-[var(--fg)] disabled:opacity-35"
+            className="border border-[var(--hairline)] px-3 py-2 text-xs font-medium text-[var(--fg-dim)] hover:border-[var(--fg)] hover:text-[var(--fg)] disabled:opacity-35"
           >
             {testing ? "Sending…" : "Send a test"}
           </button>
@@ -568,7 +568,7 @@ function TemplateCard({
                   type="button"
                   onClick={save}
                   disabled={!changed || !!local || saving}
-                  className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+                  className="bg-[var(--fg)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
                 >
                   {saving ? "Sending…" : template.status ? "Send for review" : "Create"}
                 </button>
@@ -579,7 +579,7 @@ function TemplateCard({
 
         <div>
           {editing && (
-            <p className="mb-2 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+            <p className="mb-2 text-xs font-medium text-[var(--fg-faint)]">
               Preview
             </p>
           )}

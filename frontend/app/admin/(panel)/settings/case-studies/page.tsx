@@ -39,7 +39,7 @@ export default function ProjectsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
           Case studies
         </h1>
         <NewProject />
@@ -90,21 +90,21 @@ export default function ProjectsPage() {
                   {p.thumb ? (
                     <img src={p.thumb.url} alt="" className="h-full w-full object-cover object-top" />
                   ) : (
-                    <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                    <span className="text-xs font-medium text-[var(--fg-faint)]">
                       No image
                     </span>
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                  <p className="text-xs font-medium text-[var(--fg-faint)]">
                     {p.client_name}
                     {p.year ? ` · ${p.year}` : ""}
                   </p>
                   <p className="mt-1 truncate font-medium">{p.title.en}</p>
                 </div>
 
-                <dl className="hidden gap-6 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--fg-faint)] md:flex">
+                <dl className="hidden gap-6 text-xs font-medium text-[var(--fg-faint)] md:flex">
                   <div className="text-right">
                     <dt>Captures</dt>
                     <dd className="mt-0.5 text-sm tabular-nums text-[var(--fg)]">{p.counts.captures}/3</dd>
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
                   </div>
                 </dl>
 
-                <span className="flex w-28 shrink-0 flex-col items-center gap-1 text-center font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+                <span className="flex w-28 shrink-0 flex-col items-center gap-1 text-center text-xs font-medium">
                   <span className={p.is_published ? "text-[var(--link)]" : "text-[var(--fg-faint)]"}>
                     {p.is_published ? "Published" : "Hidden"}
                   </span>
@@ -172,7 +172,7 @@ function NewProject() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+        className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)]"
       >
         + New case study
       </button>
@@ -186,7 +186,7 @@ function NewProject() {
       <input name="client_name" required maxLength={120} placeholder="Client, e.g. Riad Atlas" aria-label="Client" className="admin-input" autoFocus />
       <input name="title_en" required maxLength={160} placeholder="Headline in English" aria-label="Headline in English" className="admin-input" />
       <div className="flex shrink-0 items-center gap-3">
-        <button type="submit" disabled={busy} className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40">
+        <button type="submit" disabled={busy} className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-40">
           {busy ? "Creating…" : "Create"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="text-sm text-[var(--fg-dim)]">

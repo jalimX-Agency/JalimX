@@ -129,12 +129,12 @@ export default function AiProvidersPage() {
     // The assistant never touches this page: it is where the keys are typed.
     <div data-ai="off">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">AI providers</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">AI providers</h1>
         {open === null && !error && (
           <button
             type="button"
             onClick={() => setOpen(0)}
-            className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+            className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)]"
           >
             + Add a key
           </button>
@@ -201,12 +201,12 @@ export default function AiProvidersPage() {
                   <div className="min-w-0 flex-1 px-5 py-4">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <p className="font-medium">{row.label}</p>
-                      <span className={`font-mono text-[0.62rem] uppercase tracking-[0.12em] ${STATUS[row.status].tone}`}>
+                      <span className={`text-xs font-medium ${STATUS[row.status].tone}`}>
                         {STATUS[row.status].label}
                         {row.status === "cooling_down" && row.available_at ? ` until ${time(row.available_at)}` : ""}
                       </span>
                     </div>
-                    <p className="mt-1 font-mono text-[0.7rem] text-[var(--fg-dim)]">
+                    <p className="mt-1 font-mono text-xs text-[var(--fg-dim)]">
                       {row.provider_name} · {row.model} · {row.key_hint}
                     </p>
                     <p className="mt-1 text-xs text-[var(--fg-faint)]">
@@ -443,7 +443,7 @@ function Editor({
           type="button"
           onClick={runTest}
           disabled={busy !== null || !input.model || (!existing && !input.api_key)}
-          className="border border-[var(--hairline)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] disabled:opacity-40"
+          className="border border-[var(--hairline)] px-4 py-2.5 text-[0.8125rem] font-medium disabled:opacity-40"
         >
           {busy === "test" ? "Testing…" : "Test connection"}
         </button>
@@ -451,7 +451,7 @@ function Editor({
           type="button"
           onClick={() => save(false)}
           disabled={busy !== null}
-          className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40"
+          className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-40"
         >
           {busy === "save" ? "Testing and saving…" : "Save"}
         </button>

@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Support\Permissions;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -64,6 +65,27 @@ class User extends Authenticatable
             'invite_accepted_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    /** The clients assigned to this person on the Team page. */
+    public function clients(): BelongsToMany
+    {
+        return $this->belongsToMany(Client::class)->withTimestamps();
+    }
+
+    /**
+     * True unless every role this person holds is limited to assigned
+     * clients. The owner always sees every client.
+     */
+    public function seesAllClients(): bool
+    {
+        if ($this->isOwner()) {
+            return true;
+        }
+
+        $roles = $this->roles;
+
+        return $roles->isEmpty() || $roles->contains(fn ($role) => ($role->client_scope ?? 'all') !== 'assigned');
     }
 
     public function isOwner(): bool

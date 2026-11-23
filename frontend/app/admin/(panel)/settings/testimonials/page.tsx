@@ -57,12 +57,12 @@ export default function TestimonialsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Testimonials</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Testimonials</h1>
         {open === null && (
           <button
             type="button"
             onClick={() => setOpen(0)}
-            className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+            className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)]"
           >
             + New quote
           </button>
@@ -119,14 +119,14 @@ export default function TestimonialsPage() {
                   className="flex w-full items-start gap-5 px-5 py-4 text-left hover:bg-[color-mix(in_oklab,var(--link)_4%,var(--panel))]"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-[var(--fg-faint)]">
+                    <p className="text-xs font-medium text-[var(--fg-faint)]">
                       {row.author_name}
                       {row.client_name ? ` · ${row.client_name}` : ""}
                     </p>
                     <p className="mt-1 line-clamp-2 text-sm">{row.quote.en || row.quote.fr}</p>
                   </div>
                   <span
-                    className={`shrink-0 font-mono text-[0.6rem] uppercase tracking-[0.12em] ${
+                    className={`shrink-0 text-xs font-medium ${
                       row.is_published ? "text-[var(--link)]" : "text-[var(--fg-faint)]"
                     }`}
                   >
@@ -285,7 +285,7 @@ function Editor({
           type="button"
           onClick={save}
           disabled={busy}
-          className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-40"
+          className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-40"
         >
           {busy ? "Saving…" : "Save"}
         </button>

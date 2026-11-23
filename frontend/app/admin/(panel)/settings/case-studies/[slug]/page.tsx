@@ -85,25 +85,25 @@ function Project() {
     <div className="max-w-5xl">
       <Link
         href="/admin/settings/case-studies"
-        className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] hover:text-[var(--fg)]"
+        className="text-sm font-semibold text-[var(--fg-faint)] hover:text-[var(--fg)]"
       >
         ← Case studies
       </Link>
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--link)]">
+          <p className="text-sm font-semibold text-[var(--link)]">
             {project.client_name}
             {project.year ? ` · ${project.year}` : ""}
           </p>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight">
+          <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight">
             {project.title.en}
           </h1>
         </div>
 
         <div className="flex items-center gap-5 text-sm">
           <span
-            className={`font-mono text-[0.62rem] uppercase tracking-[0.12em] ${
+            className={`text-xs font-medium ${
               project.is_published ? "text-[var(--link)]" : "text-[var(--fg-faint)]"
             }`}
           >

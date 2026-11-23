@@ -35,11 +35,11 @@ export default function WorkTypesPage() {
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Work types</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Work types</h1>
         <button
           type="button"
           onClick={() => setOpen(open === "new" ? null : "new")}
-          className="bg-[var(--fg)] px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)]"
+          className="bg-[var(--fg)] px-4 py-2.5 text-[0.8125rem] font-medium text-[var(--ground)]"
         >
           {open === "new" ? "Cancel" : "+ New type"}
         </button>
@@ -115,7 +115,7 @@ export default function WorkTypesPage() {
                       <span className={`min-w-0 flex-1 ${row.is_active ? "" : "text-[var(--fg-faint)]"}`}>
                         {row.name}
                         {!row.is_active && (
-                          <span className="ml-3 font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+                          <span className="ml-3 text-xs font-medium">
                             Retired
                           </span>
                         )}
@@ -124,7 +124,7 @@ export default function WorkTypesPage() {
                         </span>
                       </span>
                       {row.needs_logins && (
-                        <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--fg-faint)]">
+                        <span className="text-xs font-medium text-[var(--fg-faint)]">
                           Has logins
                         </span>
                       )}
@@ -278,7 +278,7 @@ function TypeEditor({
             type="button"
             onClick={submit}
             disabled={busy || !input.name.trim()}
-            className="bg-[var(--fg)] px-4 py-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--ground)] disabled:opacity-35"
+            className="bg-[var(--fg)] px-4 py-2 text-[0.8125rem] font-medium text-[var(--ground)] disabled:opacity-35"
           >
             {busy ? "Saving…" : "Save"}
           </button>

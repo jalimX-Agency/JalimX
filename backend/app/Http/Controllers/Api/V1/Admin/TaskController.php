@@ -28,9 +28,10 @@ class TaskController extends Controller
      * old, plus what was finished in the last month — enough to see what
      * was done, not an archive.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $tasks = Task::query()
+        $user = $request->user();
+        $tasks = \App\Support\ClientScope::apply(Task::query(), $user)
             ->where(fn ($q) => $q
                 ->whereNull('done_at')
                 ->orWhere('done_at', '>=', now()->subDays(30)))
@@ -46,7 +47,7 @@ class TaskController extends Controller
 
         // What a task can be linked to: every client, and the work under
         // it that is not finished or dropped.
-        $links = Client::query()
+        $links = \App\Support\ClientScope::apply(Client::query(), $user, 'id')
             ->orderBy('name')
             ->with(['engagements' => fn ($q) => $q
                 ->whereNotIn('status', ['done', 'cancelled'])
@@ -101,6 +102,7 @@ class TaskController extends Controller
         unset($data['reminders']);
         $task->fill($data);
         $this->settle($task);
+        $this->guardScope($task);
 
         $next = DB::transaction(function () use ($task, $wasDone, $reminders) {
             $task->save();
@@ -138,7 +140,7 @@ class TaskController extends Controller
         ]);
 
         if ($data['action'] === 'delete') {
-            $deleted = Task::query()->whereIn('id', $data['ids'])->pluck('id');
+            $deleted = \App\Support\ClientScope::apply(Task::query(), $request->user())->whereIn('id', $data['ids'])->pluck('id');
             Task::query()->whereIn('id', $deleted)->delete();
 
             return response()->json(['data' => [], 'next' => [], 'deleted' => $deleted->values()]);
@@ -150,7 +152,7 @@ class TaskController extends Controller
             $changed = [];
             $next = [];
 
-            foreach (Task::query()->whereIn('id', $data['ids'])->get() as $task) {
+            foreach (\App\Support\ClientScope::apply(Task::query(), $request->user())->whereIn('id', $data['ids'])->get() as $task) {
                 $wasDone = $task->done_at !== null;
                 if ($wasDone === $done) {
                     continue;
@@ -189,6 +191,7 @@ class TaskController extends Controller
 
         $task = new Task(['status' => 'todo', 'priority' => 'normal', ...$data]);
         $this->settle($task);
+        $this->guardScope($task);
         // New ones go to the end of the undated pile; dated ones sort by
         // date anyway.
         $task->position = (int) Task::query()->max('position') + 1;
@@ -258,6 +261,19 @@ class TaskController extends Controller
 
         foreach ($wanted->diff($existing->keys()) as $minutes) {
             $task->reminders()->create(['offset_minutes' => $minutes]);
+        }
+    }
+
+    /**
+     * Someone limited to their own clients links every task to one of them:
+     * a task on another client, or on none, would vanish from their list.
+     */
+    private function guardScope(Task $task): void
+    {
+        if (! \App\Support\ClientScope::allows(auth()->user(), $task->client_id)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'client_id' => 'Link the task to one of your clients.',
+            ]);
         }
     }
 

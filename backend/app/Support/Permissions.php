@@ -53,6 +53,7 @@ final class Permissions
             'items' => [
                 'inbox.view' => ['label' => 'Read conversations', 'hint' => 'The WhatsApp conversations on the business number.'],
                 'inbox.reply' => ['label' => 'Reply on WhatsApp', 'hint' => 'Send messages from the business number.'],
+                'inbox.unlinked' => ['label' => 'See conversations not linked to a client', 'hint' => 'Only matters for a role limited to assigned clients: new numbers nobody has linked yet.'],
             ],
         ],
         'tasks' => [

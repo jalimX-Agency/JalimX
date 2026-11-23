@@ -94,7 +94,7 @@ export default function ServicesPage() {
 
   return (
     <div className="max-w-5xl pb-28">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Services</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">Services</h1>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         What the homepage says JalimX does, and the choices in the contact
         form. A hidden service disappears from both.
@@ -109,7 +109,7 @@ export default function ServicesPage() {
               <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3">
                 <div className="flex items-baseline gap-3">
                   <h2 className="font-display text-lg font-semibold tracking-tight">{row.title.en || row.slug}</h2>
-                  {isChanged && <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--link)]">Edited</span>}
+                  {isChanged && <span className="text-xs font-medium text-[var(--link)]">Edited</span>}
                 </div>
                 <div className="flex items-center gap-1">
                   <MoveButton
@@ -155,7 +155,7 @@ export default function ServicesPage() {
               <div className="grid gap-px bg-[var(--hairline)] md:grid-cols-2">
                 {(["en", "fr"] as const).map((locale) => (
                   <div key={locale} className="flex flex-col gap-4 bg-[var(--panel)] p-5">
-                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--link)]">
+                    <p className="text-xs font-medium text-[var(--link)]">
                       {locale === "en" ? "English" : "Français"}
                     </p>
                     {TEXT.map((f) => {

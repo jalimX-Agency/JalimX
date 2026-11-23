@@ -79,7 +79,7 @@ export default function BillingSettingsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Invoicing</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">Invoicing</h1>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         The details printed at the top of every quote and invoice. Only the
         name is required — leave the rest empty until there is something to

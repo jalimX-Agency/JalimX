@@ -87,7 +87,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-5xl pb-28">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">Homepage &amp; contact</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">Homepage &amp; contact</h1>
       <p className="mt-2 max-w-[60ch] text-sm text-[var(--fg-dim)]">
         The words that open the homepage, and the contact details shown in the
         footer of every page and on the contact page.
@@ -99,7 +99,7 @@ export default function SettingsPage() {
           <div className="grid md:grid-cols-2">
             {(["en", "fr"] as const).map((locale) => (
               <div key={locale} className="flex flex-col gap-5 p-5 md:border-l md:border-[var(--hairline)] md:first:border-l-0">
-                <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-[var(--link)]">
+                <p className="text-xs font-medium text-[var(--link)]">
                   {locale === "en" ? "English" : "Français"}
                 </p>
                 <Field label="Headline" hint="A comma splits it over two lines" error={err(`hero_headline.${locale}`)}>
