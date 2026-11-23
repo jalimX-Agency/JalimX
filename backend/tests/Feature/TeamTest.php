@@ -190,4 +190,16 @@ class TeamTest extends TestCase
         $this->deleteJson("/api/v1/admin/team/{$member->id}")->assertUnprocessable();
         $this->assertNotNull($member->fresh());
     }
+
+    public function test_the_dashboard_may_call_invite_accept_from_its_own_origin(): void
+    {
+        // Without this the browser blocks the request and the invite page
+        // can only say it could not reach the server.
+        $origin = explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'http://localhost:3200'))[0];
+
+        $this->call('OPTIONS', '/invite/accept', [], [], [], [
+            'HTTP_ORIGIN' => $origin,
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
+        ])->assertHeader('Access-Control-Allow-Origin', $origin);
+    }
 }

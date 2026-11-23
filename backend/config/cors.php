@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    // invite/accept: a team invite sets the password and signs in, like login.
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'invite/accept'],
 
     'allowed_methods' => ['*'],
 
