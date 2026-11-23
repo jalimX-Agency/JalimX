@@ -839,11 +839,15 @@ export const admin = {
   overview: () =>
     request<{ data: Overview }>("/api/v1/admin/overview").then((r) => r.data),
 
-  async login(email: string, password: string) {
+  /**
+   * remember: Laravel's "remember me" cookie, which signs the person back in
+   * after the session itself has ended (a redeploy, a quiet week).
+   */
+  async login(email: string, password: string, remember = true) {
     await csrf();
     return request<{ data: User }>("/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, remember }),
     }).then((r) => r.data);
   },
 

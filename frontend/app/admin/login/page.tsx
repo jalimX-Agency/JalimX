@@ -24,7 +24,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await admin.login(String(form.get("email")), String(form.get("password")));
+      await admin.login(
+        String(form.get("email")),
+        String(form.get("password")),
+        form.get("remember") === "on",
+      );
       router.replace("/admin/leads");
     } catch (e) {
       // Laravel answers a wrong password and an unknown email with the same
@@ -76,6 +80,11 @@ export default function LoginPage() {
               </div>
             ))}
           </div>
+
+          <label className="mt-4 flex cursor-pointer items-center gap-2.5 text-sm text-[var(--fg-dim)]">
+            <input type="checkbox" name="remember" defaultChecked disabled={busy} />
+            Keep me signed in on this device
+          </label>
 
           {error && (
             <p role="alert" className="mt-4 text-sm text-[var(--color-signal)]">
