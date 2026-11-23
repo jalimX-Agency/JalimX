@@ -26,7 +26,8 @@ class EngagementResource extends JsonResource
             'payment_timing' => (string) ($this->payment_timing ?: 'end'),
             // A string, not a float: money read back as a float is money one
             // rounding away from disagreeing with the invoice.
-            'budget' => $this->budget !== null ? (string) $this->budget : null,
+            // A price is money: hidden from a role that cannot see money.
+            'budget' => $this->budget !== null && $request->user()?->can('money.view') ? (string) $this->budget : null,
             'starts_on' => $this->starts_on?->toDateString(),
             'ends_on' => $this->ends_on?->toDateString(),
             'description' => $this->description,

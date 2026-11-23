@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Support\Permissions;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -24,6 +25,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
+        'invite_token',
+        'invite_expires_at',
+        'invite_accepted_at',
+        'invited_by',
+        'last_login_at',
     ];
 
     /**
@@ -31,9 +38,15 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+    /** New accounts are on until someone switches them off. */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
+        'invite_token',
     ];
 
     /**
@@ -46,6 +59,50 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'invite_expires_at' => 'datetime',
+            'invite_accepted_at' => 'datetime',
+            'last_login_at' => 'datetime',
+        ];
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->hasRole(Permissions::OWNER_ROLE);
+    }
+
+    /** active, invited (link sent, not used yet) or disabled. */
+    public function status(): string
+    {
+        if (! $this->is_active) {
+            return 'disabled';
+        }
+
+        return $this->invite_accepted_at === null ? 'invited' : 'active';
+    }
+
+    /**
+     * What this person may do, as the dashboard reads it. The owner holds
+     * every permission, including any added after their role was created.
+     *
+     * @return list<string>
+     */
+    public function permissionNames(): array
+    {
+        return $this->isOwner()
+            ? Permissions::all()
+            : $this->getAllPermissions()->pluck('name')->values()->all();
+    }
+
+    /** The signed-in person, for /auth/me and the login response. */
+    public function profile(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'roles' => $this->getRoleNames(),
+            'permissions' => $this->permissionNames(),
         ];
     }
 }

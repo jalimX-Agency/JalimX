@@ -45,7 +45,10 @@ class AuthController extends Controller
             ])->status(429);
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        // A switched-off account, or an invite never accepted, cannot sign in.
+        $credentials['is_active'] = true;
+
+        if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
 
             // One message for both a wrong password and an unknown address:
@@ -61,7 +64,9 @@ class AuthController extends Controller
         // login is worthless afterwards.
         $request->session()->regenerate();
 
-        return response()->json(['data' => $this->profile($request)]);
+        $request->user()->forceFill(['last_login_at' => now()])->save();
+
+        return response()->json(['data' => $request->user()->profile()]);
     }
 
     public function logout(Request $request): JsonResponse
@@ -74,17 +79,4 @@ class AuthController extends Controller
         return response()->json(['data' => null]);
     }
 
-    /** @return array<string, mixed> */
-    private function profile(Request $request): array
-    {
-        $user = $request->user();
-
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
-        ];
-    }
 }

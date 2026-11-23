@@ -17,7 +17,8 @@ class DocumentPdfController extends Controller
     public function __invoke(Document $document): Response
     {
         // Checked here rather than by middleware: see the note on the route.
-        abort_unless(Auth::guard('web')->check(), 403);
+        $viewer = Auth::guard('web')->user();
+        abort_unless($viewer && $viewer->is_active && $viewer->can('money.view'), 403);
 
         // Inline: the dashboard opens this in a tab to check it before it is
         // sent, and a download that must then be found in a folder is worse.

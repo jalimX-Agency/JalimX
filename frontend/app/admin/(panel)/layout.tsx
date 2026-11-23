@@ -11,6 +11,7 @@ import { InboxNotice, InboxPulseProvider, useInboxPulseSource } from "@/componen
 import { Block } from "@/components/admin/skeleton";
 import { AiAssist } from "@/components/admin/ai-assist";
 import { admin, ApiError, can, type User } from "@/lib/admin/client";
+import { allowedSettings } from "@/lib/admin/settings-sections";
 
 /**
  * The signed-in shell: session check, sidebar, sign out.
@@ -36,15 +37,17 @@ export const useAdminUser = () => useContext(UserContext);
  * it here made the daily work share a list with things that change twice a
  * year.
  */
-const NAV: { group: string; items: { href: string; label: string }[] }[] = [
+// Each item names the permission it needs; the menu shows only what the
+// person's role allows. The API checks again on every request.
+const NAV: { group: string; items: { href: string; label: string; permission?: string }[] }[] = [
   {
     group: "Agency",
     items: [
       { href: "/admin", label: "Today" },
-      { href: "/admin/tasks", label: "Tasks" },
-      { href: "/admin/inbox", label: "Inbox" },
-      { href: "/admin/leads", label: "Leads" },
-      { href: "/admin/clients", label: "Clients" },
+      { href: "/admin/tasks", label: "Tasks", permission: "tasks.view" },
+      { href: "/admin/inbox", label: "Inbox", permission: "inbox.view" },
+      { href: "/admin/leads", label: "Leads", permission: "leads.view" },
+      { href: "/admin/clients", label: "Clients", permission: "clients.view" },
     ],
   },
   {
@@ -73,13 +76,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   // a database in Europe, so the other pages do not pay for it.
   const leadsPath = pathname.startsWith("/admin/leads") ? pathname : "";
   useEffect(() => {
-    if (!user) return;
+    if (!user || !can(user, "leads.view")) return;
     admin.leads().then((r) => setUnread(r.meta.unread), () => {});
   }, [user, leadsPath]);
 
   // WhatsApp is where people write without warning: every page keeps
   // asking, cheaply. See components/admin/inbox-pulse.
-  const pulse = useInboxPulseSource(!!user);
+  const pulse = useInboxPulseSource(!!user && can(user, "inbox.view"));
   const inboxUnread = pulse.unread;
 
   async function signOut() {
@@ -111,12 +114,22 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               scrolling row, where a label per group costs more room than the
               grouping is worth. */}
           <nav className="flex min-w-0 gap-px overflow-x-auto py-2 md:flex-col md:gap-0 md:overflow-visible md:p-3">
-            {NAV.map((section) => (
+            {NAV.map((section) => {
+              // Settings opens the first settings page this person may use.
+              const firstSettings = allowedSettings(user?.permissions)[0]?.items[0]?.href;
+              const items = section.items
+                .filter((item) => !item.permission || can(user, item.permission))
+                .filter((item) => item.href !== "/admin/settings" || !!firstSettings)
+                .map((item) =>
+                  item.href === "/admin/settings" && firstSettings ? { ...item, href: firstSettings } : item,
+                );
+              if (!user || items.length === 0) return null;
+              return (
               <div key={section.group} className="flex gap-px md:flex-col md:gap-0 md:[&+div]:mt-5">
                 <p className="hidden px-3 pb-1.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-[var(--fg-faint)] md:block">
                   {section.group}
                 </p>
-                {section.items.map((item) => {
+                {items.map((item) => {
                   /*
                    * "/admin" is every page's prefix, so the first screen is
                    * matched exactly and everything else by prefix.
@@ -124,7 +137,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   const active =
                     item.href === "/admin"
                       ? pathname === "/admin"
-                      : pathname.startsWith(item.href);
+                      : item.href.startsWith("/admin/settings")
+                        ? pathname.startsWith("/admin/settings")
+                        : pathname.startsWith(item.href);
                   return (
                     <Link
                       key={item.href}
@@ -152,7 +167,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   );
                 })}
               </div>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="ml-auto px-4 md:mt-auto md:ml-0 md:border-t md:border-[var(--hairline)] md:px-5 md:py-4">

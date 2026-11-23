@@ -25,19 +25,23 @@ use Illuminate\Support\Carbon;
  */
 class OverviewController extends Controller
 {
-    public function __invoke(): JsonResponse
+    public function __invoke(\Illuminate\Http\Request $request): JsonResponse
     {
         $now = Carbon::now();
+        $user = $request->user();
+        $money = $user->can('money.view');
 
+        // A section the viewer may not see is null, not empty: the page hides
+        // it instead of saying there is nothing there.
         return response()->json([
             'data' => [
-                'money' => $this->money($now),
-                'unbilled' => $this->unbilledMonths($now),
-                'overdue' => $this->overdue($now),
-                'drafts' => $this->drafts(),
-                'tasks' => $this->tasksDue($now),
-                'leads' => $this->leads(),
-                'counts' => $this->counts(),
+                'money' => $money ? $this->money($now) : null,
+                'unbilled' => $money ? $this->unbilledMonths($now) : null,
+                'overdue' => $money ? $this->overdue($now) : null,
+                'drafts' => $money ? $this->drafts() : null,
+                'tasks' => $user->can('tasks.view') ? $this->tasksDue($now) : null,
+                'leads' => $user->can('leads.view') ? $this->leads() : null,
+                'counts' => $user->can('clients.view') ? $this->counts() : null,
                 'as_of' => $now->toIso8601String(),
             ],
         ]);

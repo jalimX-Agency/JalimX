@@ -39,7 +39,7 @@ class LeadReplyTest extends TestCase
     public function test_the_reply_goes_to_the_lead_and_marks_them_contacted(): void
     {
         Mail::fake();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $lead = $this->lead();
 
         $this->postJson("/api/v1/admin/leads/{$lead->id}/reply", [
@@ -58,7 +58,7 @@ class LeadReplyTest extends TestCase
     {
         Mail::fake();
         $this->whatsapp();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $lead = $this->lead();
 
         $this->postJson("/api/v1/admin/leads/{$lead->id}/reply", [
@@ -74,7 +74,7 @@ class LeadReplyTest extends TestCase
     public function test_a_whatsapp_button_without_a_number_is_refused_and_nothing_is_sent(): void
     {
         Mail::fake();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $lead = $this->lead();
 
         $this->postJson("/api/v1/admin/leads/{$lead->id}/reply", [
@@ -90,7 +90,7 @@ class LeadReplyTest extends TestCase
     public function test_a_later_stage_is_not_moved_back(): void
     {
         Mail::fake();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $lead = $this->lead(['status' => 'quoted']);
 
         $this->postJson("/api/v1/admin/leads/{$lead->id}/reply", [
@@ -101,7 +101,7 @@ class LeadReplyTest extends TestCase
 
     public function test_it_needs_a_subject_and_a_body(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $lead = $this->lead();
 
         $this->postJson("/api/v1/admin/leads/{$lead->id}/reply", ['subject' => '', 'body' => ''])

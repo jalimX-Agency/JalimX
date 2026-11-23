@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from "react";
 
+import { useAdminUser } from "@/app/admin/(panel)/layout";
 import { useConfirm } from "@/components/admin/confirm";
 import { Field } from "@/components/admin/fields";
 import { useToast } from "@/components/admin/toast";
 import {
   admin,
+  can,
   ApiError,
   type Client,
   type Credential,
@@ -31,6 +33,9 @@ type SecretFilter = "all" | "with" | "without";
 type SortOrder = "name" | "recent" | "oldest";
 
 export function Logins({ client }: { client: Client }) {
+  const user = useAdminUser();
+  const mayReveal = can(user, "logins.reveal");
+  const mayManage = can(user, "logins.manage");
   const [rows, setRows] = useState<Credential[]>(client.credentials ?? []);
   const [open, setOpen] = useState<number | "new" | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -219,7 +224,7 @@ export function Logins({ client }: { client: Client }) {
     <section data-ai="off" className="border border-[var(--hairline)] bg-[var(--panel)]">
       <header className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--hairline)] px-5 py-3.5">
         <div className="flex items-center gap-3">
-          {rows.length > 0 && (
+          {rows.length > 0 && mayReveal && (
             <input
               type="checkbox"
               aria-label={filtering ? "Select every login shown" : "Select every login"}
@@ -246,13 +251,13 @@ export function Logins({ client }: { client: Client }) {
                   : `${rows.length} ${rows.length === 1 ? "login" : "logins"}`}
           </h2>
         </div>
-        <button
+        {mayManage && <button
           type="button"
           onClick={() => setOpen(open === "new" ? null : "new")}
           className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--link)]"
         >
           {open === "new" ? "Cancel" : "+ Add login"}
-        </button>
+        </button>}
       </header>
 
       {rows.length > 1 && (
@@ -508,16 +513,20 @@ export function Logins({ client }: { client: Client }) {
                 />
               ) : (
                 <div className="flex items-start">
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${row.label}`}
-                    className="mt-[1.15rem] ml-5 shrink-0"
-                    checked={selected.has(row.id)}
-                    onChange={() => toggle(row.id)}
-                  />
+                  {mayReveal && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${row.label}`}
+                      className="mt-[1.15rem] ml-5 shrink-0"
+                      checked={selected.has(row.id)}
+                      onChange={() => toggle(row.id)}
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                     <LoginRow
                       credential={row}
+                      mayReveal={mayReveal}
+                      mayManage={mayManage}
                       showUpdated={sort !== "name"}
                       work={works.find((w) => w.id === row.engagement_id)?.title ?? null}
                       onEdit={() => setOpen(row.id)}
@@ -622,10 +631,14 @@ function LoginRow({
   credential,
   work,
   showUpdated,
+  mayReveal = true,
+  mayManage = true,
   onEdit,
 }: {
   credential: Credential;
   work: string | null;
+  mayReveal?: boolean;
+  mayManage?: boolean;
   /** When sorted by date, the date is what the order means. */
   showUpdated?: boolean;
   onEdit: () => void;
@@ -715,7 +728,7 @@ function LoginRow({
               {copied === "user" ? "Copied" : "Copy user"}
             </button>
           )}
-          {credential.has_secret && (
+          {credential.has_secret && mayReveal && (
             <>
               <button
                 type="button"
@@ -734,13 +747,15 @@ function LoginRow({
               </button>
             </>
           )}
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
-          >
-            Edit
-          </button>
+          {mayManage && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              Edit
+            </button>
+          )}
         </div>
       </div>
 

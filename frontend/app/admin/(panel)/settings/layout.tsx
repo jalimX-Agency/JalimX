@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useAdminUser } from "@/app/admin/(panel)/layout";
+import { allowedSettings } from "@/lib/admin/settings-sections";
+
 /**
  * Everything that is set once and then left alone.
  *
@@ -13,30 +16,12 @@ import { usePathname } from "next/navigation";
  * twice a year.
  */
 
-const SECTIONS: { group: string; items: { href: string; label: string; hint: string }[] }[] = [
-  {
-    group: "The agency",
-    items: [
-      { href: "/admin/settings/invoicing", label: "Invoicing", hint: "What goes on an invoice" },
-      { href: "/admin/settings/work-types", label: "Work types", hint: "What kinds of work you do" },
-      { href: "/admin/settings/task-templates", label: "Task templates", hint: "The steps a job always takes" },
-      { href: "/admin/settings/whatsapp", label: "WhatsApp", hint: "Where reminders go, and what they say" },
-      { href: "/admin/settings/ai", label: "AI providers", hint: "The keys the writing help runs on" },
-    ],
-  },
-  {
-    group: "The site",
-    items: [
-      { href: "/admin/settings/site", label: "Homepage & contact", hint: "The words that open jalimx.com" },
-      { href: "/admin/settings/services", label: "Services", hint: "What the site says you do" },
-      { href: "/admin/settings/case-studies", label: "Case studies", hint: "The work shown publicly" },
-      { href: "/admin/settings/testimonials", label: "Testimonials", hint: "What clients say about you" },
-    ],
-  },
-];
+
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const user = useAdminUser();
+  const SECTIONS = allowedSettings(user?.permissions);
 
   return (
     <div className="max-w-6xl">

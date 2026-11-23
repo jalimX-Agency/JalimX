@@ -91,7 +91,8 @@ class AttachmentController extends Controller
      */
     public function download(Attachment $attachment): Response
     {
-        abort_unless(Auth::guard('web')->check(), 403);
+        $viewer = Auth::guard('web')->user();
+        abort_unless($viewer && $viewer->is_active && $viewer->can('clients.view'), 403);
 
         return $this->serve($attachment, 'attachment', 'application/octet-stream');
     }
@@ -106,7 +107,8 @@ class AttachmentController extends Controller
      */
     public function preview(Attachment $attachment): Response
     {
-        abort_unless(Auth::guard('web')->check(), 403);
+        $viewer = Auth::guard('web')->user();
+        abort_unless($viewer && $viewer->is_active && $viewer->can('clients.view'), 403);
 
         $mime = (string) $attachment->mime;
 

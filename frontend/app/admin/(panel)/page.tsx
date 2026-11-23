@@ -104,16 +104,18 @@ export default function OverviewPage() {
               note="From work that runs on"
             />
           ))}
-          <Figure
-            label="Clients"
-            value={String(data.counts.clients)}
-            note={
-              data.counts.clients_without_ice > 0
-                ? `${data.counts.clients_without_ice} without an ICE`
-                : `${data.counts.active_work} jobs running`
-            }
-            alarm={data.counts.clients_without_ice > 0}
-          />
+          {data.counts && (
+            <Figure
+              label="Clients"
+              value={String(data.counts.clients)}
+              note={
+                data.counts.clients_without_ice > 0
+                  ? `${data.counts.clients_without_ice} without an ICE`
+                  : `${data.counts.active_work} jobs running`
+              }
+              alarm={data.counts.clients_without_ice > 0}
+            />
+          )}
         </dl>
       )}
 

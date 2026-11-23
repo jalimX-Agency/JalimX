@@ -103,6 +103,40 @@ export type User = {
   permissions?: string[];
 };
 
+export type TeamMember = {
+  id: number;
+  name: string;
+  email: string;
+  role: string | null;
+  status: "active" | "invited" | "disabled";
+  is_you: boolean;
+  invite_expires_at: string | null;
+  last_login_at: string | null;
+  created_at: string | null;
+};
+
+export type TeamRole = {
+  id: number;
+  name: string;
+  /** The owner role: every permission, not editable. */
+  locked: boolean;
+  members: number;
+  permissions: string[];
+};
+
+export type PermissionGroup = {
+  key: string;
+  label: string;
+  items: { name: string; label: string; hint: string }[];
+};
+
+export type InviteResult = {
+  member: TeamMember;
+  invite_url: string;
+  emailed: boolean;
+  email_error: string | null;
+};
+
 export const can = (user: User | null, permission: string) =>
   !!user?.permissions?.includes(permission);
 
@@ -757,12 +791,13 @@ export type Overview = {
       created_at: string;
     }[];
   };
+  /** Null for a role that cannot see clients. */
   counts: {
     clients: number;
     clients_without_ice: number;
     active_work: number;
     planned_work: number;
-  };
+  } | null;
   as_of: string;
 };
 
@@ -836,8 +871,20 @@ export async function request<T>(
 export const admin = {
   me: () => request<{ data: User }>("/api/v1/auth/me").then((r) => r.data),
 
+  /**
+   * Sections the person's role cannot see come back null; they are turned
+   * into empty ones here so the page simply leaves them out.
+   */
   overview: () =>
-    request<{ data: Overview }>("/api/v1/admin/overview").then((r) => r.data),
+    request<{ data: Overview }>("/api/v1/admin/overview").then(({ data: o }) => ({
+      ...o,
+      money: o.money ?? [],
+      unbilled: o.unbilled ?? [],
+      overdue: o.overdue ?? [],
+      drafts: o.drafts ?? [],
+      tasks: o.tasks ?? [],
+      leads: o.leads ?? { unread: 0, recent: [] },
+    })),
 
   /**
    * remember: Laravel's "remember me" cookie, which signs the person back in
@@ -852,6 +899,57 @@ export const admin = {
   },
 
   logout: () => request("/logout", { method: "POST" }),
+
+  team: () =>
+    request<{ data: { members: TeamMember[]; roles: TeamRole[]; permissions: PermissionGroup[] } }>(
+      "/api/v1/admin/team",
+    ).then((r) => r.data),
+
+  inviteMember: (input: { name: string; email: string; role: string }) =>
+    request<{ data: InviteResult }>("/api/v1/admin/team/invites", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  resendInvite: (id: number) =>
+    request<{ data: InviteResult }>(`/api/v1/admin/team/${id}/invite`, { method: "POST" }).then((r) => r.data),
+
+  updateMember: (id: number, change: { name?: string; role?: string; is_active?: boolean }) =>
+    request<{ data: TeamMember }>(`/api/v1/admin/team/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(change),
+    }).then((r) => r.data),
+
+  removeMember: (id: number) => request(`/api/v1/admin/team/${id}`, { method: "DELETE" }),
+
+  createRole: (input: { name: string; permissions: string[] }) =>
+    request<{ data: TeamRole[] }>("/api/v1/admin/roles", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  updateRole: (id: number, input: { name: string; permissions: string[] }) =>
+    request<{ data: TeamRole[] }>(`/api/v1/admin/roles/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }).then((r) => r.data),
+
+  deleteRole: (id: number) =>
+    request<{ data: TeamRole[] }>(`/api/v1/admin/roles/${id}`, { method: "DELETE" }).then((r) => r.data),
+
+  /** Who an invite link is for; public. */
+  inviteInfo: (token: string) =>
+    request<{ data: { name: string; email: string } }>(`/api/v1/invites/${encodeURIComponent(token)}`).then(
+      (r) => r.data,
+    ),
+
+  async acceptInvite(token: string, password: string, confirmation: string) {
+    await csrf();
+    return request<{ data: User }>("/invite/accept", {
+      method: "POST",
+      body: JSON.stringify({ token, password, password_confirmation: confirmation }),
+    }).then((r) => r.data);
+  },
 
   projects: () =>
     request<{ data: ProjectSummary[] }>("/api/v1/admin/projects").then(

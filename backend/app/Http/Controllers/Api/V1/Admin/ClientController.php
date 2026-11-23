@@ -67,20 +67,19 @@ class ClientController extends Controller
         return response()->json(['data' => new ClientResource($client->refresh())], 201);
     }
 
-    public function show(Client $client): ClientResource
+    public function show(Request $request, Client $client): ClientResource
     {
-        return new ClientResource(
-            $client->loadCount('engagements')->load(
-                'engagements.caseStudy',
-                'engagements.workTypes',
-                'engagements.attachments',
-                'engagements.tasks.reminders',
-                'documents.items',
-                'documents.payments',
-                'documents.latestWhatsApp',
-                'credentials',
-            )
+        $user = $request->user();
+
+        // Money and logins are loaded only for someone allowed to see them,
+        // so a role without them gets nothing, not just a hidden tab.
+        $relations = array_merge(
+            ['engagements.caseStudy', 'engagements.workTypes', 'engagements.attachments', 'engagements.tasks.reminders'],
+            $user->can('money.view') ? ['documents.items', 'documents.payments', 'documents.latestWhatsApp'] : [],
+            $user->can('logins.view') ? ['credentials'] : [],
         );
+
+        return new ClientResource($client->loadCount('engagements')->load($relations));
     }
 
     public function update(Request $request, Client $client): ClientResource

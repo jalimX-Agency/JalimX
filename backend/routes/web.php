@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Admin\AttachmentController;
 use App\Http\Controllers\Api\V1\Admin\DocumentPdfController;
 use App\Http\Controllers\Api\V1\Admin\InboxController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InviteController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -57,6 +58,14 @@ Route::get('/attachments/{attachment}/preview', [AttachmentController::class, 'p
  */
 Route::get('/whatsapp/media/{message}', [InboxController::class, 'media'])
     ->name('whatsapp.media');
+
+/*
+ * Accepting a team invite: sets the password and signs the person in, with
+ * the same session cookie as login, so it lives beside login.
+ */
+Route::post('/invite/accept', [InviteController::class, 'accept'])
+    ->middleware('throttle:10,1')
+    ->name('invite.accept');
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum')

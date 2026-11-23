@@ -14,7 +14,7 @@ class WorkTypeDescriptionTest extends TestCase
 
     public function test_a_kind_of_work_keeps_its_description(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->owner()->create());
         $seo = WorkType::where('slug', 'seo')->firstOrFail();
 
         $this->putJson("/api/v1/admin/work-types/{$seo->id}", [

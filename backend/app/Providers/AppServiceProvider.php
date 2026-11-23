@@ -20,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The owner passes every permission check, including ones added later.
+        \Illuminate\Support\Facades\Gate::before(
+            fn ($user) => method_exists($user, 'isOwner') && $user->isOwner() ? true : null
+        );
+
         // Any content change drops the matching cache tag on the frontend.
         foreach (RevalidatesSite::TAGS as $model => $tag) {
             $model::observe(RevalidatesSite::class);

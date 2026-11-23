@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useAdminUser } from "@/app/admin/(panel)/layout";
 import { useConfirm } from "@/components/admin/confirm";
 import { ClientForm } from "@/components/admin/client-form";
 import { Documents } from "@/components/admin/documents";
@@ -11,7 +12,7 @@ import { Engagements } from "@/components/admin/engagements";
 import { Logins } from "@/components/admin/logins";
 import { PageSkeleton, PanelsSkeleton } from "@/components/admin/skeleton";
 import { useToast } from "@/components/admin/toast";
-import { admin, isSignedOut, type Client } from "@/lib/admin/client";
+import { admin, can, isSignedOut, type Client } from "@/lib/admin/client";
 
 /**
  * One client, one page.
@@ -32,6 +33,7 @@ export default function ClientPage() {
   const [client, setClient] = useState<Client | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Work");
+  const user = useAdminUser();
   const [detailsDirty, setDetailsDirty] = useState(false);
   const ask = useConfirm();
   const toast = useToast();
@@ -98,8 +100,11 @@ export default function ClientPage() {
    * involves signing in anywhere does not need a tab about passwords.
    */
   const needsLogins =
-    (client.credentials?.length ?? 0) > 0 ||
-    (client.engagements ?? []).some((e) => e.work_types.some((t) => t.needs_logins));
+    can(user, "logins.view") &&
+    ((client.credentials?.length ?? 0) > 0 ||
+      (client.engagements ?? []).some((e) => e.work_types.some((t) => t.needs_logins)));
+  // A role without money sees no Money tab; the API sends none either.
+  const seesMoney = can(user, "money.view");
 
   const reach = [
     client.contact_name,
@@ -186,7 +191,7 @@ export default function ClientPage() {
         aria-label="This client"
         className="mt-8 flex gap-6 border-b border-[var(--hairline)]"
       >
-        {TABS.filter((t) => t !== "Logins" || needsLogins).map((t) => (
+        {TABS.filter((t) => (t !== "Logins" || needsLogins) && (t !== "Money" || seesMoney)).map((t) => (
           <button
             key={t}
             type="button"
@@ -216,9 +221,11 @@ export default function ClientPage() {
         <Engagements client={client} />
       </div>
 
-      <div className="mt-8 max-w-5xl" hidden={tab !== "Money"}>
-        <Documents client={client} />
-      </div>
+      {seesMoney && (
+        <div className="mt-8 max-w-5xl" hidden={tab !== "Money"}>
+          <Documents client={client} />
+        </div>
+      )}
 
       {needsLogins && (
         <div className="mt-8 max-w-5xl" hidden={tab !== "Logins"}>

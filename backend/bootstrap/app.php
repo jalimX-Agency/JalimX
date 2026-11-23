@@ -48,7 +48,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         // The public reads that only the site's own server may make.
-        $middleware->alias(['site.key' => \App\Http\Middleware\RequireSiteKey::class]);
+        $middleware->alias([
+            'site.key' => \App\Http\Middleware\RequireSiteKey::class,
+            // A switched-off team member is refused, and signed out, on their next request.
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Never echoed back into a session or an error page.

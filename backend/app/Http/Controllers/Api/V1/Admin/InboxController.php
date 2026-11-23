@@ -162,7 +162,8 @@ class InboxController extends Controller
      */
     public function media(WhatsAppMessage $message): Response
     {
-        abort_unless(Auth::guard('web')->check(), 403);
+        $viewer = Auth::guard('web')->user();
+        abort_unless($viewer && $viewer->is_active && $viewer->can('inbox.view'), 403);
         abort_unless($message->media_path, 404);
 
         try {

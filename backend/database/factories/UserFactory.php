@@ -33,6 +33,12 @@ class UserFactory extends Factory
         ];
     }
 
+    /** The owner: every permission, as the account that exists in production. */
+    public function owner(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->assignRole(\App\Support\Permissions::OWNER_ROLE));
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */
